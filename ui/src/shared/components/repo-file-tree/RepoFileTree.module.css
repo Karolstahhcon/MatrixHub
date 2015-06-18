@@ -1,0 +1,38 @@
+.wrapper {
+  border-radius: var(--mantine-radius-md);
+  overflow: hidden;
+}
+
+/* ── Commit caption row above table ── */
+.caption {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  background-color: var(--mantine-color-gray-0);
+  font-size: var(--mantine-font-size-sm);
+  line-height: 20px;
+  min-height: 36px;
+  border-top-left-radius: var(--mantine-radius-md);
+  border-top-right-radius: var(--mantine-radius-md);
+}
+
+.captionLeft {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
+  color: var(--mantine-color-dimmed);
+}
+
+.captionAuthor {
+  font-weight: 600;
+  color: var(--mantine-color-gray-9);
+  flex-shrink: 0;
+}
+
+.captionMessage {
+  color: var(--mantine-color-dimmed);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
