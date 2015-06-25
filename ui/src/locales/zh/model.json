@@ -1,0 +1,34 @@
+{
+  "new": "创建模型",
+  "list": {
+    "project": "项目",
+    "library": "框架",
+    "task": "任务",
+    "placeholder": {
+      "modelName": "模型名称",
+      "task": "输入任务名称搜索",
+      "library": "输入框架名称搜索",
+      "project": "输入项目名称搜索"
+    },
+    "recommend": "推荐模型",
+    "allModels": "全部模型",
+    "noRecommended": "暂无推荐模型",
+    "emptyTitle": "还没有模型",
+    "emptyDescription": "先创建一个模型仓库，再上传模型文件开始使用。",
+    "create": "创建模型",
+    "uploadGuide": "了解如何上传模型",
+    "loadFailed": "模型加载失败",
+    "retry": "重试",
+    "viewMore": "查看更多",
+    "collapse": "收起"
+  },
+  "detail": {
+    "upload": "上传模型文件",
+    "download": "下载模型文件",
+    "use": "使用此模型",
+    "desc": "模型介绍",
+    "tree": "模型文件",
+    "setting": "模型设置",
+    "history": "{{count}} 条提交",
+    "useModel": {
+      "title": "使用 {{engine}} 模型",
