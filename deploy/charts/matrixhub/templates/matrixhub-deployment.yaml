@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "matrixhub.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "matrixhub.apiserver.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.apiserver.replicaCount }}
+  selector:
+    # IMPORTANT: only use stable labels (selectorLabels) here.
+    # spec.selector.matchLabels is IMMUTABLE in K8s — including dynamic
+    # labels like helm.sh/chart or app.kubernetes.io/version will break
+    # every upgrade with "field is immutable" error.
+    matchLabels:
+      {{- include "matrixhub.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.apiserver.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
