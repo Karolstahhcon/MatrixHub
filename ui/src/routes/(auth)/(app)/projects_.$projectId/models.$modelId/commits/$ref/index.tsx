@@ -9,14 +9,3 @@ const defaults = { page: 1 }
 const commitsSearchSchema = z.object({
   page: z.coerce.number().int().positive().optional().default(defaults.page).catch(defaults.page),
 })
-
-export const Route = createFileRoute(
-  '/(auth)/(app)/projects_/$projectId/models/$modelId/commits/$ref/',
-)({
-  validateSearch: commitsSearchSchema,
-  search: {
-    middlewares: [stripSearchParams(defaults)],
-  },
-  loaderDeps: ({ search }) => ({
-    page: search.page,
-  }),
