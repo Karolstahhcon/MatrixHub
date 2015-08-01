@@ -16,3 +16,22 @@ interface RouterErrorComponentProps {
 }
 
 export function RouterErrorComponent({ error }: RouterErrorComponentProps) {
+  const { t } = useTranslation()
+  const router = useRouter()
+  const queryClient = useQueryClient()
+  const [isReloading, setIsReloading] = useState(false)
+
+  const handleReload = async () => {
+    try {
+      setIsReloading(true)
+      // 1. Reset all queries in the query client
+      await queryClient.resetQueries()
+
+      // 2. Invalidate the current route to re-run the loader
+      await router.invalidate()
+    } catch (error) {
+      console.error('Failed to reload router state:', error)
+    } finally {
+      setIsReloading(false)
+    }
+  }
