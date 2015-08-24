@@ -1,0 +1,3 @@
+ignore:
+  # Generated protobuf, gRPC gateway, OpenAPI, and TypeScript SDK artifacts.
+  - "api/go"
