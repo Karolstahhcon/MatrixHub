@@ -34,15 +34,3 @@ export const Route = createFileRoute('/(auth)/admin/robots/')({
   loaderDeps: ({ search }) => search,
   loader: ({
     context,
-    deps,
-  }) => {
-    context.queryClient.prefetchQuery(robotsQueryOptions(deps))
-  },
-  component: RouteComponent,
-})
-
-export const Icon = IconRobot
-
-function RouteComponent() {
-  const { t } = useTranslation()
-

@@ -12,3 +12,17 @@ package v1alpha1
 import (
 	"net/http"
 )
+
+// contextKeys are used to identify the type of value in the context.
+// Since these are string, it is possible to get a short description of the
+// context key for logging and debugging using key.String().
+
+type contextKey string
+
+func (c contextKey) String() string {
+	return "auth " + string(c)
+}
+
+var (
+	// ContextOAuth2 takes a oauth2.TokenSource as authentication for the request.
+	ContextOAuth2 = contextKey("token")
