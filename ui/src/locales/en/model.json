@@ -1,0 +1,45 @@
+{
+  "new": "Create New Model",
+  "list": {
+    "project": "Project",
+    "library": "Library",
+    "task": "Task",
+    "placeholder": {
+      "modelName": "Model Name",
+      "task": "Search by task name",
+      "library": "Search by library name",
+      "project": "Search by project name"
+    },
+    "recommend": "Recommended Models",
+    "allModels": "All Models",
+    "noRecommended": "No recommended models",
+    "emptyTitle": "No models yet",
+    "emptyDescription": "Create a model repository, then upload model files to get started.",
+    "create": "Create Model",
+    "uploadGuide": "Learn how to upload models",
+    "loadFailed": "Failed to load models",
+    "retry": "Retry",
+    "viewMore": "View More",
+    "collapse": "Collapse"
+  },
+  "detail": {
+    "upload": "Upload Model Files",
+    "download": "Download Model",
+    "use": "Use This Model",
+    "desc": "Model Introduction",
+    "tree": "Model Files",
+    "setting": "Settings",
+    "history": "Commit History",
+    "useModel": {
+      "title": "Use This Model with {{engine}}",
+      "intro": {
+        "transformers": "The following steps load and run the model with Transformers on your GPU server.",
+        "vllm": "The following steps start vLLM on your GPU server and fetch the model from MatrixHub.",
+        "sglang": "The following steps start SGLang on your GPU server and fetch the model from MatrixHub."
+      },
+      "gpu": "GPU",
+      "steps": {
+        "prepare": "Prepare the environment",
+        "prepareHint": "Run the following commands on the GPU server that will serve the model",
+        "install": "Install {{engine}}",
+        "configure": "Configure MatrixHub",
