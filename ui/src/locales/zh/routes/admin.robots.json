@@ -1,0 +1,30 @@
+{
+  "title": "机器人账号",
+  "searchPlaceholder": "输入机器人账号搜索",
+  "toolbar": {
+    "create": "添加机器人"
+  },
+  "table": {
+    "name": "用户名",
+    "status": "启用状态",
+    "platformPermissions": "系统权限",
+    "projectCoverage": "覆盖项目数",
+    "createdAt": "创建时间",
+    "expireStatus": "有效期剩余",
+    "description": "描述",
+    "actions": "操作",
+    "empty": "暂无机器人账号数据"
+  },
+  "boolean": {
+    "yes": "是",
+    "no": "否"
+  },
+  "projectScope": {
+    "all": "全部项目",
+    "selectedCount": "{{count}}个项目"
+  },
+  "permissionCount": "{{count}}项权限",
+  "noPermissions": "无",
+  "expireStatus": {
+    "never": "永不过期",
+    "expired": "已过期"
