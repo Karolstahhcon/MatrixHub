@@ -1,0 +1,21 @@
+{
+  "search": "Search",
+  "actions": "Actions",
+  "refresh": "Refresh",
+  "batchDeleteWithCount": "Delete {{count}} selected",
+  "batchDelete": "Batch Delete",
+  "total": "Total {{count}}",
+  "sortOrderAsc": "Asc",
+  "sortOrderDesc": "Desc",
+  "projectSelect": {
+    "project": "Project",
+    "projectPlaceholder": "Select a project",
+    "projectTooltip": "All models/datasets in a private project are private, and all models/datasets in a public project are public."
+  },
+  "revisionSelect": {
+    "group": {
+      "branch": "Branch",
+      "tag": "Tag"
+    }
+  },
+  "copyValueButton": {
