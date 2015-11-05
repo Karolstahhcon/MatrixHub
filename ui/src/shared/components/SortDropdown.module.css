@@ -1,0 +1,26 @@
+.anchor {
+  width: var(--sort-width);
+}
+
+.control {
+  display: flex;
+  width: var(--sort-width);
+  height: 32px;
+}
+
+.fieldButton,
+.orderButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 6px 12px;
+  box-sizing: border-box;
+}
+
+.fieldButton {
+  width: var(--sort-field-width);
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-3);
+  border-top-left-radius: var(--mantine-radius-sm);
+  border-bottom-left-radius: var(--mantine-radius-sm);
