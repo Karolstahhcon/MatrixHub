@@ -66,3 +66,71 @@ func WithNext(next http.Handler) Option {
 	return func(h *Handler) {
 		h.next = next
 	}
+}
+
+// WithPermissionHookFunc sets the permission hook for verifying operations.
+func WithPermissionHookFunc(fn permission.PermissionHookFunc) Option {
+	return func(h *Handler) {
+		h.permissionHookFunc = fn
+	}
+}
+
+// WithPreReceiveHookFunc sets the pre-receive hook called before a git push is processed.
+// If the hook returns an error, the push is rejected.
+func WithPreReceiveHookFunc(fn receive.PreReceiveHookFunc) Option {
+	return func(h *Handler) {
+		h.preReceiveHookFunc = fn
+	}
+}
+
+// WithPostReceiveHookFunc sets the post-receive hook called after a git push is processed.
+// Errors from this hook are logged but do not affect the push result.
+func WithPostReceiveHookFunc(fn receive.PostReceiveHookFunc) Option {
+	return func(h *Handler) {
+		h.postReceiveHookFunc = fn
+	}
+}
+
+// WithMirror sets the mirror to use for repository synchronization. If not provided,
+// a mirror will be created when mirrorSourceFunc is set.
+func WithMirror(m *mirror.Mirror) Option {
+	return func(h *Handler) {
+		h.mirror = m
+	}
+}
+
+// WithServices sets the services for the router.
+func WithServices(model model.IModelService, git git.IGitRepo, authz authz.IAuthzService) Option {
+	return func(h *Handler) {
+		h.modelService = model
+		h.gitRepo = git
+		h.authzService = authz
+	}
+}
+
+// NewHandler creates a new Handler with the given repository directory.
+func NewHandler(opts ...Option) *Handler {
+	h := &Handler{
+		root: mux.NewRouter(),
+	}
+
+	for _, opt := range opts {
+		opt(h)
+	}
+
+	h.register()
+	return h
+}
+
+// ServeHTTP implements the http.Handler interface.
+func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.root.ServeHTTP(w, r)
+}
+
+func (h *Handler) register() {
+	// Git protocol endpoints
+	h.registryGit(h.root)
+
+	h.root.Use(h.middlewares...)
+	h.root.NotFoundHandler = h.next
+}
