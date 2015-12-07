@@ -38,23 +38,3 @@ export function executionDetailQueryOptions(
         syncTaskId,
       })
 
-      return response.syncTask
-    },
-  })
-}
-
-export function syncJobsQueryOptions(
-  syncPolicyId: number,
-  syncTaskId: number,
-  search: ExecutionDetailSearch,
-) {
-  return queryOptions({
-    queryKey: adminReplicationExecutionDetailKeys.jobList(syncPolicyId, syncTaskId, search),
-    queryFn: async () => {
-      const response = await SyncPolicy.ListSyncJobs({
-        syncPolicyId,
-        syncTaskId,
-        page: search.page,
-        pageSize: DEFAULT_PAGE_SIZE,
-        status: search.status,
-        resourceType: search.resourceType,

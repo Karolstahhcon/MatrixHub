@@ -48,3 +48,53 @@ function normalizeDateValue(value: DateValue) {
   }
 
   if (isProtobufTimestamp(value)) {
+    if (isNil(value.seconds)) {
+      return undefined
+    }
+
+    const milliseconds = toMilliseconds(value.seconds)
+
+    if (milliseconds === undefined) {
+      return undefined
+    }
+
+    return milliseconds + Math.floor((value.nanos ?? 0) / 1_000_000)
+  }
+
+  if (typeof value === 'number' || typeof value === 'string') {
+    return toMilliseconds(value) ?? value
+  }
+
+  return value
+}
+
+export function formatDateTime(
+  value: DateValue,
+  format = 'YYYY-MM-DD HH:mm',
+  zeroNotToHyphen = false,
+) {
+  if (!zeroNotToHyphen && Number(value) === 0) {
+    return '-'
+  }
+
+  if (isNil(value) || value === '') {
+    return '-'
+  }
+
+  const normalizedValue = normalizeDateValue(value)
+
+  if (!zeroNotToHyphen && normalizedValue === 0) {
+    return '-'
+  }
+
+  if (isNil(normalizedValue) || normalizedValue === '') {
+    return '-'
+  }
+
+  const formattedValue = dayjs(normalizedValue)
+
+  if (!formattedValue.isValid()) {
+    return '-'
+  }
+
+  return formattedValue.format(format)
