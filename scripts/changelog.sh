@@ -1,0 +1,409 @@
+#!/usr/bin/env bash
+
+# Copyright 2026 MatrixHub Authors
+# SPDX-License-Identifier: Apache-2.0
+
+GENERATED_START='<!-- BEGIN GENERATED RELEASE NOTES -->'
+GENERATED_END='<!-- END GENERATED RELEASE NOTES -->'
+CHANGELOG_WORK_DIR=''
+
+usage() {
+  cat <<'EOF'
+Usage:
+  scripts/changelog.sh --version vX.Y.Z [options]
+
+Options:
+  --repo OWNER/REPO       GitHub repository (defaults to GITHUB_REPOSITORY)
+  --start-ref REF         Previous official release (auto-detected when omitted)
+  --end-ref REF           Candidate commit or branch (default: HEAD)
+  --base-branch BRANCH    PR base branch used to disambiguate associated PRs
+  --output PATH           CHANGELOG file to update (default: CHANGELOG/CHANGELOG-X.Y.md)
+  --dry-run               Print the generated version section without writing a file
+  --help                  Show this help
+EOF
+}
+
+git_cmd() {
+  git "$@"
+}
+
+github_api() {
+  local endpoint=$1
+  shift
+
+  gh api \
+    -H 'Accept: application/vnd.github+json' \
+    -H 'X-GitHub-Api-Version: 2022-11-28' \
+    "$@" \
+    "$endpoint"
+}
+
+http_status_code() {
+  awk 'NR == 1 && /^HTTP\// { print $2; exit }'
+}
+
+http_response_body() {
+  awk '
+    NR == 1 && /^HTTP\// { headers = 1; next }
+    headers {
+      sub(/\r$/, "")
+      if ($0 == "") headers = 0
+      next
+    }
+    { print }
+  '
+}
+
+require_command() {
+  command -v "$1" >/dev/null 2>&1 || {
+    echo "error: required command not found: $1" >&2
+    return 1
+  }
+}
+
+append_line() {
+  printf '%s\n' "$2" >> "$1"
+}
+
+has_line() {
+  local lines=$1
+  local expected=$2
+  local line
+
+  while IFS= read -r line; do
+    [ "$line" = "$expected" ] && return 0
+  done <<EOF
+$lines
+EOF
+  return 1
+}
+
+trim_blank_lines() {
+  awk '
+    { lines[NR] = $0 }
+    END {
+      first = 1
+      while (first <= NR && lines[first] ~ /^[[:space:]]*$/) first++
+      last = NR
+      while (last >= first && lines[last] ~ /^[[:space:]]*$/) last--
+      if (first <= last) {
+        sub(/^[[:space:]]+/, "", lines[first])
+        sub(/[[:space:]]+$/, "", lines[last])
+      }
+      for (i = first; i <= last; i++) print lines[i]
+    }
+  '
+}
+
+extract_release_note() {
+  awk '
+    function remember(value) {
+      content[++count] = value
+    }
+    {
+      if (done) next
+      line = $0
+      sub(/\r$/, "", line)
+      lower = tolower(line)
+      if (!found && match(lower, /```release-note[[:blank:]]*/)) {
+        found = 1
+        rest = substr(line, RSTART + RLENGTH)
+        closing = index(rest, "```")
+        if (closing) {
+          remember(substr(rest, 1, closing - 1))
+          closed = 1
+          done = 1
+          next
+        }
+        remember(rest)
+        next
+      }
+      if (found) {
+        closing = index(line, "```")
+        if (closing) {
+          remember(substr(line, 1, closing - 1))
+          closed = 1
+          done = 1
+          next
+        }
+        remember(line)
+      }
+    }
+    END {
+      if (closed) {
+        for (i = 1; i <= count; i++) print content[i]
+      }
+    }
+  ' | trim_blank_lines
+}
+
+is_no_release_note() {
+  local upper
+  upper=$(printf '%s' "$1" | tr '[:lower:]' '[:upper:]')
+  [[ $upper =~ ^[^A-Z0-9_]*(NONE|NO)[^A-Z0-9_]*$ ]]
+}
+
+version_is_less() {
+  local left=${1#v}
+  local right=${2#v}
+  local -a left_parts right_parts
+  local index left_part right_part left_digit right_digit
+
+  IFS=. read -r -a left_parts <<EOF
+$left
+EOF
+  IFS=. read -r -a right_parts <<EOF
+$right
+EOF
+
+  for index in 0 1 2; do
+    left_part=${left_parts[$index]}
+    right_part=${right_parts[$index]}
+    while [ "${#left_part}" -gt 1 ] && [ "${left_part#0}" != "$left_part" ]; do
+      left_part=${left_part#0}
+    done
+    while [ "${#right_part}" -gt 1 ] && [ "${right_part#0}" != "$right_part" ]; do
+      right_part=${right_part#0}
+    done
+    [ "${#left_part}" -lt "${#right_part}" ] && return 0
+    [ "${#left_part}" -gt "${#right_part}" ] && return 1
+    while [ -n "$left_part" ]; do
+      left_digit=${left_part%"${left_part#?}"}
+      right_digit=${right_part%"${right_part#?}"}
+      [ "$left_digit" -lt "$right_digit" ] && return 0
+      [ "$left_digit" -gt "$right_digit" ] && return 1
+      left_part=${left_part#?}
+      right_part=${right_part#?}
+    done
+  done
+  return 1
+}
+
+find_previous_official_tag() {
+  local version=$1
+  local end_ref=$2
+  local tag tags tag_commit first_parent_commits
+  local best=''
+
+  tags=$(git_cmd tag --merged "$end_ref" --list) || return 1
+  first_parent_commits=$(git_cmd rev-list --first-parent "$end_ref") || return 1
+  while IFS= read -r tag; do
+    [[ $tag =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || continue
+    tag_commit=$(git_cmd rev-parse "$tag^{commit}") || return 1
+    has_line "$first_parent_commits" "$tag_commit" || continue
+    if [ -z "$best" ] || version_is_less "$best" "$tag"; then
+      best=$tag
+    fi
+  done <<EOF
+$tags
+EOF
+
+  if [ -n "$best" ] && ! version_is_less "$best" "$version"; then
+    echo "error: --version $version must be greater than latest official tag $best on $end_ref" >&2
+    return 1
+  fi
+  printf '%s\n' "$best"
+}
+
+is_first_parent_ref() {
+  local ref=$1
+  local end_ref=$2
+  local ref_commit first_parent_commits
+
+  ref_commit=$(git_cmd rev-parse "$ref^{commit}") || return 1
+  first_parent_commits=$(git_cmd rev-list --first-parent "$end_ref") || return 1
+  has_line "$first_parent_commits" "$ref_commit"
+}
+
+parse_pull_number_from_commit_message() {
+  awk '
+    /^Merge pull request #[0-9]+/ {
+      if (found) next
+      value = $0
+      sub(/^Merge pull request #/, "", value)
+      sub(/[^0-9].*$/, "", value)
+      merged = value
+      found = 1
+      next
+    }
+    {
+      if (found) next
+      remaining = $0
+      while (match(remaining, /\(#[0-9]+\)/)) {
+        candidate = substr(remaining, RSTART + 2, RLENGTH - 3)
+        remaining = substr(remaining, RSTART + RLENGTH)
+      }
+    }
+    END {
+      if (found) print merged
+      else if (candidate != "") print candidate
+    }
+  '
+}
+
+classify_kind() {
+  local labels=$1
+  local label
+
+  has_line "$labels" 'kind/deprecation' && { printf 'deprecation\n'; return; }
+  has_line "$labels" 'kind/api-change' && { printf 'api-change\n'; return; }
+  has_line "$labels" 'kind/feature' && { printf 'feature\n'; return; }
+  if has_line "$labels" 'kind/bug' || has_line "$labels" 'kind/regression'; then
+    printf 'bug-or-regression\n'
+    return
+  fi
+  has_line "$labels" 'kind/documentation' && { printf 'documentation\n'; return; }
+  for label in \
+    kind/cleanup \
+    kind/dependency \
+    kind/design \
+    kind/failing-test \
+    kind/flake \
+    kind/support; do
+    has_line "$labels" "$label" && { printf 'other\n'; return; }
+  done
+  return 1
+}
+
+join_lines() {
+  awk 'NF { if (seen++) printf ", "; printf "%s", $0 } END { print "" }'
+}
+
+process_pull() {
+  local pull_json=$1
+  local work_dir=$2
+  local number url author body labels note
+  local kind_labels='' kind_count=0 label
+  local has_release_note_none=false category='' valid_kind=false entry_file
+
+  number=$(printf '%s' "$pull_json" | jq -er '.number') || return 1
+  url=$(printf '%s' "$pull_json" | jq -er '.html_url') || return 1
+  author=$(printf '%s' "$pull_json" | jq -r '.user.login // "ghost"') || return 1
+  body=$(printf '%s' "$pull_json" | jq -r '.body // ""') || return 1
+  labels=$(printf '%s' "$pull_json" | jq -r \
+    '.labels[]? | if type == "string" then . else .name end') || return 1
+  note=$(printf '%s\n' "$body" | extract_release_note) || return 1
+
+  while IFS= read -r label; do
+    case "$label" in
+      kind/*)
+        if [ -z "$kind_labels" ]; then
+          kind_labels=$label
+        else
+          kind_labels="$kind_labels
+$label"
+        fi
+        kind_count=$((kind_count + 1))
+        ;;
+    esac
+  done <<EOF
+$labels
+EOF
+
+  if [ "$kind_count" -eq 0 ]; then
+    append_line "$work_dir/errors" "#$number has no kind/* label"
+  elif category=$(classify_kind "$kind_labels"); then
+    valid_kind=true
+    if [ "$kind_count" -gt 1 ]; then
+      append_line "$work_dir/warnings" \
+        "#$number has multiple kind labels ($(printf '%s\n' "$kind_labels" | join_lines)); classified as $category"
+    fi
+  else
+    append_line "$work_dir/errors" \
+      "#$number has unsupported kind labels: $(printf '%s\n' "$kind_labels" | join_lines)"
+  fi
+
+  has_line "$labels" 'do-not-merge/needs-kind' && \
+    append_line "$work_dir/errors" "#$number is still labeled do-not-merge/needs-kind"
+  has_line "$labels" 'do-not-merge/needs-release-note' && \
+    append_line "$work_dir/errors" "#$number is still labeled do-not-merge/needs-release-note"
+  has_line "$labels" 'do-not-merge/release-note-label-needed' && \
+    append_line "$work_dir/errors" "#$number is still labeled do-not-merge/release-note-label-needed"
+  has_line "$labels" 'release-note-none' && has_release_note_none=true
+
+  if [ -z "$note" ] || is_no_release_note "$note"; then
+    if [ "$has_release_note_none" = false ]; then
+      append_line "$work_dir/errors" \
+        "#$number has no usable release-note content and no release-note-none label"
+      return
+    fi
+    if has_line "$kind_labels" 'kind/deprecation'; then
+      append_line "$work_dir/errors" "#$number has kind/deprecation and release-note-none"
+      return
+    fi
+    append_line "$work_dir/excluded" "$number"
+    return 0
+  fi
+
+  [ "$valid_kind" = true ] || return 0
+
+  mkdir -p "$work_dir/entries/$category"
+  entry_file=$(printf '%s/entries/%s/%012d.md' "$work_dir" "$category" "$number")
+  {
+    printf -- '- '
+    printf '%s\n' "$note" | awk 'NR == 1 { printf "%s", $0; next } { printf "\n  %s", $0 }'
+    printf ' ([#%s](%s), [@%s](https://github.com/%s))\n\n' \
+      "$number" "$url" "$author" "$author"
+  } > "$entry_file"
+}
+
+collect_pull_numbers() {
+  local start_ref=$1
+  local end_ref=$2
+  local base_branch=$3
+  local repo=$4
+  local work_dir=$5
+  local range=$end_ref sha pulls number subject message message_pull_number
+  local direct_pull api_error api_response api_status found selection ambiguous
+
+  [ -z "$start_ref" ] || range="$start_ref..$end_ref"
+  git_cmd rev-list --first-parent --reverse "$range" > "$work_dir/commits" || return 1
+  mkdir -p "$work_dir/pulls"
+  : > "$work_dir/pull_numbers"
+
+  while IFS= read -r sha; do
+    [ -n "$sha" ] || continue
+    message=$(git_cmd show -s --format=%s%n%b "$sha") || return 1
+    subject=${message%%$'\n'*}
+    message_pull_number=$(printf '%s\n' "$message" | parse_pull_number_from_commit_message)
+    found=false
+
+    if [ -n "$message_pull_number" ]; then
+      api_error="$work_dir/github-api-error"
+      : > "$api_error"
+      if api_response=$(github_api "repos/$repo/pulls/$message_pull_number" \
+        --include 2> "$api_error"); then
+        direct_pull=$(printf '%s\n' "$api_response" | http_response_body)
+        if printf '%s' "$direct_pull" | jq -e \
+          --arg base "$base_branch" \
+          --arg sha "$sha" \
+          '.merged_at != null
+            and ($base == "" or .base.ref == $base)
+            and .merge_commit_sha == $sha' >/dev/null; then
+          append_line "$work_dir/pull_numbers" "$message_pull_number"
+          printf '%s\n' "$direct_pull" > "$work_dir/pulls/$message_pull_number.json"
+          found=true
+        fi
+      else
+        api_status=$(printf '%s\n' "$api_response" | http_status_code)
+        if [ "$api_status" != 404 ]; then
+          cat "$api_error" >&2
+          echo "error: failed to read pull request #$message_pull_number" >&2
+          return 1
+        fi
+      fi
+    fi
+
+    if [ "$found" = false ]; then
+      if ! pulls=$(github_api "repos/$repo/commits/$sha/pulls?per_page=100" \
+        --paginate --slurp); then
+        echo "error: failed to find pull requests associated with commit $sha" >&2
+        return 1
+      fi
+      if ! selection=$(printf '%s' "$pulls" | jq -c \
+        --arg base "$base_branch" --arg sha "$sha" '
+          [
+            (if length > 0 and (.[0] | type) == "array" then .[] else . end)
+            | .[]
+            | select(.merged_at != null)
+            | select($base == "" or .base.ref == $base)
