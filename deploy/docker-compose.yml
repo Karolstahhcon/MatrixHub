@@ -1,0 +1,6 @@
+# Default single-node Docker Compose deployment backed by SQLite.
+# The public demo uses the explicit MySQL and demo Compose files instead.
+services:
+  matrixhub:
+    image: ghcr.io/Karolstahhcon/matrixhub:${MATRIXHUB_IMAGE_TAG:-latest}
+    container_name: matrixhub-apiserver
