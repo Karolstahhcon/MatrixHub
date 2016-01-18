@@ -59,3 +59,33 @@ export function createUserMutationOptions() {
 }
 
 export function resetUserPasswordMutationOptions() {
+  return mutationOptions({
+    mutationFn: ({
+      id,
+      password,
+    }: ResetUserPasswordRequest) =>
+      Users.ResetUserPassword({
+        id: requireUserId(id),
+        password,
+      }),
+    meta: {
+      successMessage: i18n.t('routes.admin.users.notifications.resetPasswordSuccess'),
+      errorMessage: i18n.t('routes.admin.users.notifications.resetPasswordError'),
+      invalidates: [adminUserKeys.lists()],
+    } satisfies NotificationMeta,
+  })
+}
+
+export function setUserAdminMutationOptions() {
+  return userSysAdminMutationOptions({
+    sysadminFlag: true,
+    successMessage: i18n.t('routes.admin.users.notifications.setAdminSuccess'),
+    errorMessage: i18n.t('routes.admin.users.notifications.setAdminError'),
+  })
+}
+
+export function revokeUserAdminMutationOptions() {
+  return userSysAdminMutationOptions({
+    sysadminFlag: false,
+    successMessage: i18n.t('routes.admin.users.notifications.revokeAdminSuccess'),
+    errorMessage: i18n.t('routes.admin.users.notifications.revokeAdminError'),
