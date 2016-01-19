@@ -1,0 +1,3 @@
+.codeRoot :global(.monaco-editor),
+.codeRoot :global(.monaco-editor-background),
+.codeRoot :global(.monaco-editor .margin) {
