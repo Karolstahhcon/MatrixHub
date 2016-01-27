@@ -11,8 +11,3 @@ package v1alpha1
 
 type V1alpha1Commit struct {
 	Id string `json:"id,omitempty"`
-	Message string `json:"message,omitempty"`
-	AuthorName string `json:"authorName,omitempty"`
-	AuthorEmail string `json:"authorEmail,omitempty"`
-	AuthorDate string `json:"authorDate,omitempty"`
-	CommitterName string `json:"committerName,omitempty"`
