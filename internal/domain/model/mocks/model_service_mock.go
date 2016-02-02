@@ -110,3 +110,59 @@ func (m *MockIModelService) EnsureModel(ctx context.Context, project, name strin
 }
 
 // EnsureModel indicates an expected call of EnsureModel.
+func (mr *MockIModelServiceMockRecorder) EnsureModel(ctx, project, name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnsureModel", reflect.TypeOf((*MockIModelService)(nil).EnsureModel), ctx, project, name)
+}
+
+// GetModel mocks base method.
+func (m *MockIModelService) GetModel(ctx context.Context, project, name string) (*model.Model, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetModel", ctx, project, name)
+	ret0, _ := ret[0].(*model.Model)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetModel indicates an expected call of GetModel.
+func (mr *MockIModelServiceMockRecorder) GetModel(ctx, project, name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetModel", reflect.TypeOf((*MockIModelService)(nil).GetModel), ctx, project, name)
+}
+
+// GetModelBlob mocks base method.
+func (m *MockIModelService) GetModelBlob(ctx context.Context, project, name, revision, path string) (*git.TreeEntry, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetModelBlob", ctx, project, name, revision, path)
+	ret0, _ := ret[0].(*git.TreeEntry)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetModelBlob indicates an expected call of GetModelBlob.
+func (mr *MockIModelServiceMockRecorder) GetModelBlob(ctx, project, name, revision, path any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetModelBlob", reflect.TypeOf((*MockIModelService)(nil).GetModelBlob), ctx, project, name, revision, path)
+}
+
+// GetModelCommit mocks base method.
+func (m *MockIModelService) GetModelCommit(ctx context.Context, project, name, commitID string) (*git.Commit, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetModelCommit", ctx, project, name, commitID)
+	ret0, _ := ret[0].(*git.Commit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetModelCommit indicates an expected call of GetModelCommit.
+func (mr *MockIModelServiceMockRecorder) GetModelCommit(ctx, project, name, commitID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetModelCommit", reflect.TypeOf((*MockIModelService)(nil).GetModelCommit), ctx, project, name, commitID)
+}
+
+// GetModelTree mocks base method.
+func (m *MockIModelService) GetModelTree(ctx context.Context, project, name, revision, path string) ([]*git.TreeEntry, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetModelTree", ctx, project, name, revision, path)
+	ret0, _ := ret[0].([]*git.TreeEntry)
+	ret1, _ := ret[1].(error)
