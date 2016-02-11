@@ -47,3 +47,101 @@ function formatReplicationExecutionTotalItems(task: SyncTask) {
     return '-'
   }
 
+  return new Intl.NumberFormat().format(totalItems)
+}
+
+type ReplicationExecutionsTableProps = Omit<
+  DataTableProps<SyncTask>,
+  'columns' | 'renderToolbar'
+> & {
+  syncPolicyId: number
+}
+
+function ExecutionTaskCell({
+  row, table,
+}: ExecutionCellProps) {
+  const syncPolicyId = (
+    table.options.meta as { syncPolicyId?: number } | undefined
+  )?.syncPolicyId
+
+  const executionId = row.original.id
+
+  if (executionId == null || syncPolicyId == null) {
+    return <Text size="sm" fw={600}>{executionId ?? '-'}</Text>
+  }
+
+  return (
+    <TableCellLink
+      to="/admin/replications/$replicationId/executions/$executionId"
+      params={{
+        replicationId: String(syncPolicyId),
+        executionId: String(executionId),
+      }}
+    >
+      {executionId}
+    </TableCellLink>
+  )
+}
+
+function ExecutionStatusCell({ row }: ExecutionCellProps) {
+  const { t } = useTranslation()
+  const status = row.original.status
+
+  if (status === SyncTaskStatus.SYNC_TASK_STATUS_RUNNING) {
+    return (
+      <StatusIndicator
+        type="info"
+        label={t('routes.admin.replications.executions.status.running')}
+      />
+    )
+  }
+
+  if (status === SyncTaskStatus.SYNC_TASK_STATUS_STOPPED) {
+    return (
+      <StatusIndicator
+        type="warning"
+        label={t('routes.admin.replications.executions.status.stopped')}
+      />
+    )
+  }
+
+  if (status === SyncTaskStatus.SYNC_TASK_STATUS_SUCCEEDED) {
+    return (
+      <StatusIndicator
+        type="success"
+        label={t('routes.admin.replications.executions.status.succeeded')}
+      />
+    )
+  }
+
+  if (status === SyncTaskStatus.SYNC_TASK_STATUS_FAILED) {
+    return (
+      <StatusIndicator
+        type="danger"
+        label={t('routes.admin.replications.executions.status.failed')}
+      />
+    )
+  }
+
+  return (
+    <StatusIndicator
+      label={t('routes.admin.replications.executions.status.unknown')}
+    />
+  )
+}
+
+function ExecutionActionsCell({
+  row,
+  table,
+}: DataTableRowActionsProps<SyncTask>) {
+  const syncPolicyId = (
+    table.options.meta as { syncPolicyId?: number } | undefined
+  )?.syncPolicyId
+
+  if (syncPolicyId == null) {
+    return <Text size="sm">-</Text>
+  }
+
+  return (
+    <StopReplicationExecutionAction
+      syncPolicyId={syncPolicyId}
