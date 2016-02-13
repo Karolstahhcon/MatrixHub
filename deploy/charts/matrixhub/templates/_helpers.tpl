@@ -81,31 +81,3 @@ MatrixHub image
 {{- $repository := .Values.apiserver.image.repository }}
 {{- $tag := .Values.apiserver.image.tag | default "latest" }}
 {{- if $registry }}
-{{- printf "%s/%s:%s" $registry $repository $tag }}
-{{- else }}
-{{- printf "%s:%s" $repository $tag }}
-{{- end }}
-{{- end }}
-
-{{- /*
-MySQL image
-*/}}
-{{- define "matrixhub.mysql.image" -}}
-{{- $registry := .Values.mysql.registry | default .Values.global.imageRegistry | default "" }}
-{{- $repository := .Values.mysql.repository }}
-{{- $tag := .Values.mysql.tag | default "8.0" }}
-{{- if $registry }}
-{{- printf "%s/%s:%s" $registry $repository $tag }}
-{{- else }}
-{{- printf "%s:%s" $repository $tag }}
-{{- end }}
-{{- end }}
-
-{{- /*
-MySQL secret name
-*/}}
-{{- define "matrixhub.mysql.secretName" -}}
-{{- printf "%s-mysql-secret" (include "matrixhub.fullname" .) }}
-{{- end }}
-
-{{- /*

@@ -1,0 +1,44 @@
+// Copyright The MatrixHub Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// This file is the reference example for unit-testing a domain service with
+// gomock (go.uber.org/mock) generated mocks + testify/require assertions.
+//
+// Pattern:
+//   - generate mocks for the repo/port interfaces via `go generate ./...`
+//     (see the //go:generate directives next to each interface);
+//   - construct a gomock.Controller bound to *testing.T;
+//   - inject the mocks into the service, leaving unused dependencies nil;
+//   - set call expectations with EXPECT(), and assert results with require.
+package syncpolicy_test
+
+import (
+	"context"
+	"errors"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
+
+	"github.com/matrixhub-ai/matrixhub/internal/domain/job"
+	"github.com/matrixhub-ai/matrixhub/internal/domain/syncjob"
+	syncjobmocks "github.com/matrixhub-ai/matrixhub/internal/domain/syncjob/mocks"
+	"github.com/matrixhub-ai/matrixhub/internal/domain/syncpolicy"
+	"github.com/matrixhub-ai/matrixhub/internal/domain/syncpolicy/mocks"
+)
+
+func TestSyncPolicyService_CreateSyncPolicy(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("manual policy is persisted with no schedule", func(t *testing.T) {

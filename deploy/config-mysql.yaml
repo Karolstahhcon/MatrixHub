@@ -1,0 +1,20 @@
+# Optional Docker Compose runtime config backed by MySQL.
+debug: true
+migrationPath: /etc/matrixhub/migrations
+log:
+  level: debug
+dataDir: /data
+database:
+  driver: mysql
+  accessType: readwrite
+  maxOpenConns: 100
+  maxIdleConns: 10
+  connMaxLifetimeSeconds: 3600
+  connMaxIdleSeconds: 1800
+  migrate: true
+apiServer:
+  port: 3001
+  sshPort: 22
+  externalURL: ""
+jobServer:
+  enabled: true
