@@ -70,3 +70,39 @@ func (s *AuthzService) GetUserPermissions(ctx context.Context, userID int, proje
 		return nil, err
 	}
 
+	projectPerms, err := s.authzRepo.GetUserProjectPermissions(ctx, userID, projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Merge platform and project permissions
+	return append(platformPerms, projectPerms...), nil
+}
+
+// VerifyPlatformPermission verifies platform-level permission (gets user info from ctx)
+func (s *AuthzService) VerifyPlatformPermission(ctx context.Context, perm role.Permission) (bool, error) {
+	identity, ok := auth.IdentityFromContext(ctx)
+	if !ok {
+		return false, nil
+	}
+	permissions, err := s.getPermissions(ctx, identity, 0)
+	if err != nil {
+		return false, err
+	}
+
+	return role.MatchPermissions(permissions, perm), nil
+}
+
+// getPermissions dispatches permission resolution based on the concrete identity type.
+// Users derive permissions from their assigned roles,
+// while robots have permissions bound directly at creation time.
+func (s *AuthzService) getPermissions(ctx context.Context, identity auth.Identity, projectId int) ([]role.Permission, error) {
+	switch id := identity.(type) {
+	case *user.Identity:
+		return s.getUserPermissions(ctx, id, projectId)
+	case *robot.Identity:
+		return s.getRobotPermissions(ctx, id, projectId)
+	default:
+		return nil, errors.New("unknown identity type")
+	}
+}

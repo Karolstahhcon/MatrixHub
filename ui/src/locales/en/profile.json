@@ -1,0 +1,16 @@
+{
+  "personalCenter": "Personal Center",
+  "securitySetting": "Security Settings",
+  "accessToken": "Access Token",
+  "sshKey": {
+    "publicKey": "SSH Public Key",
+    "name": "SSH Public Key Name",
+    "statusLabel": "Status",
+    "expireAt": "Expires At",
+    "importedAt": "Imported At",
+    "emptyTitle": "No SSH public keys",
+    "hint": "Before importing an SSH public key, you need to",
+    "generateHint": "generate an SSH public key",
+    "create": {
+      "button": "Import SSH Public Key",
+      "title": "Import SSH Public Key",
