@@ -24,16 +24,3 @@ import (
 	"github.com/matrixhub-ai/matrixhub/internal/domain/system"
 	"github.com/matrixhub-ai/matrixhub/internal/infra/log"
 )
-
-type SystemHandler struct {
-	svc system.IService
-}
-
-func NewSystemHandler(svc system.IService) IHandler {
-	return &SystemHandler{svc: svc}
-}
-
-func (h *SystemHandler) GetSystemConfig(ctx context.Context, _ *v1alpha1.GetSystemConfigRequest) (*v1alpha1.SystemConfig, error) {
-	cfg, err := h.svc.GetPublicConfig(ctx)
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
