@@ -20,14 +20,3 @@ import (
 // MockISSHKeyService is a mock of ISSHKeyService interface.
 type MockISSHKeyService struct {
 	ctrl     *gomock.Controller
-	recorder *MockISSHKeyServiceMockRecorder
-	isgomock struct{}
-}
-
-// MockISSHKeyServiceMockRecorder is the mock recorder for MockISSHKeyService.
-type MockISSHKeyServiceMockRecorder struct {
-	mock *MockISSHKeyService
-}
-
-// NewMockISSHKeyService creates a new mock instance.
-func NewMockISSHKeyService(ctrl *gomock.Controller) *MockISSHKeyService {
