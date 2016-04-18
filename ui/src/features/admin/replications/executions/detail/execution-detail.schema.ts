@@ -17,10 +17,3 @@ export const syncJobResourceTypeFilterValues = [
   ResourceType.RESOURCE_TYPE_MODEL,
   ResourceType.RESOURCE_TYPE_DATASET,
 ] as const
-
-export const executionDetailSearchSchema = z.object({
-  page: z.coerce.number().int().positive().optional().catch(DEFAULT_PAGE),
-  status: z.enum(syncJobStatusFilterValues).optional(),
-  resourceType: z.enum(syncJobResourceTypeFilterValues).optional(),
-})
-
