@@ -8,3 +8,7 @@ export const Route = createFileRoute(
   '/(auth)/(app)/projects_/$projectId/models/$modelId/settings/',
 )({
   beforeLoad: async ({ params }) => {
+    // only public project and user has no role for the this project,
+    // will return 403
+    await ensureProjectAccess(
+      params.projectId,
