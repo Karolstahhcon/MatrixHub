@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package matrixhub.v1alpha1;
+
+option go_package = "github.com/matrixhub-ai/matrixhub/api/go/v1alpha1;v1alpha1";
+
+import "google/api/annotations.proto";
+
+service Cleanup {
+  // Preview orphaned data (dry-run)
+  rpc PreviewCleanup(PreviewCleanupRequest) returns (CleanupPreview) {
+    option (google.api.http) = {
+      post: "/api/v1alpha1/cleanup/preview"
+      body: "*"
+    };
+  }
+
+  // Execute cleanup
+  rpc ExecuteCleanup(ExecuteCleanupRequest) returns (CleanupResult) {
+    option (google.api.http) = {
+      post: "/api/v1alpha1/cleanup/execute"
+      body: "*"
+    };
+  }
+
+  // Get storage statistics
