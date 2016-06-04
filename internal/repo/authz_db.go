@@ -73,3 +73,28 @@ func (r *AuthzDBRepo) GetUserPlatformPermissions(ctx context.Context, userID int
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
+		return nil, err
+	}
+	return result.Permissions, nil
+}
+
+// GetRobotProjectPermissions  gets robot's permissions in a project
+func (r *AuthzDBRepo) GetRobotProjectPermissions(ctx context.Context, robotID int, projectID int) ([]role.Permission, error) {
+	var result struct {
+		Permissions datatypes.JSONSlice[role.Permission]
+	}
+	var rb robot.Robot
+	if err := r.db.WithContext(ctx).Table("robots").Where("id = ?", robotID).First(&rb).Error; err != nil {
+		return nil, err
+	} else if rb.ProjectScope == robot.ProjectScopeAll {
+		return rb.ProjectPermissions, nil
+	}
+	err := r.db.WithContext(ctx).
+		Table("robots").
+		Select("robots.id", "robots.project_permissions as permissions").
+		Joins("INNER JOIN robots_projects rp ON robots.id = robot_id").
+		Where("rp.project_id = ? AND rp.robot_id = ?", projectID, robotID).
+		Take(&result).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
