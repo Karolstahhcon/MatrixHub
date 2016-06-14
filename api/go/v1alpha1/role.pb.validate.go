@@ -107,3 +107,221 @@ func (e ListAllPermissionsRequestValidationError) ErrorName() string {
 	return "ListAllPermissionsRequestValidationError"
 }
 
+// Error satisfies the builtin error interface
+func (e ListAllPermissionsRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sListAllPermissionsRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ListAllPermissionsRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ListAllPermissionsRequestValidationError{}
+
+// Validate checks the field values on ListAllPermissionsResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ListAllPermissionsResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ListAllPermissionsResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ListAllPermissionsResponseMultiError, or nil if none found.
+func (m *ListAllPermissionsResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ListAllPermissionsResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetSystemCategories() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ListAllPermissionsResponseValidationError{
+						field:  fmt.Sprintf("SystemCategories[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ListAllPermissionsResponseValidationError{
+						field:  fmt.Sprintf("SystemCategories[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ListAllPermissionsResponseValidationError{
+					field:  fmt.Sprintf("SystemCategories[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	for idx, item := range m.GetProjectCategories() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ListAllPermissionsResponseValidationError{
+						field:  fmt.Sprintf("ProjectCategories[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ListAllPermissionsResponseValidationError{
+						field:  fmt.Sprintf("ProjectCategories[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ListAllPermissionsResponseValidationError{
+					field:  fmt.Sprintf("ProjectCategories[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return ListAllPermissionsResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// ListAllPermissionsResponseMultiError is an error wrapping multiple
+// validation errors returned by ListAllPermissionsResponse.ValidateAll() if
+// the designated constraints aren't met.
+type ListAllPermissionsResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ListAllPermissionsResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ListAllPermissionsResponseMultiError) AllErrors() []error { return m }
+
+// ListAllPermissionsResponseValidationError is the validation error returned
+// by ListAllPermissionsResponse.Validate if the designated constraints aren't met.
+type ListAllPermissionsResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ListAllPermissionsResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ListAllPermissionsResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ListAllPermissionsResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ListAllPermissionsResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ListAllPermissionsResponseValidationError) ErrorName() string {
+	return "ListAllPermissionsResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ListAllPermissionsResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sListAllPermissionsResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ListAllPermissionsResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ListAllPermissionsResponseValidationError{}
+
+// Validate checks the field values on RoleCategory with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *RoleCategory) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on RoleCategory with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in RoleCategoryMultiError, or
+// nil if none found.
+func (m *RoleCategory) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *RoleCategory) validate(all bool) error {
+	if m == nil {
+		return nil
