@@ -13,3 +13,19 @@
 // limitations under the License.
 
 package user
+
+type Identity struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+func (i Identity) GetID() int {
+	return i.ID
+}
+
+func (i Identity) GetName() string {
+	return i.Name
+}
+
+func (i Identity) TypeName() string {
+	return "user"
