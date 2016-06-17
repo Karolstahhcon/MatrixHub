@@ -1,0 +1,37 @@
+.root {
+  position: relative;
+  border: 1px solid var(--app-color-gray-30);
+  border-radius: var(--mantine-radius-sm);
+  overflow: hidden;
+}
+
+.copyButton {
+  position: absolute;
+  top: var(--mantine-spacing-xs);
+  right: var(--mantine-spacing-xs);
+  z-index: 1;
+  display: flex;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+/* Idle fill matches the code surface (the Shiki theme background). */
+.copyButton :global(.mantine-ActionIcon-root) {
+  background-color: var(--shiki-light-bg, var(--app-color-gray-10));
+}
+
+:global([data-mantine-color-scheme='dark']) .copyButton :global(.mantine-ActionIcon-root) {
+  background-color: var(--shiki-dark-bg, var(--app-color-gray-10));
+}
+
+/* Hover fill one step darker than the code surface, in both colour schemes. */
+.copyButton:hover :global(.mantine-ActionIcon-root) {
+  background-color: var(--app-color-gray-30);
+}
+
+.root:hover .copyButton,
+.copyButton:focus-within {
+  opacity: 1;
+}
+
+.fallback,
