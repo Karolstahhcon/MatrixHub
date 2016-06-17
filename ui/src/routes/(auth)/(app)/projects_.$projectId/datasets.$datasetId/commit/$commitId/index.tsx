@@ -13,3 +13,11 @@ function RouteComponent() {
 
   return (
     <div>
+      Dataset Commit Details
+      <br />
+      Project ID:
+      {' '}
+      {projectId}
+      <br />
+      Dataset ID:
+      {' '}
