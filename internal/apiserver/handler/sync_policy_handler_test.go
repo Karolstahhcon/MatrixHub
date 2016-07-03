@@ -33,38 +33,3 @@ import (
 // reachable through ListSyncJobs on any freshly created task.
 func TestStatusEnumsAreRepresentableInProto(t *testing.T) {
 	t.Run("sync job", func(t *testing.T) {
-		for s := syncjob.SyncJobStatusUnspecified; s <= syncjob.SyncJobStatusPending; s++ {
-			if _, ok := v1alpha1.SyncJobStatus_name[int32(s)]; !ok {
-				t.Errorf("domain SyncJobStatus %d has no v1alpha1.SyncJobStatus counterpart; "+
-					"it would serialise as a number and break generated clients", int32(s))
-			}
-		}
-	})
-
-	t.Run("sync task", func(t *testing.T) {
-		for s := syncpolicy.SyncTaskStatusUnspecified; s <= syncpolicy.SyncTaskStatusPending; s++ {
-			if _, ok := v1alpha1.SyncTaskStatus_name[int32(s)]; !ok {
-				t.Errorf("domain SyncTaskStatus %d has no v1alpha1.SyncTaskStatus counterpart; "+
-					"it would serialise as a number and break generated clients", int32(s))
-			}
-		}
-	})
-}
-
-func TestListSyncTasksPaginationIncludesPageCount(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	policyService := syncpolicymocks.NewMockISyncPolicyService(ctrl)
-	jobService := syncjobmocks.NewMockISyncJobService(ctrl)
-	h := &SyncPolicyHandler{
-		syncPolicyService: policyService,
-		syncJobService:    jobService,
-	}
-
-	policyService.EXPECT().
-		ListSyncTasksByPolicyID(gomock.Any(), 1, 2, 10, syncpolicy.SyncTaskStatusUnspecified).
-		Return([]*syncpolicy.SyncTask{}, int64(21), nil)
-
-	response, err := h.ListSyncTasks(t.Context(), &v1alpha1.ListSyncTasksRequest{
-		SyncPolicyId: 1,
-		Page:         2,
-		PageSize:     10,
