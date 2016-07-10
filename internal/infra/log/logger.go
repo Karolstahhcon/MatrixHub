@@ -34,3 +34,76 @@ func NewLogger(name string) *Logger {
 
 	return logger.LoggerWithOptions(name, zap.AddCallerSkip(-1))
 }
+
+func (logger *Logger) Logger(name string) *Logger {
+	return &Logger{
+		name:  name,
+		sugar: logger.sugar.Named(name),
+	}
+}
+
+func (logger *Logger) LoggerWithLevel(name string, level zapcore.LevelEnabler) *Logger {
+	return logger.LoggerWithOptions(name, zap.IncreaseLevel(level))
+}
+
+func (logger *Logger) LoggerWithOptions(name string, opts ...zap.Option) *Logger {
+	return &Logger{
+		name:  name,
+		sugar: logger.sugar.Desugar().WithOptions(opts...).Named(name).Sugar(),
+	}
+}
+
+func (logger *Logger) InfoWithPayload(msg string, payload LoggerPayload, keysAndValues ...any) {
+	keysAndValues = append(keysAndValues, payload.LoggerOutput(true)...)
+	logger.sugar.Infow(msg, keysAndValues...)
+}
+
+func (logger *Logger) WarnWithPayload(msg string, payload LoggerPayload, keysAndValues ...any) {
+	keysAndValues = append(keysAndValues, payload.LoggerOutput(true)...)
+	logger.sugar.Warnw(msg, keysAndValues...)
+}
+
+func (logger *Logger) ErrorWithPayload(msg string, payload LoggerPayload, keysAndValues ...any) {
+	keysAndValues = append(keysAndValues, payload.LoggerOutput(true)...)
+	logger.sugar.Errorw(msg, keysAndValues...)
+}
+
+func (logger *Logger) DebugWithPayload(msg string, payload LoggerPayload, keysAndValues ...any) {
+	keysAndValues = append(keysAndValues, payload.LoggerOutput(false)...)
+	logger.sugar.Debugw(msg, keysAndValues...)
+}
+
+func (logger *Logger) Debug(args ...any) {
+	logger.sugar.Debug(args...)
+}
+
+func (logger *Logger) Debugw(msg string, keysAndValues ...any) {
+	logger.sugar.Debugw(msg, keysAndValues...)
+}
+
+func (logger *Logger) Debugf(template string, args ...any) {
+	logger.sugar.Debugf(template, args...)
+}
+
+func (logger *Logger) Info(args ...any) {
+	logger.sugar.Info(args...)
+}
+
+func (logger *Logger) Infow(msg string, keysAndValues ...any) {
+	logger.sugar.Infow(msg, keysAndValues...)
+}
+
+func (logger *Logger) Infof(template string, args ...any) {
+	logger.sugar.Infof(template, args...)
+}
+
+func (logger *Logger) Warn(args ...any) {
+	logger.sugar.Warn(args...)
+}
+
+func (logger *Logger) Warnf(template string, args ...any) {
+	logger.sugar.Warnf(template, args...)
+}
+
+func (logger *Logger) Warnw(msg string, keysAndValues ...any) {
+	logger.sugar.Warnw(msg, keysAndValues...)
