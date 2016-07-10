@@ -77,3 +77,82 @@ var _ = Describe("Robot", Label("robot"), func() {
 				Name: "",
 			})
 			Expect(err).To(HaveOccurred(), "empty name must fail validation")
+		})
+
+		It("should fail to create a robot account with a duplicate name", Label("R00003"), func() {
+			name := generateRobotName("rb-dup")
+			_, _, err := robotsApi.RobotsCreateRobotAccount(ctx, v1alpha1robot.V1alpha1CreateRobotAccountRequest{
+				Name: name,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			_, _, err = robotsApi.RobotsCreateRobotAccount(ctx, v1alpha1robot.V1alpha1CreateRobotAccountRequest{
+				Name: name,
+			})
+			Expect(err).To(HaveOccurred(), "duplicate robot name must be rejected")
+
+			// Cleanup
+			listResp, _, _ := robotsApi.RobotsListRobotAccounts(ctx, &v1alpha1robot.RobotsApiRobotsListRobotAccountsOpts{
+				Search: optional.NewString(robotPrefix + name),
+			})
+			for _, r := range listResp.Items {
+				if r.Name == robotPrefix+name {
+					_, _, _ = robotsApi.RobotsDeleteRobotAccount(ctx, r.Id)
+				}
+			}
+		})
+
+		It("should store the robot name with the 'robot$' prefix", Label("R00004"), func() {
+			name := generateRobotName("rb-prefix")
+			_, _, err := robotsApi.RobotsCreateRobotAccount(ctx, v1alpha1robot.V1alpha1CreateRobotAccountRequest{
+				Name: name,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			listResp, _, err := robotsApi.RobotsListRobotAccounts(ctx, &v1alpha1robot.RobotsApiRobotsListRobotAccountsOpts{
+				Search: optional.NewString(robotPrefix + name),
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			found := false
+			var foundID int64
+			for _, r := range listResp.Items {
+				if r.Name == robotPrefix+name {
+					found = true
+					foundID = r.Id
+					Expect(strings.HasPrefix(r.Name, robotPrefix)).To(BeTrue())
+					break
+				}
+			}
+			Expect(found).To(BeTrue(), "robot must be listed with its prefixed name")
+
+			_, _, _ = robotsApi.RobotsDeleteRobotAccount(ctx, foundID)
+		})
+
+		It("should create a robot with expiry and reflect VALID expire status", Label("R00005"), func() {
+			name := generateRobotName("rb-expiry")
+			_, _, err := robotsApi.RobotsCreateRobotAccount(ctx, v1alpha1robot.V1alpha1CreateRobotAccountRequest{
+				Name:       name,
+				ExpireDays: 30,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			listResp, _, err := robotsApi.RobotsListRobotAccounts(ctx, &v1alpha1robot.RobotsApiRobotsListRobotAccountsOpts{
+				Search: optional.NewString(robotPrefix + name),
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			for _, r := range listResp.Items {
+				if r.Name == robotPrefix+name {
+					Expect(r.ExpireDays).To(Equal(int32(30)))
+					Expect(r.ExpireStatus).NotTo(BeNil())
+					Expect(*r.ExpireStatus).To(Equal(v1alpha1robot.VALID_V1alpha1RobotAccountExpireStatus))
+
+					_, _, _ = robotsApi.RobotsDeleteRobotAccount(ctx, r.Id)
+					break
+				}
+			}
+		})
+	})
+
+	// ═══════════════════════════════════════════════════════════
