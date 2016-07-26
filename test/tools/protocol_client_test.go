@@ -13,10 +13,3 @@
 // limitations under the License.
 
 package tools
-
-import (
-	"testing"
-
-	"github.com/stretchr/testify/require"
-)
-

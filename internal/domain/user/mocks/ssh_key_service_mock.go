@@ -9,14 +9,3 @@
 // Package mocks is a generated GoMock package.
 package mocks
 
-import (
-	context "context"
-	reflect "reflect"
-
-	user "github.com/matrixhub-ai/matrixhub/internal/domain/user"
-	gomock "go.uber.org/mock/gomock"
-)
-
-// MockISSHKeyService is a mock of ISSHKeyService interface.
-type MockISSHKeyService struct {
-	ctrl     *gomock.Controller
