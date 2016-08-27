@@ -44,3 +44,26 @@ export function BatchDeleteUsersModal({
         }),
       })
     } else {
+      notifications.show({
+        color: 'green',
+        message: t('routes.admin.users.notifications.batchDeleteSuccess'),
+      })
+    }
+    onSuccess()
+    onClose()
+  }
+
+  return (
+    <ModalWrapper
+      size="sm"
+      opened={opened}
+      onClose={onClose}
+      type="danger"
+      title={t('routes.admin.users.batchDeleteModal.title')}
+      footer={(
+        <Group justify="flex-end" gap="md">
+          <Button
+            color="default"
+            variant="subtle"
+            onClick={onClose}
+          >
