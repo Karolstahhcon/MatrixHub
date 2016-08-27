@@ -1,0 +1,16 @@
+/* MRT paints the pinned-column divider unconditionally, so a pinned column
+   shows a shadow even when the table fits and there is nothing to scroll.
+   Gate each side's shadow on the container's actual scroll position.
+
+   Head/footer cells carry the shadow directly, body cells carry it on
+   `::before`. The extra `[data-column-pinned]` qualifier keeps these rules
+   above MRT's own selectors, which would otherwise tie on specificity and be
+   decided by stylesheet order. */
+
+.container:not([data-scrolled-left]) {
+  & [data-column-pinned='left'][data-column-pinned][data-last-left-pinned] {
+    box-shadow: none;
+
+    &::before {
+      box-shadow: none;
+    }
