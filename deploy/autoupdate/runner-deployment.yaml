@@ -1,0 +1,108 @@
+# GitHub Actions Self-Hosted Runner for MatrixHub auto-deploy
+#
+# This deploys an org-level (or repo-level) self-hosted runner inside an
+# internal K8s cluster. The runner makes outbound HTTPS long-poll
+# connections to github.com — no inbound ports, no webhook receiver.
+#
+# Two auth modes (pick ONE — see comments in the Deployment env block):
+#
+#   A) Registration token (one-time, persisted via PVC)
+#      - Owner generates an org-level registration token (UI or API).
+#      - Token is valid for 1 hour; runner uses it once to register.
+#      - Runner credentials (.runner, .credentials, ~6-month lifetime) are
+#        written to the mounted PVC. Pod restarts reuse those credentials
+#        without needing a new registration token.
+#      - Set RUNNER_TOKEN secret key; leave ACCESS_TOKEN unset.
+#
+#   B) Long-lived PAT (admin:org on org-level, or admin on repo-level)
+#      - Bot account creates a PAT and stores it in the secret.
+#      - Runner mints a fresh registration token on each startup.
+#      - More resilient (no PVC dependency) but PAT is a long-term secret.
+#      - Set ACCESS_TOKEN secret key; leave RUNNER_TOKEN unset.
+#
+# Bootstrap:
+#   kubectl apply -f runner-deployment.yaml
+#
+#   # mode A (registration token):
+#   kubectl -n matrixhub-runner create secret generic github-runner-secret \
+#     --from-literal=runner-token=AAAAxxxx_1HOUR_TOKEN
+#
+#   # mode B (PAT):
+#   kubectl -n matrixhub-runner create secret generic github-runner-secret \
+#     --from-literal=github-pat=ghp_xxxx
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: matrixhub-runner
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: github-runner
+  namespace: matrixhub-runner
+---
+# Runner needs cluster-wide permissions to run helm upgrade
+# (Helm manages Deployments, Services, ConfigMaps, Secrets, etc.)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: matrixhub-github-runner
+rules:
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: matrixhub-github-runner
+subjects:
+  - kind: ServiceAccount
+    name: github-runner
+    namespace: matrixhub-runner
+roleRef:
+  kind: ClusterRole
+  name: matrixhub-github-runner
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: github-runner-values
+  namespace: matrixhub-runner
+data:
+  # Internal-network helm values override.
+  # Customize these for your environment.
+  values-internal.yaml: |
+    apiserver:
+      image:
+        registry: ghcr.m.daocloud.io
+        repository: Karolstahhcon/matrixhub
+        tag: "latest"
+        pullPolicy: Always
+      service:
+        type: NodePort
+      storage:
+        mode: pvc
+        pvc:
+          size: 60Gi
+    mysql:
+      registry: docker.m.daocloud.io
+      persistence:
+        size: 8Gi
+---
+# PVC for runner credentials (.runner, .credentials, .credentials_rsaparams).
+# These files have ~6-month lifetime and let the runner reconnect across
+# pod restarts without needing a new registration token.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: github-runner-data
+  namespace: matrixhub-runner
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 5Gi
+---
