@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package matrixhub.v1alpha1;
+
+option go_package = "github.com/matrixhub-ai/matrixhub/api/go/v1alpha1;v1alpha1";
+
+import "google/api/annotations.proto";
+import "validate/validate.proto";
+import "v1alpha1/role.proto";
+
+service CurrentUser {
+  rpc GetCurrentUser(GetCurrentUserRequest) returns (GetCurrentUserResponse) {
+    option (google.api.http) = {
+      get: "/api/v1alpha1/current-user"
+    };
+  }
+  rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse) {
+    option (google.api.http) = {
+      post: "/api/v1alpha1/current-user/reset-password"
+      body: "*"
+    };
+  }
+  rpc ListAccessTokens(ListAccessTokensRequest) returns (ListAccessTokensResponse) {
+    option (google.api.http) = {
+      get: "/api/v1alpha1/current-user/access-tokens"
+    };
+  }
+  rpc CreateAccessToken(CreateAccessTokenRequest) returns (CreateAccessTokenResponse) {
+    option (google.api.http) = {
+      post: "/api/v1alpha1/current-user/access-tokens"
+      body: "*"

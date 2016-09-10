@@ -15,3 +15,21 @@
 package syncpolicy
 
 import (
+	"context"
+	"database/sql/driver"
+	"fmt"
+	"time"
+)
+
+type SyncTaskStatus int
+
+const (
+	SyncTaskStatusUnspecified SyncTaskStatus = iota
+	SyncTaskStatusRunning
+	SyncTaskStatusSucceeded
+	SyncTaskStatusFailed
+	SyncTaskStatusStopped
+	SyncTaskStatusPending
+)
+
+func (t SyncTaskStatus) Value() (driver.Value, error) {
