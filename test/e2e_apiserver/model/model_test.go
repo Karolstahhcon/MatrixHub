@@ -249,3 +249,505 @@ var _ = Describe("Model", Label("model"), func() {
 		It("should fail to get a model from non-existent project", Label("M00010"), func() {
 			_, _, err := modelsApi.ModelsGetModel(ctx, "nonexistent", "nonexistent-model")
 			Expect(err).To(HaveOccurred())
+		})
+
+		// --- ListModels ---
+		It("should list models with pagination", Label("M00011"), func() {
+			modelName := tools.GenerateTestModelName("list-model")
+
+			_, _, err := modelsApi.ModelsCreateModel(ctx, v1alpha1model.V1alpha1CreateModelRequest{
+				Project: projectName,
+				Name:    modelName,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			listResp, _, err := modelsApi.ModelsListModels(ctx, &v1alpha1model.ModelsApiModelsListModelsOpts{
+				Page:     optional.NewInt32(1),
+				PageSize: optional.NewInt32(50),
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(listResp.Items).NotTo(BeNil())
+			Expect(listResp.Pagination).NotTo(BeNil())
+
+			GinkgoWriter.Printf("ListModels: total=%v, page=%v\n",
+				listResp.Pagination.Total, listResp.Pagination.Page)
+		})
+
+		It("should filter models by project", Label("M00012"), func() {
+			modelName := tools.GenerateTestModelName("filter-model")
+
+			_, _, err := modelsApi.ModelsCreateModel(ctx, v1alpha1model.V1alpha1CreateModelRequest{
+				Project: projectName,
+				Name:    modelName,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			listResp, _, err := modelsApi.ModelsListModels(ctx, &v1alpha1model.ModelsApiModelsListModelsOpts{
+				Project:  optional.NewString(projectName),
+				Page:     optional.NewInt32(1),
+				PageSize: optional.NewInt32(20),
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			var found bool
+			for _, m := range listResp.Items {
+				if m.Name == modelName {
+					found = true
+					break
+				}
+			}
+			Expect(found).To(BeTrue(), "created model should be in the project-filtered list")
+		})
+
+		It("should search models by keyword", Label("M00013"), func() {
+			modelName := tools.GenerateTestModelName("search-target")
+
+			_, _, err := modelsApi.ModelsCreateModel(ctx, v1alpha1model.V1alpha1CreateModelRequest{
+				Project: projectName,
+				Name:    modelName,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			listResp, _, err := modelsApi.ModelsListModels(ctx, &v1alpha1model.ModelsApiModelsListModelsOpts{
+				Project:  optional.NewString(projectName),
+				Search:   optional.NewString("search-target"),
+				Page:     optional.NewInt32(1),
+				PageSize: optional.NewInt32(10),
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(listResp.Items)).To(BeNumerically(">=", 1))
+		})
+
+		It("should respect page_size=1", Label("M00014"), func() {
+			// Create 2 models
+			for i := 0; i < 2; i++ {
+				name := tools.GenerateTestModelName("paging")
+				_, _, err := modelsApi.ModelsCreateModel(ctx, v1alpha1model.V1alpha1CreateModelRequest{
+					Project: projectName,
+					Name:    name,
+				})
+				Expect(err).NotTo(HaveOccurred())
+			}
+
+			listResp, _, err := modelsApi.ModelsListModels(ctx, &v1alpha1model.ModelsApiModelsListModelsOpts{
+				Project:  optional.NewString(projectName),
+				Page:     optional.NewInt32(1),
+				PageSize: optional.NewInt32(1),
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(listResp.Items)).To(Equal(1))
+			Expect(listResp.Pagination.Total).To(BeNumerically(">=", 2))
+		})
+
+		It("should return empty list for non-existent project filter", Label("M00015"), func() {
+			listResp, _, err := modelsApi.ModelsListModels(ctx, &v1alpha1model.ModelsApiModelsListModelsOpts{
+				Project:  optional.NewString("nonexistent-project-xyz"),
+				Page:     optional.NewInt32(1),
+				PageSize: optional.NewInt32(10),
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(listResp.Items)).To(Equal(0))
+		})
+
+		// --- DeleteModel ---
+		It("should delete an existing model and verify", Label("M00016"), func() {
+			modelName := tools.GenerateTestModelName("delete-model")
+
+			_, _, err := modelsApi.ModelsCreateModel(ctx, v1alpha1model.V1alpha1CreateModelRequest{
+				Project: projectName,
+				Name:    modelName,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			// Delete
+			_, _, err = modelsApi.ModelsDeleteModel(ctx, projectName, modelName)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify deleted via GetModel
+			_, _, err = modelsApi.ModelsGetModel(ctx, projectName, modelName)
+			Expect(err).To(HaveOccurred(), "get should fail after delete")
+		})
+
+		It("should fail to delete a non-existent model", Label("M00017"), func() {
+			_, _, err := modelsApi.ModelsDeleteModel(ctx, projectName, "non-existent-model-xyz")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should fail to delete an already deleted model", Label("M00018"), func() {
+			modelName := tools.GenerateTestModelName("double-delete")
+
+			_, _, err := modelsApi.ModelsCreateModel(ctx, v1alpha1model.V1alpha1CreateModelRequest{
+				Project: projectName,
+				Name:    modelName,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			// First delete
+			_, _, err = modelsApi.ModelsDeleteModel(ctx, projectName, modelName)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Second delete should fail
+			_, _, err = modelsApi.ModelsDeleteModel(ctx, projectName, modelName)
+			Expect(err).To(HaveOccurred(), "double delete should fail")
+		})
+
+		// --- Full lifecycle ---
+		It("should handle full create-get-list-delete lifecycle", Label("M00019"), func() {
+			modelName := tools.GenerateTestModelName("lifecycle")
+
+			// Create
+			_, _, err := modelsApi.ModelsCreateModel(ctx, v1alpha1model.V1alpha1CreateModelRequest{
+				Project: projectName,
+				Name:    modelName,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			// Get
+			getResp, _, err := modelsApi.ModelsGetModel(ctx, projectName, modelName)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(getResp.Name).To(Equal(modelName))
+			Expect(getResp.Project).To(Equal(projectName))
+
+			// List
+			listResp, _, err := modelsApi.ModelsListModels(ctx, &v1alpha1model.ModelsApiModelsListModelsOpts{
+				Project:  optional.NewString(projectName),
+				Page:     optional.NewInt32(1),
+				PageSize: optional.NewInt32(100),
+			})
+			Expect(err).NotTo(HaveOccurred())
+			var found bool
+			for _, m := range listResp.Items {
+				if m.Name == modelName {
+					found = true
+					break
+				}
+			}
+			Expect(found).To(BeTrue())
+
+			// Delete
+			_, _, err = modelsApi.ModelsDeleteModel(ctx, projectName, modelName)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify deleted
+			_, _, err = modelsApi.ModelsGetModel(ctx, projectName, modelName)
+			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	// ═══════════════════════════════════════════════════════════
+	// 3. ListModelRevisions
+	// ═══════════════════════════════════════════════════════════
+	Context("ListModelRevisions API", Label("git"), func() {
+		var (
+			gitProject string
+			gitModel   string
+		)
+
+		BeforeEach(func() {
+			gitProject, gitModel = createGitModelFixture(ctx, modelsApi, projectsApi)
+		})
+
+		AfterEach(func() {
+			cleanupGitModelFixture(ctx, modelsApi, projectsApi, gitProject, gitModel)
+		})
+
+		It("should list revisions successfully", Label("M00020"), func() {
+			resp, _, err := modelsApi.ModelsListModelRevisions(ctx, gitProject, gitModel)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.Items).NotTo(BeNil())
+
+			GinkgoWriter.Printf("Revisions: branches=%d, tags=%d\n",
+				len(resp.Items.Branches), len(resp.Items.Tags))
+		})
+
+		It("should fail for non-existent model", Label("M00021"), func() {
+			_, _, err := modelsApi.ModelsListModelRevisions(ctx, "nonexistent", "nonexistent")
+			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	// ═══════════════════════════════════════════════════════════
+	// 4. ListModelCommits + GetModelCommit
+	// ═══════════════════════════════════════════════════════════
+	Context("Commits APIs", Label("git"), func() {
+		var (
+			gitProject string
+			gitModel   string
+		)
+
+		BeforeEach(func() {
+			gitProject, gitModel = createGitModelFixture(ctx, modelsApi, projectsApi)
+		})
+
+		AfterEach(func() {
+			cleanupGitModelFixture(ctx, modelsApi, projectsApi, gitProject, gitModel)
+		})
+
+		It("should list commits with default branch", Label("M00022"), func() {
+			resp, _, err := modelsApi.ModelsListModelCommits(ctx, gitProject, gitModel, &v1alpha1model.ModelsApiModelsListModelCommitsOpts{
+				Page:     optional.NewInt32(1),
+				PageSize: optional.NewInt32(10),
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.Items).NotTo(BeNil())
+			Expect(resp.Pagination).NotTo(BeNil())
+
+			GinkgoWriter.Printf("Commits: count=%d, total=%d\n", len(resp.Items), resp.Pagination.Total)
+		})
+
+		It("should list commits with revision=main", Label("M00023"), func() {
+			resp, _, err := modelsApi.ModelsListModelCommits(ctx, gitProject, gitModel, &v1alpha1model.ModelsApiModelsListModelCommitsOpts{
+				Revision: optional.NewString("main"),
+				Page:     optional.NewInt32(1),
+				PageSize: optional.NewInt32(10),
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.Items).NotTo(BeNil())
+		})
+
+		It("should list commits with diff=false", Label("M00061"), func() {
+			resp, _, err := modelsApi.ModelsListModelCommits(ctx, gitProject, gitModel, &v1alpha1model.ModelsApiModelsListModelCommitsOpts{
+				Diff:     optional.NewBool(false),
+				Page:     optional.NewInt32(1),
+				PageSize: optional.NewInt32(10),
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.Items).NotTo(BeNil())
+		})
+
+		It("should list commits with pagination", Label("M00024"), func() {
+			resp, _, err := modelsApi.ModelsListModelCommits(ctx, gitProject, gitModel, &v1alpha1model.ModelsApiModelsListModelCommitsOpts{
+				Page:     optional.NewInt32(1),
+				PageSize: optional.NewInt32(2),
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(resp.Items)).To(BeNumerically("<=", 2))
+		})
+
+		It("should fail to list commits for non-existent model", Label("M00025"), func() {
+			_, _, err := modelsApi.ModelsListModelCommits(ctx, "nonexistent", "nonexistent", &v1alpha1model.ModelsApiModelsListModelCommitsOpts{
+				Page:     optional.NewInt32(1),
+				PageSize: optional.NewInt32(10),
+			})
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should get a specific commit with valid fields", Label("M00026"), func() {
+			// Get first commit ID
+			listResp, _, err := modelsApi.ModelsListModelCommits(ctx, gitProject, gitModel, &v1alpha1model.ModelsApiModelsListModelCommitsOpts{
+				Page:     optional.NewInt32(1),
+				PageSize: optional.NewInt32(1),
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(listResp.Items)).To(BeNumerically(">=", 1), "need at least one commit")
+
+			commitID := listResp.Items[0].Id
+			Expect(commitID).NotTo(BeEmpty())
+
+			// Get specific commit
+			commit, _, err := modelsApi.ModelsGetModelCommit(ctx, gitProject, gitModel, commitID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(commit.Id).To(Equal(commitID))
+			Expect(commit.Message).NotTo(BeEmpty())
+			Expect(commit.AuthorName).NotTo(BeEmpty())
+			Expect(commit.AuthorDate).NotTo(BeEmpty())
+			// Commit ID should be 40-char SHA-1
+			Expect(len(commit.Id)).To(Equal(40))
+
+			GinkgoWriter.Printf("GetModelCommit: id=%v, author=%v, message=%v\n",
+				commit.Id[:8], commit.AuthorName, commit.Message)
+		})
+
+		It("should fail to get non-existent commit ID", Label("M00027"), func() {
+			_, _, err := modelsApi.ModelsGetModelCommit(ctx, gitProject, gitModel,
+				"0000000000000000000000000000000000000000")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should fail to get commit from non-existent model", Label("M00028"), func() {
+			_, _, err := modelsApi.ModelsGetModelCommit(ctx, "nonexistent", "nonexistent", "abc123")
+			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	// ═══════════════════════════════════════════════════════════
+	// 5. GetModelTree
+	// ═══════════════════════════════════════════════════════════
+	Context("GetModelTree API", Label("git"), func() {
+		var (
+			gitProject string
+			gitModel   string
+		)
+
+		BeforeEach(func() {
+			gitProject, gitModel = createGitModelFixture(ctx, modelsApi, projectsApi)
+		})
+
+		AfterEach(func() {
+			cleanupGitModelFixture(ctx, modelsApi, projectsApi, gitProject, gitModel)
+		})
+
+		It("should get root tree successfully", Label("M00029"), func() {
+			resp, _, err := modelsApi.ModelsGetModelTree(ctx, gitProject, gitModel, &v1alpha1model.ModelsApiModelsGetModelTreeOpts{})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.Items).NotTo(BeNil())
+
+			GinkgoWriter.Printf("GetModelTree root: found %d entries\n", len(resp.Items))
+
+			// Validate first item structure if available
+			if len(resp.Items) > 0 {
+				item := resp.Items[0]
+				Expect(item.Name).NotTo(BeEmpty())
+				Expect(item.Path).NotTo(BeEmpty())
+				Expect(item.Type_).NotTo(BeNil())
+				GinkgoWriter.Printf("  first item: name=%v, type=%v, path=%v\n", item.Name, *item.Type_, item.Path)
+			}
+		})
+
+		It("should get tree with revision=main", Label("M00030"), func() {
+			resp, _, err := modelsApi.ModelsGetModelTree(ctx, gitProject, gitModel, &v1alpha1model.ModelsApiModelsGetModelTreeOpts{
+				Revision: optional.NewString("main"),
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.Items).NotTo(BeNil())
+		})
+
+		It("should handle non-existent path gracefully", Label("M00031"), func() {
+			resp, _, err := modelsApi.ModelsGetModelTree(ctx, gitProject, gitModel, &v1alpha1model.ModelsApiModelsGetModelTreeOpts{
+				Path: optional.NewString("nonexistent-path-xyz"),
+			})
+			// Either returns error or empty items
+			if err == nil {
+				Expect(len(resp.Items)).To(Equal(0))
+			}
+		})
+
+		It("should fail for non-existent model", Label("M00032"), func() {
+			_, _, err := modelsApi.ModelsGetModelTree(ctx, "nonexistent", "nonexistent", &v1alpha1model.ModelsApiModelsGetModelTreeOpts{})
+			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	// ═══════════════════════════════════════════════════════════
+	// 6. GetModelBlob
+	// ═══════════════════════════════════════════════════════════
+	Context("GetModelBlob API", Label("git"), func() {
+		var (
+			gitProject    string
+			gitModel      string
+			firstFilePath string
+			firstDirPath  string
+		)
+
+		BeforeEach(func() {
+			gitProject, gitModel = createGitModelFixture(ctx, modelsApi, projectsApi)
+
+			// Discover file and directory paths from tree
+			treeResp, _, err := modelsApi.ModelsGetModelTree(ctx, gitProject, gitModel, &v1alpha1model.ModelsApiModelsGetModelTreeOpts{})
+			if err != nil {
+				Fail("cannot get tree for test Git model: " + err.Error())
+			}
+
+			for _, item := range treeResp.Items {
+				if item.Type_ == nil {
+					continue
+				}
+				if *item.Type_ == v1alpha1model.FILE_V1alpha1FileType && firstFilePath == "" {
+					firstFilePath = item.Path
+				}
+				if *item.Type_ == v1alpha1model.DIR_V1alpha1FileType && firstDirPath == "" {
+					firstDirPath = item.Path
+				}
+			}
+		})
+
+		AfterEach(func() {
+			cleanupGitModelFixture(ctx, modelsApi, projectsApi, gitProject, gitModel)
+		})
+
+		It("should get blob for a file with valid fields", Label("M00033"), func() {
+			if firstFilePath == "" {
+				Skip("no file found in tree")
+			}
+
+			resp, _, err := modelsApi.ModelsGetModelBlob(ctx, gitProject, gitModel, &v1alpha1model.ModelsApiModelsGetModelBlobOpts{
+				Path: optional.NewString(firstFilePath),
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.Name).NotTo(BeEmpty())
+			Expect(resp.Path).NotTo(BeEmpty())
+			Expect(resp.Type_).NotTo(BeNil())
+			Expect(*resp.Type_).To(Equal(v1alpha1model.FILE_V1alpha1FileType))
+
+			GinkgoWriter.Printf("GetModelBlob: name=%v, path=%v, size=%v, sha256=%v\n",
+				resp.Name, resp.Path, resp.Size, resp.Sha256)
+		})
+
+		It("should get blob with revision=main", Label("M00034"), func() {
+			if firstFilePath == "" {
+				Skip("no file found in tree")
+			}
+
+			resp, _, err := modelsApi.ModelsGetModelBlob(ctx, gitProject, gitModel, &v1alpha1model.ModelsApiModelsGetModelBlobOpts{
+				Revision: optional.NewString("main"),
+				Path:     optional.NewString(firstFilePath),
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.Name).NotTo(BeEmpty())
+		})
+
+		It("should fail for non-existent file path", Label("M00035"), func() {
+			_, _, err := modelsApi.ModelsGetModelBlob(ctx, gitProject, gitModel, &v1alpha1model.ModelsApiModelsGetModelBlobOpts{
+				Path: optional.NewString("nonexistent-file-xyz.txt"),
+			})
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should fail for directory path", Label("M00036"), func() {
+			if firstDirPath == "" {
+				Skip("no directory found in tree")
+			}
+
+			_, _, err := modelsApi.ModelsGetModelBlob(ctx, gitProject, gitModel, &v1alpha1model.ModelsApiModelsGetModelBlobOpts{
+				Path: optional.NewString(firstDirPath),
+			})
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should fail for non-existent model", Label("M00037"), func() {
+			_, _, err := modelsApi.ModelsGetModelBlob(ctx, "nonexistent", "nonexistent", &v1alpha1model.ModelsApiModelsGetModelBlobOpts{
+				Path: optional.NewString("README.md"),
+			})
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should fail for empty path", Label("M00038"), func() {
+			_, _, err := modelsApi.ModelsGetModelBlob(ctx, gitProject, gitModel, &v1alpha1model.ModelsApiModelsGetModelBlobOpts{})
+			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	// ═══════════════════════════════════════════════════════════
+	// 7. Multi-user permission tests
+	// ═══════════════════════════════════════════════════════════
+	Context("Multi-user permission tests", func() {
+		var (
+			viewerCookie    string
+			viewerID        int32
+			editorCookie    string
+			editorID        int32
+			projAdminCookie string
+			projAdminID     int32
+		)
+
+		BeforeEach(func() {
+			password := "Test@123456"
+
+			viewerUsername := tools.GenerateTestUsername("m-viewer")
+			var err error
+			viewerID, viewerCookie, err = tools.CreateUserAndLoginWithID(viewerUsername, password, false)
+			Expect(err).NotTo(HaveOccurred())
+
+			editorUsername := tools.GenerateTestUsername("m-editor")
+			editorID, editorCookie, err = tools.CreateUserAndLoginWithID(editorUsername, password, false)
+			Expect(err).NotTo(HaveOccurred())
