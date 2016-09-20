@@ -71,39 +71,3 @@ func (logger *Logger) ErrorWithPayload(msg string, payload LoggerPayload, keysAn
 func (logger *Logger) DebugWithPayload(msg string, payload LoggerPayload, keysAndValues ...any) {
 	keysAndValues = append(keysAndValues, payload.LoggerOutput(false)...)
 	logger.sugar.Debugw(msg, keysAndValues...)
-}
-
-func (logger *Logger) Debug(args ...any) {
-	logger.sugar.Debug(args...)
-}
-
-func (logger *Logger) Debugw(msg string, keysAndValues ...any) {
-	logger.sugar.Debugw(msg, keysAndValues...)
-}
-
-func (logger *Logger) Debugf(template string, args ...any) {
-	logger.sugar.Debugf(template, args...)
-}
-
-func (logger *Logger) Info(args ...any) {
-	logger.sugar.Info(args...)
-}
-
-func (logger *Logger) Infow(msg string, keysAndValues ...any) {
-	logger.sugar.Infow(msg, keysAndValues...)
-}
-
-func (logger *Logger) Infof(template string, args ...any) {
-	logger.sugar.Infof(template, args...)
-}
-
-func (logger *Logger) Warn(args ...any) {
-	logger.sugar.Warn(args...)
-}
-
-func (logger *Logger) Warnf(template string, args ...any) {
-	logger.sugar.Warnf(template, args...)
-}
-
-func (logger *Logger) Warnw(msg string, keysAndValues ...any) {
-	logger.sugar.Warnw(msg, keysAndValues...)
