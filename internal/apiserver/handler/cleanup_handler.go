@@ -40,3 +40,25 @@ func (h *CleanupHandler) RegisterToServer(options *ServerOptions) {
 	if err := v1alpha1.RegisterCleanupHandlerFromEndpoint(context.Background(), options.GatewayMux, options.GRPCAddr, options.GRPCDialOpt); err != nil {
 		log.Errorf("register cleanup handler error: %s", err.Error())
 	}
+}
+
+// PreviewCleanup previews orphaned data without deleting.
+func (h *CleanupHandler) PreviewCleanup(ctx context.Context, req *v1alpha1.PreviewCleanupRequest) (*v1alpha1.CleanupPreview, error) {
+	preview, err := h.cleanupService.PreviewCleanup(ctx, req.IncludeOrphanedRepos, req.IncludeOrphanedLfs)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert domain model to proto
+	repos := make([]*v1alpha1.OrphanedRepo, len(preview.OrphanedRepos))
+	for i, r := range preview.OrphanedRepos {
+		repos[i] = &v1alpha1.OrphanedRepo{
+			Path:         r.Path,
+			Type:         r.Type,
+			ProjectName:  r.ProjectName,
+			ResourceName: r.ResourceName,
+			SizeBytes:    r.SizeBytes,
+		}
+	}
+
+	lfs := make([]*v1alpha1.OrphanedLFS, len(preview.OrphanedLFSObjects))
