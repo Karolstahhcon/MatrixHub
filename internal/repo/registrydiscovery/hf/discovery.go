@@ -61,34 +61,3 @@ func New(opts ...Option) *Discovery {
 // registry's credential to somewhere the operator never configured.
 func endpointBase(reg *registry.Registry) (string, error) {
 	if reg == nil {
-		return "", fmt.Errorf("hf discovery: no registry given")
-	}
-	base := strings.TrimSuffix(reg.URL, "/")
-	if base == "" {
-		return "", fmt.Errorf("hf discovery: registry %q (id=%d) has no URL configured", reg.Name, reg.ID)
-	}
-	return base, nil
-}
-
-// ListRepositories queries the registry's HuggingFace-compatible API and returns
-// matching repositories.
-func (d *Discovery) ListRepositories(ctx context.Context, reg *registry.Registry, filter registrydiscovery.Filter) ([]registrydiscovery.RemoteRepository, error) {
-	base, err := endpointBase(reg)
-	if err != nil {
-		return nil, err
-	}
-
-	endpoint := "/api/models"
-	if filter.ResourceType == "dataset" {
-		endpoint = "/api/datasets"
-	}
-
-	u := fmt.Sprintf("%s%s?author=%s&limit=100", base, endpoint, filter.Namespace)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
-	if err != nil {
-		return nil, fmt.Errorf("build hf request: %w", err)
-	}
-
-	if basic := registry.AsBasic(reg.GetCredential()); basic != nil {
-		req.Header.Set("Authorization", "Bearer "+basic.Password)
-	}
