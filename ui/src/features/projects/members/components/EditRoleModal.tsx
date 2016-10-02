@@ -34,39 +34,3 @@ export function EditRoleModal({
   const { t } = useTranslation()
   const mutation = useMutation(updateMemberRoleMutationOptions())
 
-  const requiredString = z.string().min(1, t('common.validation.required'))
-
-  const form = useForm({
-    defaultValues: {
-      role: member?.role ?? '' as string,
-    },
-    onSubmit: async ({ value }) => {
-      if (!member?.memberId || !member?.memberType) {
-        return
-      }
-
-      await mutation.mutateAsync({
-        name: projectId,
-        memberType: member.memberType,
-        memberId: member.memberId,
-        role: value.role as ProjectRoleType,
-      })
-      handleClose()
-    },
-  })
-
-  const roleOptions = useProjectRoleOptions()
-  const roleDescription = useProjectRoleDescription()
-
-  const handleClose = () => {
-    form.reset()
-    onClose()
-  }
-
-  const canSubmit = useStore(form.store, s => s.canSubmit && !s.isSubmitting)
-  const isSubmitting = useStore(form.store, s => s.isSubmitting)
-
-  const handleConfirm = () => {
-    void form.handleSubmit()
-  }
-
