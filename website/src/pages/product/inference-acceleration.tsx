@@ -38,3 +38,23 @@ export default function InferenceAcceleration(): React.ReactElement {
             </p>
           </div>
 
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="bg-slate-800/30 p-8 rounded-3xl border border-slate-700/50 text-center hover:border-slate-600/50 transition-colors">
+              <div className="text-5xl mb-6">🚄</div>
+              <h3 className="text-xl font-bold text-white mb-3">
+                <Translate id="acceleration.pullOnce.title">Pull-Once, Serve-All</Translate>
+              </h3>
+              <p className="text-slate-400">
+                <Translate id="acceleration.pullOnce.desc">
+                  The first request fetches the model from the public source and persists it locally. Subsequent nodes read from MatrixHub over the local network instead of re-downloading.
+                </Translate>
+              </p>
+            </div>
+            <div className="bg-slate-800/30 p-8 rounded-3xl border border-slate-700/50 text-center hover:border-slate-600/50 transition-colors">
+              <div className="text-5xl mb-6">🔗</div>
+              <h3 className="text-xl font-bold text-white mb-3">
+                <Translate id="acceleration.p2p.title">P2P Distribution</Translate>
+              </h3>
+              <p className="text-slate-400">
+                <Translate id="acceleration.p2p.desc">
+                  Future native support for P2P distribution to handle startup storms when hundreds of inference nodes initialize simultaneously.
