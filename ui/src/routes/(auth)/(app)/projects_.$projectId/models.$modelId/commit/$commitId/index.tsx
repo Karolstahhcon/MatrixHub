@@ -6,3 +6,8 @@ import { ModelCommitDetailPage } from '@/features/models/pages/ModelCommitDetail
 
 const commitDetailSearchSchema = z.object({
   branch: z.string().optional(),
+})
+
+export const Route = createFileRoute(
+  '/(auth)/(app)/projects_/$projectId/models/$modelId/commit/$commitId/',
+)({
