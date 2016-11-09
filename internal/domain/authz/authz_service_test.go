@@ -15,20 +15,3 @@
 package authz_test
 
 import (
-	"context"
-	"testing"
-
-	"github.com/stretchr/testify/require"
-	"gorm.io/gorm"
-
-	"github.com/matrixhub-ai/matrixhub/internal/domain/authz"
-	"github.com/matrixhub-ai/matrixhub/internal/domain/project"
-	"github.com/matrixhub-ai/matrixhub/internal/domain/role"
-)
-
-type projectRepoStub struct {
-	project.IProjectRepo
-	getProjectByName func(context.Context, string) (*project.Project, error)
-}
-
-func (s *projectRepoStub) GetProjectByName(ctx context.Context, name string) (*project.Project, error) {
