@@ -144,3 +144,149 @@ func TestDatasetHandlerListDatasetTaskLabels(t *testing.T) {
 		requireProtoEqual(t, &v1alpha1.ListDatasetTaskLabelsResponse{Items: []*v1alpha1.Label{
 			{Id: 1, Name: "text-classification", Category: v1alpha1.Category_TASK, CreatedAt: handlerTestCreatedAtText, UpdatedAt: handlerTestUpdatedAtText},
 			{Id: 5, Name: "translation", Category: v1alpha1.Category_TASK, CreatedAt: handlerTestCreatedAtText, UpdatedAt: handlerTestUpdatedAtText},
+		}}, got)
+	})
+
+	t.Run("hides service errors", func(t *testing.T) {
+		h, svc := datasetHandlerTestSetup(t)
+		svc.EXPECT().ListDatasetTaskLabels(ctx).Return(nil, errors.New("database is locked"))
+
+		got, err := h.ListDatasetTaskLabels(ctx, &v1alpha1.ListDatasetTaskLabelsRequest{})
+		require.Nil(t, got)
+		requireHandlerTestStatus(t, err, codes.Internal, "failed to list task labels")
+	})
+}
+
+func TestDatasetHandlerListDatasets(t *testing.T) {
+	ctx := context.Background()
+	request := &v1alpha1.ListDatasetsRequest{
+		Label:    []string{"text-classification"},
+		Search:   "im",
+		Sort:     "updated_at",
+		Project:  datasetHandlerTestProject,
+		Page:     2,
+		PageSize: 5,
+		Popular:  true,
+	}
+
+	t.Run("forwards filters and paginates the result", func(t *testing.T) {
+		h, svc := datasetHandlerTestSetup(t)
+		svc.EXPECT().ListDatasets(ctx, gomock.Any()).DoAndReturn(
+			func(_ context.Context, filter *model.Filter) ([]*dataset.Dataset, int64, error) {
+				require.Equal(t, []string{"text-classification"}, filter.Label)
+				require.Equal(t, "im", filter.Search)
+				require.Equal(t, "updated_at", filter.Sort)
+				require.Equal(t, datasetHandlerTestProject, filter.Project)
+				require.Equal(t, int32(2), filter.Page)
+				require.Equal(t, int32(5), filter.PageSize)
+				require.NotNil(t, filter.Popular)
+				require.True(t, *filter.Popular)
+				return []*dataset.Dataset{datasetHandlerTestDataset()}, 12, nil
+			})
+
+		got, err := h.ListDatasets(ctx, request)
+		require.NoError(t, err)
+		requireProtoEqual(t, &v1alpha1.ListDatasetsResponse{
+			Items:      []*v1alpha1.Dataset{datasetHandlerTestDatasetProto()},
+			Pagination: &v1alpha1.Pagination{Total: 12, Page: 2, PageSize: 5, Pages: 3},
+		}, got)
+	})
+
+	t.Run("passes a false popular flag through", func(t *testing.T) {
+		h, svc := datasetHandlerTestSetup(t)
+		svc.EXPECT().ListDatasets(ctx, gomock.Any()).DoAndReturn(
+			func(_ context.Context, filter *model.Filter) ([]*dataset.Dataset, int64, error) {
+				require.NotNil(t, filter.Popular)
+				require.False(t, *filter.Popular)
+				return nil, 0, nil
+			})
+
+		got, err := h.ListDatasets(ctx, &v1alpha1.ListDatasetsRequest{Page: 1, PageSize: 20})
+		require.NoError(t, err)
+		require.Empty(t, got.Items)
+		requireProtoEqual(t, &v1alpha1.Pagination{Total: 0, Page: 1, PageSize: 20, Pages: 0}, got.Pagination)
+	})
+
+	t.Run("hides service errors", func(t *testing.T) {
+		h, svc := datasetHandlerTestSetup(t)
+		svc.EXPECT().ListDatasets(ctx, gomock.Any()).Return(nil, int64(0), errors.New("database is locked"))
+
+		got, err := h.ListDatasets(ctx, request)
+		require.Nil(t, got)
+		requireHandlerTestStatus(t, err, codes.Internal, "failed to list datasets")
+	})
+}
+
+func TestDatasetHandlerRejectsInvalidRequests(t *testing.T) {
+	cases := []struct {
+		name  string
+		field string
+		call  func(context.Context, *DatasetHandler) error
+	}{
+		{
+			name:  "GetDataset without project",
+			field: "GetDatasetRequest.Project",
+			call: func(ctx context.Context, h *DatasetHandler) error {
+				_, err := h.GetDataset(ctx, &v1alpha1.GetDatasetRequest{Name: datasetHandlerTestName})
+				return err
+			},
+		},
+		{
+			name:  "GetDataset with reserved name",
+			field: "GetDatasetRequest.Name",
+			call: func(ctx context.Context, h *DatasetHandler) error {
+				_, err := h.GetDataset(ctx, &v1alpha1.GetDatasetRequest{Project: datasetHandlerTestProject, Name: "datasets"})
+				return err
+			},
+		},
+		{
+			name:  "CreateDataset without name",
+			field: "CreateDatasetRequest.Name",
+			call: func(ctx context.Context, h *DatasetHandler) error {
+				_, err := h.CreateDataset(ctx, &v1alpha1.CreateDatasetRequest{Project: datasetHandlerTestProject})
+				return err
+			},
+		},
+		{
+			name:  "CreateDataset with reserved name",
+			field: "CreateDatasetRequest.Name",
+			call: func(ctx context.Context, h *DatasetHandler) error {
+				_, err := h.CreateDataset(ctx, &v1alpha1.CreateDatasetRequest{Project: datasetHandlerTestProject, Name: "models"})
+				return err
+			},
+		},
+		{
+			name:  "DeleteDataset with reserved name",
+			field: "DeleteDatasetRequest.Name",
+			call: func(ctx context.Context, h *DatasetHandler) error {
+				_, err := h.DeleteDataset(ctx, &v1alpha1.DeleteDatasetRequest{Project: datasetHandlerTestProject, Name: "resolve"})
+				return err
+			},
+		},
+		{
+			name:  "ListDatasetRevisions without project",
+			field: "ListDatasetRevisionsRequest.Project",
+			call: func(ctx context.Context, h *DatasetHandler) error {
+				_, err := h.ListDatasetRevisions(ctx, &v1alpha1.ListDatasetRevisionsRequest{Name: datasetHandlerTestName})
+				return err
+			},
+		},
+		{
+			name:  "ListDatasetCommits without name",
+			field: "ListDatasetCommitsRequest.Name",
+			call: func(ctx context.Context, h *DatasetHandler) error {
+				_, err := h.ListDatasetCommits(ctx, &v1alpha1.ListDatasetCommitsRequest{Project: datasetHandlerTestProject})
+				return err
+			},
+		},
+		{
+			name:  "GetDatasetCommit without commit id",
+			field: "GetDatasetCommitRequest.Id",
+			call: func(ctx context.Context, h *DatasetHandler) error {
+				_, err := h.GetDatasetCommit(ctx, &v1alpha1.GetDatasetCommitRequest{Project: datasetHandlerTestProject, Name: datasetHandlerTestName})
+				return err
+			},
+		},
+		{
+			name:  "GetDatasetTree with reserved name",
+			field: "GetDatasetTreeRequest.Name",
