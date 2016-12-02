@@ -75,3 +75,80 @@ func buildUserListQuery(db *gorm.DB, search, excludeProject string) *gorm.DB {
 	return query
 }
 
+func (u *UserRepo) ListUsers(ctx context.Context, page, pageSize int, search, excludeProject string) (us []*user.User, total int64, err error) {
+	query := buildUserListQuery(u.db.WithContext(ctx), search, excludeProject)
+	if err = query.Count(&total).Error; err != nil {
+		return
+	}
+
+	if utils.IsFullPageData(page, pageSize) {
+		err = query.Order("username ASC").Find(&us).Error
+	} else {
+		offset := (page - 1) * pageSize
+		err = query.Order("username ASC").Offset(offset).Limit(pageSize).Find(&us).Error
+	}
+	return
+}
+
+func (u *UserRepo) DeleteUser(ctx context.Context, id int) error {
+	return u.db.WithContext(ctx).Where("id = ?", id).Delete(&user.User{}).Error
+}
+
+func (u *UserRepo) UpdateUserPassword(ctx context.Context, id int, password string) error {
+	user, err := u.GetUser(ctx, id)
+	if err != nil {
+		return err
+	}
+	password, err = crypto.HashPassword(password)
+	if err != nil {
+		return err
+	}
+	user.Password = password
+	return u.db.WithContext(ctx).Model(user).Where("id = ?", user.ID).Updates(map[string]interface{}{
+		"password":        password,
+		"session_version": gorm.Expr("session_version + 1"),
+	}).Error
+}
+
+func (u *UserRepo) SetUserSysAdmin(ctx context.Context, userID int, isAdmin bool) error {
+	if isAdmin {
+		isAdminAlready, err := u.IsUserSysAdmin(ctx, userID)
+		if err != nil {
+			return err
+		}
+		if isAdminAlready {
+			return nil
+		}
+
+		member := &project.ProjectMember{
+			MemberID:   userID,
+			MemberType: project.MemberTypeUser,
+			RoleID:     role.PlatformRoleAdmin,
+			ProjectID:  nil,
+		}
+		return u.db.WithContext(ctx).Create(member).Error
+	} else {
+		return u.db.WithContext(ctx).
+			Where("member_id = ? AND member_type = ? AND project_id IS NULL AND role_id = ?", userID, project.MemberTypeUser, role.PlatformRoleAdmin).
+			Delete(&project.ProjectMember{}).Error
+	}
+}
+
+func (u *UserRepo) IsUserSysAdmin(ctx context.Context, userID int) (bool, error) {
+	var count int64
+	err := u.db.WithContext(ctx).
+		Model(&project.ProjectMember{}).
+		Where("member_id = ? AND member_type = ? AND project_id IS NULL AND role_id = ?", userID, project.MemberTypeUser, role.PlatformRoleAdmin).
+		Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+func (u *UserRepo) GetUserAllProjectRoles(ctx context.Context, userID int) (map[string]int, error) {
+	type projectRole struct {
+		ProjectName string
+		RoleID      int
+	}
+

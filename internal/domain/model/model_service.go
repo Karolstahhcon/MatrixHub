@@ -90,3 +90,189 @@ func (s *ModelService) CreateModel(ctx context.Context, project, name string) (*
 		return nil, err
 	}
 
+	if _, exists, err := s.findModel(ctx, project, name); err != nil {
+		return nil, err
+	} else if exists {
+		return nil, errors.New("model already exists")
+	}
+
+	repositoryExists, err := s.gitRepo.RepositoryExists(ctx, "models", project, name)
+	if err != nil {
+		return nil, err
+	}
+	if !repositoryExists {
+		if err := s.gitRepo.CreateRepository(ctx, "models", project, name); err != nil {
+			return nil, err
+		}
+	}
+
+	return s.createModelRecord(ctx, project, name)
+}
+
+// GetModel retrieves a model by project and name.
+func (s *ModelService) GetModel(ctx context.Context, project, name string) (*Model, error) {
+	if project == "" {
+		return nil, errors.New("invalid project")
+	}
+	if name == "" {
+		return nil, errors.New("invalid input")
+	}
+
+	mod, err := s.modelRepo.GetByProjectAndName(ctx, project, name)
+	if err != nil {
+		return nil, err
+	}
+
+	return mod, nil
+}
+
+// ListModels returns a paginated list of models with optional filtering.
+func (s *ModelService) ListModels(ctx context.Context, filter *Filter) ([]*Model, int64, error) {
+	if filter == nil {
+		filter = &Filter{
+			Page:     1,
+			PageSize: 20,
+		}
+	}
+
+	return s.modelRepo.List(ctx, filter)
+}
+
+// DeleteModel deletes a model by project and name.
+func (s *ModelService) DeleteModel(ctx context.Context, project, name string) error {
+	if project == "" {
+		return errors.New("invalid project")
+	}
+	if name == "" {
+		return errors.New("invalid input")
+	}
+
+	// First delete the Git repository, then delete the model record in the database.
+	if err := s.gitRepo.DeleteRepository(ctx, "models", project, name); err != nil {
+		return err
+	}
+
+	return s.modelRepo.Delete(ctx, project, name)
+}
+
+// ListModelTaskLabels returns all task labels for models.
+func (s *ModelService) ListModelTaskLabels(ctx context.Context) ([]*Label, error) {
+	return s.labelRepo.ListByCategoryAndScope(ctx, "task", "model")
+}
+
+// ListModelFrameLabels returns all framework labels for models.
+func (s *ModelService) ListModelFrameLabels(ctx context.Context) ([]*Label, error) {
+	return s.labelRepo.ListByCategoryAndScope(ctx, "library", "model")
+}
+
+// ListModelRevisions returns all branches and tags for a model.
+func (s *ModelService) ListModelRevisions(ctx context.Context, project, name string) (*git.Revisions, error) {
+	if project == "" {
+		return nil, errors.New("invalid project")
+	}
+	if name == "" {
+		return nil, errors.New("invalid input")
+	}
+
+	// Check if model exists in database first
+	_, err := s.modelRepo.GetByProjectAndName(ctx, project, name)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.gitRepo.ListRevisions(ctx, "models", project, name)
+}
+
+// ListModelCommits returns the commit history for a model.
+func (s *ModelService) ListModelCommits(ctx context.Context, project, name, revision string, page, pageSize int) ([]*git.Commit, int64, error) {
+	if project == "" {
+		return nil, 0, errors.New("invalid project")
+	}
+	if name == "" {
+		return nil, 0, errors.New("invalid input")
+	}
+
+	// Check if model exists in database first
+	_, err := s.modelRepo.GetByProjectAndName(ctx, project, name)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Set default values
+	if page <= 0 {
+		page = 1
+
+	}
+	if pageSize <= 0 {
+		pageSize = 20
+	}
+
+	return s.gitRepo.ListCommits(ctx, "models", project, name, revision, page, pageSize)
+}
+
+// GetModelCommit returns a specific commit by ID.
+func (s *ModelService) GetModelCommit(ctx context.Context, project, name, commitID string) (*git.Commit, error) {
+	if project == "" {
+		return nil, errors.New("invalid project")
+	}
+	if name == "" {
+		return nil, errors.New("invalid input")
+	}
+	if commitID == "" {
+		return nil, errors.New("invalid input")
+	}
+
+	// Check if model exists in database first
+	_, err := s.modelRepo.GetByProjectAndName(ctx, project, name)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.gitRepo.GetCommit(ctx, "models", project, name, commitID)
+}
+
+// CreateModelCommit creates a new model commit.
+func (s *ModelService) CreateModelCommit(ctx context.Context, project, name, revision string, commit *git.Commit, ops []git.CommitOperation) (string, error) {
+	prj, err := s.projectRepo.GetProjectByName(ctx, project)
+	if err != nil {
+		return "", err
+	}
+	if prj.HasProxy() {
+		return "", fmt.Errorf("it is not allowed to upload file to model %s/%s for proxy project  ", project, name)
+	}
+
+	// create model if not exist
+	mod, _ := s.modelRepo.GetByProjectAndName(ctx, project, name)
+	if mod == nil {
+		mod = &Model{
+			Name:        name,
+			ProjectID:   prj.ID,
+			ProjectName: project,
+		}
+		if _, err = s.modelRepo.Create(ctx, mod); err != nil {
+			return "", err
+		}
+	}
+
+	commitHash, err := s.gitRepo.CreateCommit(ctx, "models", project, name, revision, commit, ops)
+	if err != nil {
+		return "", err
+	}
+	if err = s.SyncMetadata(ctx, project, name); err != nil {
+		log.Errorf("failed to sync metadata for %s/%s: %v", project, name, err)
+	}
+
+	return commitHash, nil
+}
+
+// GetModelTree returns the file tree at a specific revision and path.
+func (s *ModelService) GetModelTree(ctx context.Context, project, name, revision, path string) ([]*git.TreeEntry, error) {
+	if project == "" {
+		return nil, errors.New("invalid project")
+	}
+	if name == "" {
+		return nil, errors.New("invalid input")
+	}
+
+	// Check if model exists in database first
+	_, err := s.modelRepo.GetByProjectAndName(ctx, project, name)
