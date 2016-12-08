@@ -3,3 +3,9 @@
   publish = "build"
   base = "website"
   [build.environment]
+    NODE_VERSION = "20"
+
+[context.deploy-preview]
+  command = "npm ci && npm run build"
+  [context.deploy-preview.environment]
+    NODE_VERSION = "20"
