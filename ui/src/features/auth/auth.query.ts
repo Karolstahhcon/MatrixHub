@@ -12,3 +12,18 @@ export const authKeys = {
 // -- Query options factory --
 export function currentUserQueryOptions() {
   return queryOptions({
+    queryKey: authKeys.currentUser(),
+    queryFn: () => CurrentUser.GetCurrentUser({}),
+  })
+}
+
+export function projectRolesQueryOptions() {
+  return queryOptions({
+    queryKey: authKeys.projectRoles(),
+    queryFn: () => CurrentUser.GetProjectRoles({}),
+  })
+}
+
+// -- Custom hooks --
+export function useCurrentUser() {
+  return useQuery(currentUserQueryOptions())
