@@ -12,10 +12,3 @@ service Login {
       post: "/api/v1alpha1/login"
       body: "*"
     };
-  }
-
-  rpc Logout(LogoutRequest) returns (LogoutResponse) {
-    option (google.api.http) = {
-      post: "/api/v1alpha1/logout"
-      body: "*"
-    };
