@@ -18,3 +18,44 @@ export function normalizeLanguage(
   if (!value) {
     return null
   }
+
+  const normalized = value.toLowerCase().split('-')[0]
+
+  if (SUPPORTED_LANGUAGES.includes(normalized as SupportedLanguage)) {
+    return normalized as SupportedLanguage
+  }
+
+  return null
+}
+
+i18n
+  .use(LanguageDetector)
+  .use(initReactI18next)
+  .init({
+    fallbackLng: DEFAULT_LANGUAGE,
+    supportedLngs: [...SUPPORTED_LANGUAGES],
+    load: 'languageOnly',
+    interpolation: {
+      escapeValue: false,
+    },
+    detection: {
+      order: ['localStorage', 'navigator'],
+      caches: [],
+      lookupLocalStorage: LANGUAGE_STORAGE_KEY,
+    },
+  })
+
+// Keep the document language in sync so `:lang()` / `html[lang]` selectors can
+// adapt layout to the active locale (e.g. inline label column widths).
+function setDocumentLanguage(lang: SupportedLanguage) {
+  if (typeof document === 'undefined') {
+    return
+  }
+
+  document.documentElement.lang = lang
+}
+
+const initialLanguage = normalizeLanguage(i18n.language) ?? DEFAULT_LANGUAGE
+
+setDayjsLocale(initialLanguage)
+setDocumentLanguage(initialLanguage)
