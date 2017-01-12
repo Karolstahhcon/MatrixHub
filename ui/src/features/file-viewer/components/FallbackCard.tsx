@@ -1,0 +1,26 @@
+import {
+  Box,
+  Stack,
+  Text,
+} from '@mantine/core'
+import { useTranslation } from 'react-i18next'
+
+import { formatStorageSize } from '@/shared/utils/format'
+
+import type { FileViewerFile } from '../types'
+
+interface FallbackCardProps {
+  file: FileViewerFile
+}
+
+export function FallbackCard({ file }: FallbackCardProps) {
+  const { t } = useTranslation()
+
+  return (
+    <Box px="md" py="lg">
+      <Stack gap="sm">
+        {/* Notice */}
+        <Text size="sm" c="dimmed">
+          {t('file-viewer.binaryFileNotice')}
+        </Text>
+
