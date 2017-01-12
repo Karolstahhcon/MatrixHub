@@ -8,3 +8,13 @@ import {
 import { ProjectMembersPage } from '@/features/projects/members/pages/ProjectMembersPage'
 
 // -- Route definition --
+
+export const Route = createFileRoute(
+  '/(auth)/(app)/projects/$projectId/members/',
+)({
+  validateSearch: membersSearchSchema,
+  search: {
+    middlewares: [stripSearchParams(membersSearchDefaults)],
+  },
+  loaderDeps: ({ search }) => search,
+  loader: ({

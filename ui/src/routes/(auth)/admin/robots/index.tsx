@@ -22,15 +22,3 @@ const robotsSearchSchema = z.object({
   query: z.string().trim().optional().default(defaults.query),
   page: z.coerce.number().int().positive().optional().default(defaults.page),
   pageSize: z.coerce.number().int().positive().optional().default(defaults.pageSize),
-})
-
-export type RobotsSearch = z.infer<typeof robotsSearchSchema>
-
-export const Route = createFileRoute('/(auth)/admin/robots/')({
-  validateSearch: robotsSearchSchema,
-  search: {
-    middlewares: [stripSearchParams(defaults)],
-  },
-  loaderDeps: ({ search }) => search,
-  loader: ({
-    context,
