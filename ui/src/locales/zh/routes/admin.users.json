@@ -1,0 +1,50 @@
+{
+  "title": "用户管理",
+  "searchPlaceholder": "输入用户名搜索",
+  "toolbar": {
+    "create": "创建用户"
+  },
+  "form": {
+    "username": "用户名",
+    "password": "密码",
+    "confirmPassword": "确认密码",
+    "isAdmin": "设为管理员"
+  },
+  "table": {
+    "username": "用户名",
+    "admin": "平台管理员",
+    "source": "来源",
+    "createdAt": "创建时间",
+    "actions": "操作",
+    "empty": "暂无用户数据"
+  },
+  "boolean": {
+    "yes": "是",
+    "no": "否"
+  },
+  "source": {
+    "local": "内置"
+  },
+  "actions": {
+    "setAdmin": "设为管理员",
+    "revokeAdmin": "取消管理权限",
+    "resetPassword": "重置密码",
+    "delete": "删除"
+  },
+  "createModal": {
+    "title": "创建用户"
+  },
+  "resetPasswordModal": {
+    "title": "重置密码",
+    "submit": "重置密码"
+  },
+  "deleteModal": {
+    "title": "删除用户",
+    "description": "确认删除 {{username}} 吗？此操作不可撤销。",
+    "submit": "删除"
+  },
+  "batchDeleteModal": {
+    "title": "批量删除用户",
+    "description": "确定要删除 {{usernames}} 等 {{count}} 个用户吗？",
+    "submit": "删除 {{count}} 个用户"
+  },
