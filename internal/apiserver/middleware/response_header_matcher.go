@@ -16,12 +16,3 @@ package middleware
 
 import (
 	"context"
-	"fmt"
-	"net/http"
-	"slices"
-	"strings"
-
-	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"google.golang.org/protobuf/proto"
-)
-
