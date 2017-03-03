@@ -65,3 +65,25 @@ extend google.protobuf.ServiceOptions {
 //
 // If an element and all its parents have no visibility label, its visibility
 // is unconditionally granted.
+//
+// Example:
+//
+//     visibility:
+//       rules:
+//       - selector: google.calendar.Calendar.EnhancedSearch
+//         restriction: PREVIEW
+//       - selector: google.calendar.Calendar.Delegate
+//         restriction: INTERNAL
+//
+// Here, all methods are publicly visible except for the restricted methods
+// EnhancedSearch and Delegate.
+message Visibility {
+  // A list of visibility rules that apply to individual API elements.
+  //
+  // **NOTE:** All service configuration rules follow "last one wins" order.
+  repeated VisibilityRule rules = 1;
+}
+
+// A visibility rule provides visibility configuration for an individual API
+// element.
+message VisibilityRule {

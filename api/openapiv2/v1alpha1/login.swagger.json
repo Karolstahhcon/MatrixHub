@@ -32,3 +32,71 @@
               "$ref": "#/definitions/rpcStatus"
             }
           }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1alpha1LoginRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Login"
+        ]
+      }
+    },
+    "/api/v1alpha1/logout": {
+      "post": {
+        "operationId": "Login_Logout",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1LogoutResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1alpha1LogoutRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Login"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
