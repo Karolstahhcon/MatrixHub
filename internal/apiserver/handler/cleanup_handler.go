@@ -62,3 +62,24 @@ func (h *CleanupHandler) PreviewCleanup(ctx context.Context, req *v1alpha1.Previ
 	}
 
 	lfs := make([]*v1alpha1.OrphanedLFS, len(preview.OrphanedLFSObjects))
+	for i, o := range preview.OrphanedLFSObjects {
+		lfs[i] = &v1alpha1.OrphanedLFS{
+			Oid:       o.OID,
+			SizeBytes: o.SizeBytes,
+		}
+	}
+
+	return &v1alpha1.CleanupPreview{
+		OrphanedRepos:         repos,
+		OrphanedLfsObjects:    lfs,
+		TotalReclaimableBytes: preview.TotalReclaimable,
+	}, nil
+}
+
+// ExecuteCleanup executes cleanup based on options.
+func (h *CleanupHandler) ExecuteCleanup(ctx context.Context, req *v1alpha1.ExecuteCleanupRequest) (*v1alpha1.CleanupResult, error) {
+	result, err := h.cleanupService.ExecuteCleanup(ctx, req.CleanOrphanedRepos, req.CleanOrphanedLfs, req.DryRun)
+	if err != nil {
+		return nil, err
+	}
+
