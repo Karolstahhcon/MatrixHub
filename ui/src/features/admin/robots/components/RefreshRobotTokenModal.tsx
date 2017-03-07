@@ -39,3 +39,86 @@ function getRefreshRobotTokenFieldIssues(
 ) {
   const result = refreshRobotTokenSchema.safeParse(values)
 
+  if (result.success) {
+    return undefined
+  }
+
+  const issues = result.error.issues.filter(issue => issue.path[0] === fieldName)
+
+  return issues.length > 0
+    ? issues as StandardSchemaV1Issue[]
+    : undefined
+}
+
+export function RefreshRobotTokenModal({
+  opened,
+  robot,
+  onClose,
+  onSuccess,
+}: RefreshRobotTokenModalProps) {
+  const { t } = useTranslation()
+  const mutation = useMutation(refreshRobotAccountTokenMutationOptions())
+  const form = useForm({
+    defaultValues: { ...refreshRobotTokenFormDefaults },
+    validators: {
+      onSubmit: refreshRobotTokenSchema,
+    },
+    onSubmit: async ({ value }) => {
+      const response = await mutation.mutateAsync({
+        id: robot.id,
+        autoGenerate: value.autoGenerate,
+        token: value.autoGenerate ? undefined : value.token.trim(),
+      })
+
+      onClose()
+      onSuccess(response.token ?? '')
+    },
+  })
+
+  const resetForm = useEffectEvent(() => {
+    if (opened) {
+      form.reset()
+      mutation.reset()
+    }
+  })
+
+  useEffect(() => {
+    resetForm()
+  }, [opened])
+
+  const handleAutoGenerateChange = (
+    autoGenerate: boolean,
+    onChange: (value: boolean) => void,
+  ) => {
+    onChange(autoGenerate)
+
+    if (autoGenerate) {
+      form.setFieldValue('token', refreshRobotTokenFormDefaults.token)
+      form.setFieldValue('confirmToken', refreshRobotTokenFormDefaults.confirmToken)
+    }
+  }
+
+  return (
+    <ModalWrapper
+      size="md"
+      title={t('routes.admin.robots.refreshTokenModal.title', {
+        name: robot.name,
+      })}
+      closeOnClickOutside={false}
+      opened={opened}
+      onClose={onClose}
+      confirmLoading={mutation.isPending || form.state.isSubmitting}
+      onConfirm={form.handleSubmit}
+    >
+      <Stack gap="md">
+        <Alert
+          lh={rem(20)}
+          icon={<IconInfoCircle size={20} />}
+        >
+          {t('routes.admin.robots.refreshTokenModal.description')}
+        </Alert>
+
+        <form.Field name="autoGenerate">
+          {field => (
+            <Switch
+              size="sm"
