@@ -32,3 +32,37 @@ import (
 	projectmocks "github.com/matrixhub-ai/matrixhub/internal/domain/project/mocks"
 	"github.com/matrixhub-ai/matrixhub/internal/infra/config"
 	"github.com/matrixhub-ai/matrixhub/internal/repo"
+)
+
+func TestInitGitStorageDoesNotRegisterMetadataPostReceiveHook(t *testing.T) {
+	server := &APIServer{
+		config: &config.Config{DataDir: t.TempDir()},
+	}
+	server.initMirrorHooks()
+	server.initGitStorage()
+
+	postReceiveHook := reflect.ValueOf(server.gitStorage.sharedMirror).
+		Elem().FieldByName("postReceiveHookFunc")
+	if !postReceiveHook.IsNil() {
+		t.Fatal("mirror must not register the metadata post-receive hook")
+	}
+}
+
+func TestInitPresetsSkipsDisabledPresets(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	disabled := false
+	server := &APIServer{
+		config: &config.Config{Presets: config.PresetsConfig{Enabled: &disabled}},
+		repos: &repo.Repos{
+			Preset:  presetmocks.NewMockIPresetRepo(ctrl),
+			Project: projectmocks.NewMockIProjectRepo(ctrl),
+			Model:   modelmocks.NewMockIModelRepo(ctrl),
+			Git:     gitmocks.NewMockIGitRepo(ctrl),
+		},
+	}
+
+	// No expectations are registered, so any repository access fails the test.
+	server.initPresets()
+}
+
+func TestInitPresetsWaitsForRepositoryReconciliation(t *testing.T) {
