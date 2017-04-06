@@ -49,28 +49,3 @@ export function ModelBlobPage() {
     )
   } else if (!file) {
     body = (
-      <Alert variant="light" color="yellow">No file found.</Alert>
-    )
-  } else {
-    body = (
-      <Stack gap="md">
-        <FileViewer
-          file={file}
-          content={content}
-          loading={isContentLoading}
-          error={contentError}
-        />
-      </Stack>
-    )
-  }
-
-  return (
-    <Box pt="sm">
-      <Flex
-        justify="space-between"
-        align="center"
-        mb="md"
-        wrap="nowrap"
-      >
-        <Group gap="md" wrap="nowrap">
-          <ModelRevisionSelect
