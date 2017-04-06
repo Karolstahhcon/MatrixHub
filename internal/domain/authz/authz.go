@@ -16,3 +16,9 @@ package authz
 
 import (
 	"context"
+
+	"github.com/matrixhub-ai/matrixhub/internal/domain/role"
+)
+
+// IAuthzProjectRepo project repository interface required for permission verification
+type IAuthzProjectRepo interface {
