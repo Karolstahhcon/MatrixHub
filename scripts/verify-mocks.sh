@@ -4,3 +4,9 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+DIR="$(dirname "${BASH_SOURCE[0]}")"
+ROOT_DIR="$(realpath "${DIR}/..")"
+
+cd "${ROOT_DIR}"
+
+go generate ./...
