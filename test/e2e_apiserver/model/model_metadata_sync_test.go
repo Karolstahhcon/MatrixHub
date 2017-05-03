@@ -142,3 +142,292 @@ package model_test
 // 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // #nosec G402
 // 		},
 // 	}
+// 	resp, err := client.Do(req)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("commit request failed: %w", err)
+// 	}
+// 	defer resp.Body.Close()
+//
+// 	body, err := io.ReadAll(resp.Body)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("failed to read response: %w", err)
+// 	}
+//
+// 	if resp.StatusCode >= 300 {
+// 		return nil, fmt.Errorf("commit failed: HTTP %d: %s", resp.StatusCode, string(body))
+// 	}
+//
+// 	var commitResp commitResponse
+// 	if err := json.Unmarshal(body, &commitResp); err != nil {
+// 		return nil, fmt.Errorf("failed to parse response: %w (body: %s)", err, string(body))
+// 	}
+//
+// 	return &commitResp, nil
+// }
+//
+// // extractLabelNames extracts label name list from model labels.
+// func extractLabelNames(labels []v1alpha1model.MatrixhubV1alpha1Label) []string {
+// 	names := make([]string, len(labels))
+// 	for i, l := range labels {
+// 		names[i] = l.Name
+// 	}
+// 	return names
+// }
+//
+// var _ = Describe("Model Metadata Sync", Label("model", "metadata-sync"), func() {
+// 	var (
+// 		ctx         context.Context
+// 		modelsApi   *v1alpha1model.ModelsApiService
+// 		projectsApi *v1alpha1project.ProjectsApiService
+// 		projectName string
+// 		modelName   string
+// 		baseURL     string
+// 	)
+//
+// 	BeforeEach(func() {
+// 		ctx = context.Background()
+// 		modelsApi = tools.GetV1alpha1ModelsApi()
+// 		projectsApi = tools.GetV1alpha1ProjectsApi()
+// 		baseURL = tools.GetBaseURL()
+//
+// 		// Create project
+// 		projectName = tools.GenerateTestProjectName("sync")
+// 		_, _, err := projectsApi.ProjectsCreateProject(ctx, v1alpha1project.V1alpha1CreateProjectRequest{
+// 			Name: projectName,
+// 		})
+// 		Expect(err).NotTo(HaveOccurred())
+//
+// 		// Create model
+// 		modelName = tools.GenerateTestModelName("sync")
+// 		_, _, err = modelsApi.ModelsCreateModel(ctx, v1alpha1model.V1alpha1CreateModelRequest{
+// 			Project: projectName,
+// 			Name:    modelName,
+// 		})
+// 		Expect(err).NotTo(HaveOccurred())
+// 	})
+//
+// 	AfterEach(func() {
+// 		_, _, _ = modelsApi.ModelsDeleteModel(ctx, projectName, modelName)
+// 		_, _, _ = projectsApi.ProjectsDeleteProject(ctx, projectName)
+// 	})
+//
+// 	// ═══════════════════════════════════════════════════════════
+// 	// HF Commit API basic
+// 	// ═══════════════════════════════════════════════════════════
+// 	Context("HF Commit API", func() {
+// 		It("should commit files via NDJSON API", Label("M00039"), func() {
+// 			payload := buildNDJSON("add README.md", map[string]string{
+// 				"README.md": "# Hello\nThis is a test.",
+// 			})
+//
+// 			commitResp, err := hfCommit(baseURL, projectName, modelName, "main", payload)
+// 			Expect(err).NotTo(HaveOccurred())
+// 			Expect(commitResp.CommitOid).NotTo(BeEmpty())
+//
+// 			GinkgoWriter.Printf("Commit OID: %s\n", commitResp.CommitOid)
+// 		})
+// 	})
+//
+// 	// ═══════════════════════════════════════════════════════════
+// 	// Full metadata sync + all model API verification
+// 	// ═══════════════════════════════════════════════════════════
+// 	Context("Metadata sync end-to-end with all model APIs", func() {
+// 		It("should sync all metadata and reflect in every model API", Label("M00040"), func() {
+// 			By("recording initial model state")
+// 			initialModel, _, err := modelsApi.ModelsGetModel(ctx, projectName, modelName)
+// 			Expect(err).NotTo(HaveOccurred())
+// 			initialReadme := initialModel.ReadmeContent
+// 			Expect(len(initialModel.Labels)).To(Equal(0), "new model should have no labels")
+//
+// 			By("committing README.md + config.json + safetensors index via HF commit API")
+// 			payload := buildNDJSON("add model metadata files", map[string]string{
+// 				"README.md":                    testReadmeContent,
+// 				"config.json":                  testConfigJSON,
+// 				"model.safetensors.index.json": testSafetensorsIndexJSON,
+// 			})
+//
+// 			commitResp, err := hfCommit(baseURL, projectName, modelName, "main", payload)
+// 			Expect(err).NotTo(HaveOccurred())
+// 			Expect(commitResp.CommitOid).NotTo(BeEmpty())
+// 			commitOid := commitResp.CommitOid
+// 			GinkgoWriter.Printf("Commit OID: %s\n", commitOid)
+//
+// 			By("waiting for postReceiveHook to complete metadata sync")
+// 			time.Sleep(3 * time.Second)
+//
+// 			// ── GetModel: verify metadata fields ───────────────
+// 			By("verifying GetModel returns synced metadata")
+// 			updatedModel, _, err := modelsApi.ModelsGetModel(ctx, projectName, modelName)
+// 			Expect(err).NotTo(HaveOccurred())
+//
+// 			// readmeContent should be updated
+// 			Expect(updatedModel.ReadmeContent).NotTo(Equal(initialReadme))
+// 			Expect(updatedModel.ReadmeContent).To(ContainSubstring("# Test Model"))
+// 			GinkgoWriter.Printf("GetModel: readmeContent length=%d\n", len(updatedModel.ReadmeContent))
+//
+// 			// parameterCount: 26000000000 / 2 = 13000000000
+// 			Expect(updatedModel.ParameterCount).To(Equal("13000000000"))
+// 			GinkgoWriter.Printf("GetModel: parameterCount=%s\n", updatedModel.ParameterCount)
+//
+// 			// labels should be populated from front matter + config
+// 			Expect(len(updatedModel.Labels)).To(BeNumerically(">", 0))
+// 			labelNames := extractLabelNames(updatedModel.Labels)
+// 			GinkgoWriter.Printf("GetModel: labels=%v\n", labelNames)
+//
+// 			Expect(labelNames).To(ContainElement("text-generation")) // pipeline_tag -> task
+// 			Expect(labelNames).To(ContainElement("transformers"))    // library_name -> library
+// 			Expect(labelNames).To(ContainElement("apache-2.0"))      // license
+// 			Expect(labelNames).To(ContainElement("llama"))           // model_type from config.json
+//
+// 			// ── ListModels: verify synced model appears with labels ─
+// 			By("verifying ListModels returns the model with labels")
+// 			listResp, _, err := modelsApi.ModelsListModels(ctx, &v1alpha1model.ModelsApiModelsListModelsOpts{
+// 				Project:  optional.NewString(projectName),
+// 				Page:     optional.NewInt32(1),
+// 				PageSize: optional.NewInt32(10),
+// 			})
+// 			Expect(err).NotTo(HaveOccurred())
+//
+// 			var listedModel *v1alpha1model.V1alpha1Model
+// 			for i, m := range listResp.Items {
+// 				if m.Name == modelName {
+// 					listedModel = &listResp.Items[i]
+// 					break
+// 				}
+// 			}
+// 			Expect(listedModel).NotTo(BeNil(), "model should appear in ListModels")
+// 			Expect(len(listedModel.Labels)).To(BeNumerically(">", 0), "ListModels should include labels")
+// 			GinkgoWriter.Printf("ListModels: found model with %d labels\n", len(listedModel.Labels))
+//
+// 			// ── GetModelTree: verify committed files visible ───
+// 			By("verifying GetModelTree shows committed files")
+// 			treeResp, _, err := modelsApi.ModelsGetModelTree(ctx, projectName, modelName, &v1alpha1model.ModelsApiModelsGetModelTreeOpts{})
+// 			Expect(err).NotTo(HaveOccurred())
+// 			Expect(len(treeResp.Items)).To(BeNumerically(">=", 3), "tree should contain at least README.md, config.json, safetensors index")
+//
+// 			treeFileNames := make([]string, len(treeResp.Items))
+// 			for i, f := range treeResp.Items {
+// 				treeFileNames[i] = f.Name
+// 			}
+// 			GinkgoWriter.Printf("GetModelTree: files=%v\n", treeFileNames)
+//
+// 			Expect(treeFileNames).To(ContainElement("README.md"))
+// 			Expect(treeFileNames).To(ContainElement("config.json"))
+// 			Expect(treeFileNames).To(ContainElement("model.safetensors.index.json"))
+//
+// 			// Verify tree item structure
+// 			for _, f := range treeResp.Items {
+// 				Expect(f.Name).NotTo(BeEmpty())
+// 				Expect(f.Path).NotTo(BeEmpty())
+// 				Expect(f.Type_).NotTo(BeNil())
+// 				Expect(*f.Type_).To(Equal(v1alpha1model.FILE_V1alpha1FileType))
+// 			}
+//
+// 			// ── GetModelBlob: verify file content accessible ───
+// 			By("verifying GetModelBlob returns committed file data")
+// 			blobResp, _, err := modelsApi.ModelsGetModelBlob(ctx, projectName, modelName, &v1alpha1model.ModelsApiModelsGetModelBlobOpts{
+// 				Path: optional.NewString("README.md"),
+// 			})
+// 			Expect(err).NotTo(HaveOccurred())
+// 			Expect(blobResp.Name).To(Equal("README.md"))
+// 			Expect(blobResp.Path).To(Equal("README.md"))
+// 			Expect(blobResp.Type_).NotTo(BeNil())
+// 			Expect(*blobResp.Type_).To(Equal(v1alpha1model.FILE_V1alpha1FileType))
+// 			GinkgoWriter.Printf("GetModelBlob: name=%s, size=%s, sha256=%s\n", blobResp.Name, blobResp.Size, blobResp.Sha256)
+//
+// 			// config.json blob
+// 			configBlob, _, err := modelsApi.ModelsGetModelBlob(ctx, projectName, modelName, &v1alpha1model.ModelsApiModelsGetModelBlobOpts{
+// 				Path: optional.NewString("config.json"),
+// 			})
+// 			Expect(err).NotTo(HaveOccurred())
+// 			Expect(configBlob.Name).To(Equal("config.json"))
+//
+// 			// ── ListModelRevisions: verify branch exists ───────
+// 			By("verifying ListModelRevisions returns main branch")
+// 			revResp, _, err := modelsApi.ModelsListModelRevisions(ctx, projectName, modelName)
+// 			Expect(err).NotTo(HaveOccurred())
+// 			Expect(revResp.Items).NotTo(BeNil())
+// 			Expect(len(revResp.Items.Branches)).To(BeNumerically(">=", 1))
+//
+// 			var hasMain bool
+// 			for _, b := range revResp.Items.Branches {
+// 				if b.Name == "main" {
+// 					hasMain = true
+// 					break
+// 				}
+// 			}
+// 			Expect(hasMain).To(BeTrue(), "should have main branch")
+// 			GinkgoWriter.Printf("ListModelRevisions: branches=%d, tags=%d\n",
+// 				len(revResp.Items.Branches), len(revResp.Items.Tags))
+//
+// 			// ── ListModelCommits: verify commit history ────────
+// 			By("verifying ListModelCommits includes the commit")
+// 			commitsResp, _, err := modelsApi.ModelsListModelCommits(ctx, projectName, modelName, &v1alpha1model.ModelsApiModelsListModelCommitsOpts{
+// 				Page:     optional.NewInt32(1),
+// 				PageSize: optional.NewInt32(10),
+// 			})
+// 			Expect(err).NotTo(HaveOccurred())
+// 			Expect(len(commitsResp.Items)).To(BeNumerically(">=", 1))
+// 			Expect(commitsResp.Pagination).NotTo(BeNil())
+//
+// 			// Find our commit
+// 			var foundCommit bool
+// 			for _, c := range commitsResp.Items {
+// 				if c.Id == commitOid {
+// 					foundCommit = true
+// 					Expect(c.Message).To(ContainSubstring("add model metadata files"))
+// 					GinkgoWriter.Printf("ListModelCommits: found commit id=%s, message=%s\n", c.Id[:8], c.Message)
+// 					break
+// 				}
+// 			}
+// 			Expect(foundCommit).To(BeTrue(), "commit should appear in ListModelCommits")
+//
+// 			// ── GetModelCommit: verify commit detail ───────────
+// 			By("verifying GetModelCommit returns commit detail")
+// 			commitDetail, _, err := modelsApi.ModelsGetModelCommit(ctx, projectName, modelName, commitOid)
+// 			Expect(err).NotTo(HaveOccurred())
+// 			Expect(commitDetail.Id).To(Equal(commitOid))
+// 			Expect(len(commitDetail.Id)).To(Equal(40), "commit ID should be 40-char SHA-1")
+// 			Expect(commitDetail.Message).To(ContainSubstring("add model metadata files"))
+// 			Expect(commitDetail.AuthorName).NotTo(BeEmpty())
+// 			Expect(commitDetail.AuthorDate).NotTo(BeEmpty())
+// 			GinkgoWriter.Printf("GetModelCommit: id=%s, author=%s\n", commitDetail.Id[:8], commitDetail.AuthorName)
+//
+// 			// ── ListModelTaskLabels: verify global task label ──
+// 			By("verifying ListModelTaskLabels includes synced task label")
+// 			taskResp, _, err := modelsApi.ModelsListModelTaskLabels(ctx)
+// 			Expect(err).NotTo(HaveOccurred())
+// 			var hasTaskLabel bool
+// 			for _, l := range taskResp.Items {
+// 				if l.Name == "text-generation" {
+// 					hasTaskLabel = true
+// 					break
+// 				}
+// 			}
+// 			Expect(hasTaskLabel).To(BeTrue(), "task labels should include 'text-generation'")
+//
+// 			// ── ListModelFrameLabels: verify global library label
+// 			By("verifying ListModelFrameLabels includes synced library label")
+// 			frameResp, _, err := modelsApi.ModelsListModelFrameLabels(ctx)
+// 			Expect(err).NotTo(HaveOccurred())
+// 			var hasFrameLabel bool
+// 			for _, l := range frameResp.Items {
+// 				if l.Name == "transformers" {
+// 					hasFrameLabel = true
+// 					break
+// 				}
+// 			}
+// 			Expect(hasFrameLabel).To(BeTrue(), "library labels should include 'transformers'")
+// 		})
+//
+// 		It("should update metadata when README is replaced with new tags", Label("M00041"), func() {
+// 			By("committing initial README with tags")
+// 			payload1 := buildNDJSON("initial README", map[string]string{
+// 				"README.md": testReadmeContent,
+// 			})
+// 			_, err := hfCommit(baseURL, projectName, modelName, "main", payload1)
+// 			Expect(err).NotTo(HaveOccurred())
+// 			time.Sleep(3 * time.Second)
+//
+// 			model1, _, err := modelsApi.ModelsGetModel(ctx, projectName, modelName)
+// 			Expect(err).NotTo(HaveOccurred())

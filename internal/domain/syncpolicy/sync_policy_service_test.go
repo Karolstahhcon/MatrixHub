@@ -42,3 +42,48 @@ func TestSyncPolicyService_CreateSyncPolicy(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("manual policy is persisted with no schedule", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		repo := mocks.NewMockISyncPolicyRepo(ctrl)
+
+		// Expect exactly one persistence call; capture the policy to assert the
+		// service applied the schedule (manual => NextRunAt cleared to 0).
+		repo.EXPECT().
+			CreateSyncPolicy(gomock.Any(), gomock.Any()).
+			DoAndReturn(func(_ context.Context, p *syncpolicy.SyncPolicy) error {
+				require.EqualValues(t, 0, p.NextRunAt)
+				return nil
+			})
+
+		svc := syncpolicy.NewSyncPolicyService(repo, nil, nil, nil, nil)
+		err := svc.CreateSyncPolicy(ctx, &syncpolicy.SyncPolicy{
+			Name:        "manual",
+			TriggerType: syncpolicy.TriggerTypeManual,
+		})
+		require.NoError(t, err)
+	})
+
+	t.Run("invalid cron is rejected before touching the repo", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		repo := mocks.NewMockISyncPolicyRepo(ctrl)
+		// No EXPECT on the repo: gomock fails the test if CreateSyncPolicy is called.
+
+		svc := syncpolicy.NewSyncPolicyService(repo, nil, nil, nil, nil)
+		err := svc.CreateSyncPolicy(ctx, &syncpolicy.SyncPolicy{
+			Name:        "bad-cron",
+			TriggerType: syncpolicy.TriggerTypeScheduled,
+			Cron:        "not-a-cron",
+		})
+		require.Error(t, err)
+	})
+}
+
+func TestSyncPolicyService_ClaimDueSyncPolicies(t *testing.T) {
+	ctx := context.Background()
+	const nowMs = int64(1_700_000_000_000)
+
+	t.Run("only CAS-claimed policies are returned as due jobs", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		repo := mocks.NewMockISyncPolicyRepo(ctrl)
+
+		due := []*syncpolicy.SyncPolicy{
+			{ID: 1, TriggerType: syncpolicy.TriggerTypeManual},
