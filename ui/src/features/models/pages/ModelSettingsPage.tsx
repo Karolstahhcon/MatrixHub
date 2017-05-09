@@ -45,27 +45,3 @@ export function ModelSettingsPage() {
     })
   }
 
-  return (
-    <Stack
-      pt={20}
-      gap={28}
-      align="flex-start"
-    >
-      <Stack
-        gap="md"
-        align="flex-start"
-      >
-        <Text fw="600" lh={rem(24)}>
-          {t('model.settings.recommended.title')}
-        </Text>
-
-        <Checkbox
-          checked={model.popular}
-          label={t('model.settings.recommended.set.label')}
-          onClick={popularModalHandlers.open}
-        />
-
-        <SetPopularModelModal
-          opened={popularModalOpened}
-          projectId={projectId}
-          modelId={modelId}
