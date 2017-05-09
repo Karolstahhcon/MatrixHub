@@ -87,3 +87,48 @@ func TestSyncPolicyService_ClaimDueSyncPolicies(t *testing.T) {
 
 		due := []*syncpolicy.SyncPolicy{
 			{ID: 1, TriggerType: syncpolicy.TriggerTypeManual},
+			{ID: 2, TriggerType: syncpolicy.TriggerTypeManual},
+		}
+		repo.EXPECT().
+			SelectDuePolicies(gomock.Any(), nowMs, gomock.Any()).
+			Return(due, nil)
+
+		// Policy 1 wins the CAS; policy 2 loses the race and must be skipped.
+		repo.EXPECT().
+			AdvanceNextRunAtCAS(gomock.Any(), 1, gomock.Any(), gomock.Any(), nowMs).
+			Return(true, nil)
+		repo.EXPECT().
+			AdvanceNextRunAtCAS(gomock.Any(), 2, gomock.Any(), gomock.Any(), nowMs).
+			Return(false, nil)
+
+		svc := syncpolicy.NewSyncPolicyService(repo, nil, nil, nil, nil)
+		jobs, err := svc.ClaimDueSyncPolicies(ctx, nowMs)
+
+		require.NoError(t, err)
+		require.Len(t, jobs, 1)
+		require.Equal(t, job.DueJob{
+			ID:          1,
+			PolicyID:    1,
+			TriggerType: int(syncpolicy.TriggerTypeManual),
+			FireAtMs:    nowMs,
+		}, jobs[0])
+	})
+
+	t.Run("repo error is propagated and stops claiming", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		repo := mocks.NewMockISyncPolicyRepo(ctrl)
+
+		wantErr := errors.New("db down")
+		repo.EXPECT().
+			SelectDuePolicies(gomock.Any(), nowMs, gomock.Any()).
+			Return(nil, wantErr)
+		// AdvanceNextRunAtCAS must not be called when selection fails.
+
+		svc := syncpolicy.NewSyncPolicyService(repo, nil, nil, nil, nil)
+		jobs, err := svc.ClaimDueSyncPolicies(ctx, nowMs)
+
+		require.ErrorIs(t, err, wantErr)
+		require.Nil(t, jobs)
+	})
+}
+
