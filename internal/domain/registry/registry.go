@@ -38,17 +38,3 @@ type Registry struct {
 }
 
 func (Registry) TableName() string {
-	return "registries"
-}
-
-// GetCredential returns the registry credential built from persistence fields; nil when none or invalid.
-func (r *Registry) GetCredential() ICredential {
-	return ParseCredentialInfo(r.CredentialType, r.AuthInfo)
-}
-
-// SetCredential sets or clears the credential; pass nil to clear.
-func (r *Registry) SetCredential(c ICredential) {
-	if c == nil {
-		r.CredentialType = ""
-		r.AuthInfo = ""
-		return
