@@ -19,3 +19,13 @@ export const Route = createFileRoute('/(auth)/admin/registries')({
     deps: { search },
   }) => {
     queryClient.prefetchQuery(registriesQueryOptions(search))
+  },
+  component: RouteComponent,
+})
+
+export const Icon = AdminRegistriesIcon
+
+function RouteComponent() {
+  const { t } = useTranslation()
+
+  return (

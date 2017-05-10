@@ -16,12 +16,3 @@ export function PathNotFound({
   rootLinkProps,
 }: PathNotFoundProps) {
   const { t } = useTranslation()
-
-  return (
-    <Center py="xl">
-      <Stack align="center" gap="sm">
-        <Text fw={500}>
-          {t('common.fileTree.pathNotFound', {
-            path,
-            branch,
-          })}
