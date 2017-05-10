@@ -21,27 +21,3 @@ export function ModelSettingsPage() {
     projectId, modelId,
   } = useParams()
 
-  const [inputValue, setInputValue] = useState('')
-  const { data: model } = useSuspenseQuery(modelQueryOptions(projectId, modelId))
-
-  const [popularModalOpened, popularModalHandlers] = useDisclosure(false)
-  const deleteMutation = useMutation(deleteModelMutationOptions())
-
-  const fullName = `${projectId}/${modelId}`
-  const isPopular = Boolean(model.popular)
-
-  const handleDelete = async () => {
-    await deleteMutation.mutateAsync({
-      project: projectId,
-      name: modelId,
-    })
-
-    // Fixme: confirm navigation to which page
-    void navigate({
-      to: '/projects/$projectId/models',
-      params: {
-        projectId,
-      },
-    })
-  }
-
