@@ -20,10 +20,3 @@ export function currentUserQueryOptions() {
 export function projectRolesQueryOptions() {
   return queryOptions({
     queryKey: authKeys.projectRoles(),
-    queryFn: () => CurrentUser.GetProjectRoles({}),
-  })
-}
-
-// -- Custom hooks --
-export function useCurrentUser() {
-  return useQuery(currentUserQueryOptions())
