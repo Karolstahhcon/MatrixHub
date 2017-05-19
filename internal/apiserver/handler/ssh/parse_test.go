@@ -27,3 +27,17 @@ func TestParseCommand(t *testing.T) {
 	tests := []struct {
 		name           string
 		command        string
+		wantService    string
+		wantRepository string
+		wantOperation  string
+		wantError      bool
+	}{
+		{name: "upload pack quoted", command: "git-upload-pack '/org/model.git'", wantService: repository.GitUploadPack, wantRepository: "/org/model.git"},
+		{name: "receive pack", command: "git-receive-pack /org/model.git", wantService: repository.GitReceivePack, wantRepository: "/org/model.git"},
+		{name: "lfs download", command: "git-lfs-authenticate '/org/model.git' download", wantService: repository.GitLFSAuthenticate, wantRepository: "/org/model.git", wantOperation: "download"},
+		{name: "lfs transfer", command: "git-lfs-transfer /org/model.git upload", wantService: repository.GitLFSTransfer, wantRepository: "/org/model.git", wantOperation: "upload"},
+		{name: "empty", wantError: true},
+		{name: "missing repository", command: "git-upload-pack", wantError: true},
+		{name: "missing lfs operation", command: "git-lfs-authenticate /org/model.git", wantError: true},
+		{name: "unsupported", command: "git-status /org/model.git", wantError: true},
+	}

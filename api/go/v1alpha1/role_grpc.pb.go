@@ -45,27 +45,3 @@ func (c *rolesClient) ListAllPermissions(ctx context.Context, in *ListAllPermiss
 		return nil, err
 	}
 	return out, nil
-}
-
-// RolesServer is the server API for Roles service.
-// All implementations should embed UnimplementedRolesServer
-// for forward compatibility.
-type RolesServer interface {
-	ListAllPermissions(context.Context, *ListAllPermissionsRequest) (*ListAllPermissionsResponse, error)
-}
-
-// UnimplementedRolesServer should be embedded to have
-// forward compatible implementations.
-//
-// NOTE: this should be embedded by value instead of pointer to avoid a nil
-// pointer dereference when methods are called.
-type UnimplementedRolesServer struct{}
-
-func (UnimplementedRolesServer) ListAllPermissions(context.Context, *ListAllPermissionsRequest) (*ListAllPermissionsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ListAllPermissions not implemented")
-}
-func (UnimplementedRolesServer) testEmbeddedByValue() {}
-
-// UnsafeRolesServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to RolesServer will
-// result in compilation errors.
