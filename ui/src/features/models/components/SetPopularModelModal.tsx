@@ -10,3 +10,15 @@ interface RecommendedModelModalProps {
   opened: boolean
   onClose: () => void
   projectId: string
+  modelId: string
+  isPopular: boolean
+}
+
+export function SetPopularModelModal({
+  opened,
+  onClose,
+  projectId,
+  modelId,
+  isPopular,
+}: RecommendedModelModalProps) {
+  const { t } = useTranslation()
