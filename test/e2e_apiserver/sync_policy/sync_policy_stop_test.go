@@ -28,33 +28,3 @@ import (
 )
 
 var _ = Describe("SyncPolicy Stop Task", Label("sync-policy"), func() {
-	It("should stop a running sync task", Label("SP0030"), func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-		defer cancel()
-
-		api := tools.GetV1alpha1SyncPolicyApi()
-
-		// 1. Create project and registry
-		project, err := tools.CreateProjectFixture(ctx, "e2e-stop-target")
-		Expect(err).NotTo(HaveOccurred())
-		defer project.Cleanup(ctx)
-
-		registry, err := tools.CreateHuggingFaceRegistryFixture(ctx, "e2e-stop", "https://hf-mirror.com")
-		Expect(err).NotTo(HaveOccurred())
-		defer registry.Cleanup(ctx)
-		Expect(registry.ID).To(BeNumerically(">", 0))
-
-		// 2. Create Manual + Pull Base Policy
-		name := fmt.Sprintf("e2e-stop-%d", time.Now().UnixNano())
-		req := v1alpha1.V1alpha1CreateSyncPolicyRequest{
-			Name:        name,
-			Description: "e2e stop test",
-			PolicyType:  ptrPolicyType(v1alpha1.PULL_BASE_V1alpha1SyncPolicyType),
-			TriggerType: ptrTriggerType(v1alpha1.MANUAL_V1alpha1TriggerType),
-			PullBasePolicy: &v1alpha1.V1alpha1PullBasePolicy{
-				SourceRegistryId:  registry.ID,
-				ResourceName:      "gpt2",
-				ResourceTypes:     []v1alpha1.V1alpha1ResourceType{v1alpha1.MODEL_V1alpha1ResourceType},
-				TargetProjectName: project.Name,
-			},
-			IsOverwrite: false,
