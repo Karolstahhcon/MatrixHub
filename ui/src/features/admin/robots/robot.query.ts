@@ -37,3 +37,22 @@ export function robotAccountDetailQueryOptions(robotId: number) {
     queryFn: () => Robots.GetRobotAccount({ id: robotId }),
   })
 }
+
+export function robotProjectsQueryOptions() {
+  return queryOptions({
+    queryKey: adminRobotKeys.projects(),
+    queryFn: async () => {
+      const response = await Projects.ListProjects({
+        page: 1,
+        pageSize: -1,
+      })
+
+      return response.projects ?? []
+    },
+  })
+}
+
+export function robotPermissionsQueryOptions() {
+  return queryOptions({
+    queryKey: adminRobotKeys.permissions(),
+    queryFn: () => Roles.ListAllPermissions({}),
