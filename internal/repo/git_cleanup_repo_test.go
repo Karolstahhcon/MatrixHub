@@ -48,3 +48,28 @@ func TestFindOrphanedLFSShardedObjects(t *testing.T) {
 		t.Fatal(err)
 	}
 	repo, err := repository.Init(ctx, repoPath, "main")
+	if err != nil {
+		t.Fatal(err)
+	}
+	pointer := "version https://git-lfs.github.com/spec/v1\noid sha256:" + referencedOID + "\nsize 1048576\n"
+	if _, err := repo.CreateCommit(ctx, "main", "add model", "Test", "test@example.com", []repository.CommitOperation{
+		{Type: repository.CommitOperationAdd, Path: "model.bin", Content: []byte(pointer)},
+	}, ""); err != nil {
+		t.Fatal(err)
+	}
+
+	gitRepo := NewGitDB(store, nil)
+	orphaned, err := gitRepo.FindOrphanedLFS(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(orphaned) != 1 {
+		oids := make([]string, 0, len(orphaned))
+		for _, object := range orphaned {
+			oids = append(oids, object.OID)
+		}
+		t.Fatalf("expected one orphaned LFS object, got %d: %q", len(orphaned), oids)
+	}
+	wantPath := filepath.Join(store.LFSDir(), orphanedOID[:2], orphanedOID[2:4], orphanedOID[4:])
+	if orphaned[0].OID != orphanedOID || orphaned[0].Path != wantPath {
+		t.Fatalf("expected OID %q at %q, got %+v", orphanedOID, wantPath, orphaned[0])
