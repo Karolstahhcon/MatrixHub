@@ -127,3 +127,261 @@ func TestSyncJobGenerator_Generate(t *testing.T) {
 			name: "push base",
 			policy: &SyncPolicy{
 				ID:                 3,
+				PolicyType:         SyncPolicyTypePush,
+				TriggerType:        TriggerTypeManual,
+				RegistryID:         4,
+				LocalProjectName:   "myproject",
+				LocalResourceName:  "mygpt2",
+				RemoteProjectName:  "hf",
+				RemoteResourceName: "gpt2",
+				ResourceTypes:      "model,dataset",
+			},
+			wantTaskCheck: func(t *testing.T, task *SyncTask) {
+				if task.SyncPolicyID != 3 {
+					t.Errorf("task.SyncPolicyID = %d, want 3", task.SyncPolicyID)
+				}
+				if task.TotalItems != 2 {
+					t.Errorf("task.TotalItems = %d, want 2", task.TotalItems)
+				}
+			},
+			wantJobsCount: 2,
+			wantJobCheck: func(t *testing.T, job *syncjob.SyncJob) {
+				if job.RemoteRegistryID != 4 {
+					t.Errorf("job.RemoteRegistryID = %d, want 4", job.RemoteRegistryID)
+				}
+				if job.SyncType != "push" {
+					t.Errorf("job.SyncType = %s, want push", job.SyncType)
+				}
+				if job.ProjectName != "myproject" {
+					t.Errorf("job.ProjectName = %s, want myproject", job.ProjectName)
+				}
+				if job.ResourceName != "mygpt2" {
+					t.Errorf("job.ResourceName = %s, want mygpt2", job.ResourceName)
+				}
+			},
+		},
+		{
+			name: "empty resource types defaults to model",
+			policy: &SyncPolicy{
+				ID:                 4,
+				PolicyType:         SyncPolicyTypePull,
+				TriggerType:        TriggerTypeManual,
+				RegistryID:         5,
+				RemoteProjectName:  "hf",
+				RemoteResourceName: "bert",
+				LocalProjectName:   "proj",
+				LocalResourceName:  "",
+				ResourceTypes:      "",
+			},
+			wantTaskCheck: func(t *testing.T, task *SyncTask) {
+				if task.TotalItems != 1 {
+					t.Errorf("task.TotalItems = %d, want 1", task.TotalItems)
+				}
+			},
+			wantJobsCount: 1,
+			wantJobCheck: func(t *testing.T, job *syncjob.SyncJob) {
+				if job.ResourceType != "model" {
+					t.Errorf("job.ResourceType = %s, want model", job.ResourceType)
+				}
+			},
+		},
+		{
+			name: "resource type 'all' expands to model and dataset",
+			policy: &SyncPolicy{
+				ID:                 5,
+				PolicyType:         SyncPolicyTypePull,
+				TriggerType:        TriggerTypeScheduled,
+				RegistryID:         6,
+				RemoteProjectName:  "hf",
+				RemoteResourceName: "llama",
+				LocalProjectName:   "proj",
+				LocalResourceName:  "",
+				ResourceTypes:      "all",
+			},
+			wantTaskCheck: func(t *testing.T, task *SyncTask) {
+				if task.TotalItems != 2 {
+					t.Errorf("task.TotalItems = %d, want 2", task.TotalItems)
+				}
+			},
+			wantJobsCount: 2,
+			wantJobCheck: func(t *testing.T, job *syncjob.SyncJob) {
+				if job.ResourceType != "model" && job.ResourceType != "dataset" {
+					t.Errorf("job.ResourceType = %s, want model or dataset", job.ResourceType)
+				}
+			},
+		},
+	}
+
+	g := NewSyncJobGenerator(nil, nil)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			task, jobs, err := g.Generate(t.Context(), tt.policy)
+			if err != nil {
+				t.Fatalf("Generate() error = %v", err)
+			}
+
+			if tt.wantTaskCheck != nil {
+				tt.wantTaskCheck(t, task)
+			}
+
+			if len(jobs) != tt.wantJobsCount {
+				t.Fatalf("got %d jobs, want %d", len(jobs), tt.wantJobsCount)
+			}
+
+			if tt.wantJobCheck != nil {
+				for _, job := range jobs {
+					tt.wantJobCheck(t, job)
+				}
+			}
+		})
+	}
+}
+
+func TestSyncJobGenerator_Generate_Wildcard(t *testing.T) {
+	mockRepo := &mockRegistryRepo{
+		registry: &registry.Registry{
+			ID:   1,
+			Type: "REGISTRY_TYPE_HUGGINGFACE",
+		},
+	}
+	mockDisc := &mockDiscovery{
+		repos: []registrydiscovery.RemoteRepository{
+			{Namespace: "google", Name: "bert-base", ResourceType: "model"},
+			{Namespace: "google", Name: "t5-base", ResourceType: "model"},
+		},
+	}
+	discoveries := map[string]registrydiscovery.Discovery{
+		registrydiscovery.ProviderHuggingFace: mockDisc,
+	}
+	g := NewSyncJobGenerator(mockRepo, discoveries)
+
+	policy := &SyncPolicy{
+		ID:                 1,
+		PolicyType:         SyncPolicyTypePull,
+		TriggerType:        TriggerTypeManual,
+		RegistryID:         1,
+		RemoteProjectName:  "google",
+		RemoteResourceName: "**",
+		LocalProjectName:   "myproject",
+		ResourceTypes:      "model",
+	}
+
+	task, jobs, err := g.Generate(t.Context(), policy)
+	if err != nil {
+		t.Fatalf("Generate() error = %v", err)
+	}
+	if task.TotalItems != 2 {
+		t.Errorf("task.TotalItems = %d, want 2", task.TotalItems)
+	}
+	if len(jobs) != 2 {
+		t.Fatalf("got %d jobs, want 2", len(jobs))
+	}
+
+	if jobs[0].RemoteResourceName != "bert-base" {
+		t.Errorf("jobs[0].RemoteResourceName = %s, want bert-base", jobs[0].RemoteResourceName)
+	}
+	if jobs[0].ResourceName != "bert-base" {
+		t.Errorf("jobs[0].ResourceName = %s, want bert-base", jobs[0].ResourceName)
+	}
+	if jobs[0].SyncType != "pull" {
+		t.Errorf("jobs[0].SyncType = %s, want pull", jobs[0].SyncType)
+	}
+	if jobs[1].RemoteResourceName != "t5-base" {
+		t.Errorf("jobs[1].RemoteResourceName = %s, want t5-base", jobs[1].RemoteResourceName)
+	}
+}
+
+// The registry loaded for the policy carries the URL operators configure when
+// they point a registry at a mirror or proxy. It must reach the discovery
+// unchanged, otherwise discovery matches against a different host than the one
+// the sync jobs subsequently pull from.
+func TestSyncJobGenerator_Generate_Wildcard_PassesRegistryToDiscovery(t *testing.T) {
+	reg := &registry.Registry{
+		ID:             1,
+		Type:           "REGISTRY_TYPE_HUGGINGFACE",
+		URL:            "https://hf-mirror.example.com",
+		CredentialType: registry.CredentialTypeBasic,
+		AuthInfo:       `{"username":"token","password":"secret"}`,
+	}
+	mockRepo := &mockRegistryRepo{registry: reg}
+	mockDisc := &mockDiscovery{
+		repos: []registrydiscovery.RemoteRepository{
+			{Namespace: "google", Name: "bert-base", ResourceType: "model"},
+		},
+	}
+	g := NewSyncJobGenerator(mockRepo, map[string]registrydiscovery.Discovery{
+		registrydiscovery.ProviderHuggingFace: mockDisc,
+	})
+
+	policy := &SyncPolicy{
+		ID:                 1,
+		PolicyType:         SyncPolicyTypePull,
+		TriggerType:        TriggerTypeManual,
+		RegistryID:         1,
+		RemoteProjectName:  "google",
+		RemoteResourceName: "*",
+		LocalProjectName:   "myproject",
+		ResourceTypes:      "model,dataset",
+	}
+
+	if _, _, err := g.Generate(t.Context(), policy); err != nil {
+		t.Fatalf("Generate() error = %v", err)
+	}
+
+	if len(mockDisc.gotRegistries) != 2 {
+		t.Fatalf("discovery called %d times, want 2 (one per resource type)", len(mockDisc.gotRegistries))
+	}
+	for i, got := range mockDisc.gotRegistries {
+		if got == nil {
+			t.Fatalf("call %d: discovery received a nil registry", i)
+		}
+		if got.URL != reg.URL {
+			t.Errorf("call %d: registry URL = %q, want %q", i, got.URL, reg.URL)
+		}
+		if got.AuthInfo != reg.AuthInfo {
+			t.Errorf("call %d: registry AuthInfo = %q, want %q", i, got.AuthInfo, reg.AuthInfo)
+		}
+	}
+
+	wantTypes := []string{"model", "dataset"}
+	for i, want := range wantTypes {
+		if mockDisc.gotFilters[i].ResourceType != want {
+			t.Errorf("call %d: filter.ResourceType = %q, want %q", i, mockDisc.gotFilters[i].ResourceType, want)
+		}
+		if mockDisc.gotFilters[i].Namespace != "google" {
+			t.Errorf("call %d: filter.Namespace = %q, want google", i, mockDisc.gotFilters[i].Namespace)
+		}
+	}
+}
+
+func TestSyncJobGenerator_Generate_PushBaseWildcard(t *testing.T) {
+	localModels := &mockLocalResourceRepo{
+		paths: []string{
+			"myproject/bert-base",
+			"other-project/ignored",
+			"myproject/t5-base",
+		},
+	}
+	g := NewSyncJobGenerator(nil, nil, LocalResourceSource{
+		ResourceType: "model",
+		Repo:         localModels,
+	})
+	policy := &SyncPolicy{
+		ID:                2,
+		PolicyType:        SyncPolicyTypePush,
+		TriggerType:       TriggerTypeManual,
+		RegistryID:        1,
+		RemoteProjectName: "remote-project",
+		LocalProjectName:  "myproject",
+		LocalResourceName: "**",
+		ResourceTypes:     "model",
+	}
+
+	task, jobs, err := g.Generate(t.Context(), policy)
+	if err != nil {
+		t.Fatalf("Generate() error = %v", err)
+	}
+	if len(jobs) != 2 {
+		t.Fatalf("got %d jobs, want 2", len(jobs))
+	}
+	if jobs[0].ResourceName != "bert-base" || jobs[0].RemoteResourceName != "bert-base" {
