@@ -19,10 +19,3 @@
   border-color: var(--mantine-color-cyan-6);
 }
 
-.card[data-interactive]:focus-visible {
-  outline: 2px solid var(--mantine-color-cyan-6);
-  outline-offset: 2px;
-}
-
-.badgeRow {
-  overflow: hidden;
