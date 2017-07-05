@@ -18,23 +18,3 @@ import (
 	"context"
 
 	"github.com/matrixhub-ai/matrixhub/internal/domain/registry"
-)
-
-// Discovery discovers remote repositories for a given registry type.
-type Discovery interface {
-	// ListRepositories returns remote repositories matching the filter.
-	// The registry credential (if any) is used for authenticated access.
-	ListRepositories(ctx context.Context, reg *registry.Registry, filter Filter) ([]RemoteRepository, error)
-}
-
-// Filter holds criteria for listing remote repositories.
-type Filter struct {
-	Namespace    string // e.g., "google"
-	ResourceType string // "model", "dataset"
-}
-
-// RemoteRepository represents a repository discovered on a remote registry.
-type RemoteRepository struct {
-	Namespace    string
-	Name         string
-	ResourceType string

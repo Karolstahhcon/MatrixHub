@@ -27,3 +27,32 @@ const (
 
 	MATRIXHUB_DSN_ENV = "MATRIXHUB_DATABASE_DSN"
 )
+
+type Config struct {
+	Debug                  bool   `yaml:"debug"`
+	Driver                 string `yaml:"driver"`
+	AccessType             string `yaml:"accessType"`
+	DSN                    string `yaml:"dsn"`
+	MaxOpenConns           int    `yaml:"maxOpenConns"`
+	MaxIdleConns           int    `yaml:"maxIdleConns"`
+	ConnMaxLifetimeSeconds int    `yaml:"connMaxLifetimeSeconds"`
+	ConnMaxIdleSeconds     int    `yaml:"connMaxIdleSeconds"`
+
+	SQLPath string `yaml:"sqlPath"`
+	Migrate bool   `yaml:"migrate"`
+}
+
+func (config *Config) applyDefaults() {
+	if config.Driver != DriverSQLite {
+		return
+	}
+
+	if config.MaxOpenConns == 0 {
+		config.MaxOpenConns = 1
+	}
+	if config.MaxIdleConns == 0 {
+		config.MaxIdleConns = 1
+	}
+}
+
+func (config *Config) validate() error {

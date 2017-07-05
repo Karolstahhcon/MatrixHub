@@ -26,3 +26,17 @@ type MockIPresetRepo struct {
 
 // MockIPresetRepoMockRecorder is the mock recorder for MockIPresetRepo.
 type MockIPresetRepoMockRecorder struct {
+	mock *MockIPresetRepo
+}
+
+// NewMockIPresetRepo creates a new mock instance.
+func NewMockIPresetRepo(ctrl *gomock.Controller) *MockIPresetRepo {
+	mock := &MockIPresetRepo{ctrl: ctrl}
+	mock.recorder = &MockIPresetRepoMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockIPresetRepo) EXPECT() *MockIPresetRepoMockRecorder {
+	return m.recorder
+}
