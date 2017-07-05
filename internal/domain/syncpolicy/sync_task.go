@@ -33,3 +33,39 @@ const (
 )
 
 func (t SyncTaskStatus) Value() (driver.Value, error) {
+	return int64(t), nil
+}
+
+func (t *SyncTaskStatus) Scan(value any) error {
+	if value == nil {
+		*t = SyncTaskStatusUnspecified
+		return nil
+	}
+	switch v := value.(type) {
+	case int64:
+		*t = SyncTaskStatus(v)
+	case int:
+		*t = SyncTaskStatus(v)
+	case int32:
+		*t = SyncTaskStatus(v)
+	case uint8:
+		*t = SyncTaskStatus(v)
+	default:
+		return fmt.Errorf("cannot scan %T into SyncTaskStatus", value)
+	}
+	return nil
+}
+
+type SyncTask struct {
+	ID                 int            `gorm:"primarykey"`
+	SyncPolicyID       int            `gorm:"column:sync_policy_id"`
+	TriggerType        TriggerType    `gorm:"column:trigger_type"`
+	Status             SyncTaskStatus `gorm:"column:status"`
+	StartedTimestamp   int64          `gorm:"column:started_timestamp"`
+	CompletedTimestamp int64          `gorm:"column:completed_timestamp"`
+	TotalItems         int            `gorm:"column:total_items"`
+	SuccessfulItems    int            `gorm:"column:successful_items"`
+	StoppedItems       int            `gorm:"column:stopped_items"`
+	FailedItems        int            `gorm:"column:failed_items"`
+	CompletePercents   int            `gorm:"column:complete_percents"`
+	CreatedAt          time.Time      `gorm:"column:created_at"`
