@@ -100,37 +100,3 @@ func WithMirror(m *mirror.Mirror) Option {
 }
 
 // WithServices sets the services for the router.
-func WithServices(model model.IModelService, git git.IGitRepo, authz authz.IAuthzService) Option {
-	return func(h *Handler) {
-		h.modelService = model
-		h.gitRepo = git
-		h.authzService = authz
-	}
-}
-
-// NewHandler creates a new Handler with the given repository directory.
-func NewHandler(opts ...Option) *Handler {
-	h := &Handler{
-		root: mux.NewRouter(),
-	}
-
-	for _, opt := range opts {
-		opt(h)
-	}
-
-	h.register()
-	return h
-}
-
-// ServeHTTP implements the http.Handler interface.
-func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h.root.ServeHTTP(w, r)
-}
-
-func (h *Handler) register() {
-	// Git protocol endpoints
-	h.registryGit(h.root)
-
-	h.root.Use(h.middlewares...)
-	h.root.NotFoundHandler = h.next
-}
