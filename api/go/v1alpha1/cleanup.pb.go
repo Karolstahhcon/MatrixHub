@@ -148,3 +148,153 @@ type OrphanedRepo struct {
 func (x *OrphanedRepo) Reset() {
 	*x = OrphanedRepo{}
 	mi := &file_v1alpha1_cleanup_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OrphanedRepo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OrphanedRepo) ProtoMessage() {}
+
+func (x *OrphanedRepo) ProtoReflect() protoreflect.Message {
+	mi := &file_v1alpha1_cleanup_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OrphanedRepo.ProtoReflect.Descriptor instead.
+func (*OrphanedRepo) Descriptor() ([]byte, []int) {
+	return file_v1alpha1_cleanup_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *OrphanedRepo) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *OrphanedRepo) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *OrphanedRepo) GetProjectName() string {
+	if x != nil {
+		return x.ProjectName
+	}
+	return ""
+}
+
+func (x *OrphanedRepo) GetResourceName() string {
+	if x != nil {
+		return x.ResourceName
+	}
+	return ""
+}
+
+func (x *OrphanedRepo) GetSizeBytes() int64 {
+	if x != nil {
+		return x.SizeBytes
+	}
+	return 0
+}
+
+type OrphanedLFS struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Oid           string                 `protobuf:"bytes,1,opt,name=oid,proto3" json:"oid,omitempty"`
+	SizeBytes     int64                  `protobuf:"varint,2,opt,name=size_bytes,json=sizeBytes,proto3" json:"size_bytes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OrphanedLFS) Reset() {
+	*x = OrphanedLFS{}
+	mi := &file_v1alpha1_cleanup_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OrphanedLFS) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OrphanedLFS) ProtoMessage() {}
+
+func (x *OrphanedLFS) ProtoReflect() protoreflect.Message {
+	mi := &file_v1alpha1_cleanup_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OrphanedLFS.ProtoReflect.Descriptor instead.
+func (*OrphanedLFS) Descriptor() ([]byte, []int) {
+	return file_v1alpha1_cleanup_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *OrphanedLFS) GetOid() string {
+	if x != nil {
+		return x.Oid
+	}
+	return ""
+}
+
+func (x *OrphanedLFS) GetSizeBytes() int64 {
+	if x != nil {
+		return x.SizeBytes
+	}
+	return 0
+}
+
+type ExecuteCleanupRequest struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	CleanOrphanedRepos bool                   `protobuf:"varint,1,opt,name=clean_orphaned_repos,json=cleanOrphanedRepos,proto3" json:"clean_orphaned_repos,omitempty"`
+	CleanOrphanedLfs   bool                   `protobuf:"varint,2,opt,name=clean_orphaned_lfs,json=cleanOrphanedLfs,proto3" json:"clean_orphaned_lfs,omitempty"`
+	DryRun             bool                   `protobuf:"varint,3,opt,name=dry_run,json=dryRun,proto3" json:"dry_run,omitempty"` // true = preview only, no actual deletion
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *ExecuteCleanupRequest) Reset() {
+	*x = ExecuteCleanupRequest{}
+	mi := &file_v1alpha1_cleanup_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExecuteCleanupRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExecuteCleanupRequest) ProtoMessage() {}
+
+func (x *ExecuteCleanupRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1alpha1_cleanup_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExecuteCleanupRequest.ProtoReflect.Descriptor instead.
+func (*ExecuteCleanupRequest) Descriptor() ([]byte, []int) {

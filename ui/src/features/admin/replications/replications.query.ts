@@ -23,28 +23,3 @@ export const adminReplicationKeys = {
 export function replicationsQueryOptions(search: ReplicationsSearch) {
   return queryOptions({
     queryKey: adminReplicationKeys.list(search),
-    queryFn: async () => {
-      const response = await SyncPolicy.ListSyncPolicies({
-        page: search.page,
-        pageSize: DEFAULT_REPLICATIONS_PAGE_SIZE,
-        search: search.query,
-      })
-
-      return {
-        replications: response.syncPolicies ?? [],
-        pagination: response.pagination,
-      }
-    },
-  })
-}
-
-export function replicationDetailQueryOptions(syncPolicyId: number) {
-  return queryOptions({
-    queryKey: adminReplicationKeys.detail(syncPolicyId),
-    queryFn: async () => {
-      const response = await SyncPolicy.GetSyncPolicy({ syncPolicyId })
-
-      if (!response.syncPolicy) {
-        throw new Error(i18n.t('routes.admin.replications.executions.errors.syncPolicyNotFound'))
-      }
-
