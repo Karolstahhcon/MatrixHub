@@ -1,0 +1,111 @@
+// Copyright The MatrixHub Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package hf
+
+import (
+	"bufio"
+	"context"
+	"encoding/base64"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"log/slog"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/gorilla/mux"
+	"github.com/matrixhub-ai/hfd/pkg/authenticate"
+	"github.com/matrixhub-ai/hfd/pkg/permission"
+	"github.com/matrixhub-ai/hfd/pkg/receive"
+	"github.com/matrixhub-ai/hfd/pkg/repository"
+
+	"github.com/matrixhub-ai/matrixhub/internal/domain/git"
+	"github.com/matrixhub-ai/matrixhub/internal/domain/role"
+	"github.com/matrixhub-ai/matrixhub/internal/infra/authcodec"
+)
+
+const (
+	// lfsThreshold is the file size threshold for LFS upload mode.
+	// Files larger than this will be uploaded via LFS.
+	lfsThreshold = 10 * 1024 * 1024 // 10MB
+)
+
+func requestOrigin(r *http.Request) string {
+	scheme := "http"
+	if r.TLS != nil {
+		scheme = "https"
+	}
+	if fwdProto := r.Header.Get("X-Forwarded-Proto"); fwdProto != "" {
+		scheme = fwdProto
+	}
+	return fmt.Sprintf("%s://%s", scheme, r.Host)
+}
+
+func commitAuthorName(user authenticate.UserInfo) string {
+	identity, err := authcodec.Unmarshal(user.User)
+	if err == nil && identity.GetName() != "" {
+		return identity.GetName()
+	}
+	if err == nil && identity.GetID() != 0 {
+		return fmt.Sprintf("%d", identity.GetID())
+	}
+	return user.User
+}
+
+// handleValidateYAML handles POST /api/validate-yaml
+// This endpoint is called by huggingface_hub to validate YAML front matter in files like README.md.
+// https://github.com/huggingface/huggingface_hub/blob/8708631a463d9a6dc8ec7b046e748cc14844474e/src/huggingface_hub/repocard.py#L189-L224
+func (h *Handler) handleValidateYAML(w http.ResponseWriter, r *http.Request) {
+	// Return a successful validation response
+	responseJSON(w, struct {
+		Errors   []string `json:"errors"`
+		Warnings []string `json:"warnings"`
+	}{
+		Errors:   []string{},
+		Warnings: []string{},
+	}, http.StatusOK)
+}
+
+func repoTypePrefix(repoType string) string {
+	switch repoType {
+	case "dataset":
+		return "datasets"
+	case "space":
+		return "spaces"
+	default:
+		return ""
+	}
+}
+
+// handleCreateRepo handles POST /api/repos/create
+func (h *Handler) handleCreateRepo(w http.ResponseWriter, r *http.Request) {
+	var req createRepoRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		responseJSON(w, fmt.Errorf("invalid request body: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	repoName := req.Name
+	if req.Organization != "" {
+		repoName = req.Organization + "/" + repoName
+	}
+
+	storageName := repoName
+	prefix := repoTypePrefix(req.Type)
+	if prefix != "" {
+		storageName = prefix + "/" + repoName
