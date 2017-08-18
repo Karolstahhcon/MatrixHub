@@ -40,17 +40,3 @@ func InitTestEnvironment() {
 		err := tools.InitAuth()
 		if err != nil {
 			panic(err)
-		}
-
-		// Initialize HTTP clients (which depend on auth)
-		err = tools.InitHTTPClients()
-		if err != nil {
-			panic(err)
-		}
-
-		atomic.StoreInt32(&initialized, 1)
-		log.Println("=== Test environment initialized ===")
-	})
-}
-
-// CleanupTestEnvironment cleans up the test environment

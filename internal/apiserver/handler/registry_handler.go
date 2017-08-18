@@ -53,3 +53,58 @@ func (rh *RegistryHandler) ListRegistries(ctx context.Context, request *registry
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
+	page := pageutils.NewPage(request.Page, request.PageSize)
+	domainRegistries, total, err := rh.registryRepo.ListRegistries(ctx, int(page.Page), int(page.PageSize), request.Search)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	pageutils.SetPageTotal(page, int32(total))
+
+	var list []*registryv1alpha1.Registry
+	for _, registry := range domainRegistries {
+		list = append(list, convertDomainRegistryToAPIRegistry(registry))
+	}
+
+	return &registryv1alpha1.ListRegistriesResponse{
+		Registries: list,
+		Pagination: page,
+	}, nil
+}
+
+func (rh *RegistryHandler) GetRegistry(ctx context.Context, request *registryv1alpha1.GetRegistryRequest) (*registryv1alpha1.GetRegistryResponse, error) {
+	if err := request.ValidateAll(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	domainRegistry, err := rh.registryRepo.GetRegistry(ctx, int(request.Id))
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &registryv1alpha1.GetRegistryResponse{
+		Registry: convertDomainRegistryToAPIRegistry(domainRegistry),
+	}, nil
+}
+
+func (rh *RegistryHandler) CreateRegistry(ctx context.Context, request *registryv1alpha1.CreateRegistryRequest) (*registryv1alpha1.CreateRegistryResponse, error) {
+	if err := request.ValidateAll(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	domainRegistry := registry.Registry{
+		Name:        request.Name,
+		Description: request.Description,
+		Type:        request.Type.String(),
+		URL:         request.Url,
+		Insecure:    request.Insecure,
+	}
+	if b := request.GetBasic(); b != nil {
+		domainRegistry.SetCredential(registry.NewBasicCredential(b.Username, b.Password))
+	}
+
+	created, err := rh.registryRepo.CreateRegistry(ctx, domainRegistry)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
