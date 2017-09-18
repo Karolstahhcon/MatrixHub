@@ -49,3 +49,55 @@ func SetLoggerWithConfig(debug bool, config Config) error {
 	sink, err := openSinks(config)
 	if err != nil {
 		return err
+	}
+
+	var level zapcore.LevelEnabler
+	var encoderConfig zapcore.EncoderConfig
+	constructor := zapcore.NewConsoleEncoder
+	if debug {
+		level = zap.DebugLevel
+		encoderConfig = zap.NewDevelopmentEncoderConfig()
+	} else {
+		level = zap.InfoLevel
+		if config.Level != "" {
+			l := zap.NewAtomicLevel()
+			if err = l.UnmarshalText([]byte(config.Level)); err == nil {
+				level = l
+			}
+		}
+
+		encoderConfig = zap.NewProductionEncoderConfig()
+
+		if config.Encoder == "json" {
+			constructor = zapcore.NewJSONEncoder
+		} else {
+			encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
+		}
+	}
+	encoderConfig.TimeKey = "time"
+	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+
+	opts := []zap.Option{zap.AddCaller(), zap.AddCallerSkip(2), zap.AddStacktrace(zap.ErrorLevel)}
+	if debug {
+		opts = append(opts, zap.Development())
+	}
+
+	core := zapcore.NewCore(constructor(encoderConfig), sink, level)
+	zapLogger = zap.New(core, opts...)
+	zapSugarLogger = zapLogger.Sugar()
+
+	logger = &Logger{sugar: zapSugarLogger}
+	klog.SetLogger(zapr.NewLogger(zapLogger.WithOptions(zap.AddCallerSkip(1))))
+	return nil
+}
+
+func Sync() {
+	if err := zapLogger.Sync(); err != nil {
+		logger.Errorf("sync zap log failed, err: %s", err.Error())
+	}
+}
+
+func openSinks(config Config) (zapcore.WriteSyncer, error) {
+	sink, _, err := zap.Open("stderr")
+	if err != nil {
+		return nil, err
