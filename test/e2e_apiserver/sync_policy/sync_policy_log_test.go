@@ -20,3 +20,25 @@ import (
 	"time"
 
 	"github.com/antihax/optional"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
+	v1alpha1 "github.com/matrixhub-ai/matrixhub/test/client/v1alpha1/sync_policy"
+	"github.com/matrixhub-ai/matrixhub/test/tools"
+)
+
+var _ = Describe("SyncPolicy Job Log", Label("sync-policy"), func() {
+	It("should generate and retrieve sync job logs", Label("SP0040"), func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		defer cancel()
+
+		api := tools.GetV1alpha1SyncPolicyApi()
+
+		// 1. Create project and registry
+		project, err := tools.CreateProjectFixture(ctx, "e2e-log-target")
+		Expect(err).NotTo(HaveOccurred())
+		defer project.Cleanup(ctx)
+
+		registry, err := tools.CreateHuggingFaceRegistryFixture(ctx, "e2e-log", "https://hf-mirror.com")
+		Expect(err).NotTo(HaveOccurred())
+		defer registry.Cleanup(ctx)

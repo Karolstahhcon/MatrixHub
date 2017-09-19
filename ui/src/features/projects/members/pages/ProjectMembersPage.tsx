@@ -93,3 +93,50 @@ export function ProjectMembersPage() {
   }
 
   const handleRemoveMember = (member: ProjectMember) => {
+    setProcessMember(member)
+    removeHandlers.open()
+  }
+
+  const handleBatchRemove = () => {
+    if (selectedMembers.length === 0) {
+      return
+    }
+    batchRemoveHandlers.open()
+  }
+
+  const handleBatchRemoveClose = () => {
+    batchRemoveHandlers.close()
+    setRowSelection({})
+    void refetch()
+  }
+
+  const handleRemoveClose = () => {
+    removeHandlers.close()
+    setRowSelection({})
+    void refetch()
+  }
+
+  const handleAddClose = () => {
+    addHandlers.close()
+    void refetch()
+  }
+
+  const handleEditClose = () => {
+    editHandlers.close()
+    void refetch()
+  }
+
+  return (
+    <Box py="lg">
+      <MembersTable
+        data={members}
+        pagination={pagination}
+        page={search.page}
+        loading={isLoading}
+        fetching={isFetching}
+        searchValue={search.q}
+        onSearchChange={handleSearchChange}
+        onRefresh={handleRefresh}
+        currentRole={currentRole}
+        currentUsername={currentUser?.username}
+        onEditRole={handleEditMember}
