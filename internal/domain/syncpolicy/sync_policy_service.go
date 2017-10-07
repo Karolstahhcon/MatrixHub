@@ -74,3 +74,155 @@ func (sps *SyncPolicyService) GetSyncPolicy(ctx context.Context, id int) (*SyncP
 }
 
 // SetOnTaskCreated registers a best-effort wakeup called after a task is persisted.
+func (sps *SyncPolicyService) SetOnTaskCreated(fn func(taskID int) bool) {
+	sps.onTaskCreated = fn
+}
+
+func (sps *SyncPolicyService) notifyTaskCreated(taskID int) {
+	if sps.onTaskCreated != nil && !sps.onTaskCreated(taskID) {
+		log.Warnw("sync task trigger was not queued; periodic polling will recover it", "taskID", taskID)
+	}
+}
+
+func (sps *SyncPolicyService) CreateSyncPolicy(ctx context.Context, param *SyncPolicy) error {
+	if err := param.ApplyScheduleNextRun(time.Now()); err != nil {
+		return err
+	}
+	return sps.syncPolicyRepo.CreateSyncPolicy(ctx, param)
+}
+
+func (sps *SyncPolicyService) UpdateSyncPolicy(ctx context.Context, param *SyncPolicy) error {
+	if err := param.ApplyScheduleNextRun(time.Now()); err != nil {
+		return err
+	}
+	return sps.syncPolicyRepo.UpdateSyncPolicy(ctx, param)
+}
+
+func (sps *SyncPolicyService) DeleteSyncPolicy(ctx context.Context, id int) error {
+	return sps.syncPolicyRepo.DeleteSyncPolicy(ctx, id)
+}
+
+func (sps *SyncPolicyService) ListSyncPolicies(ctx context.Context, page, pageSize int, search string) ([]*SyncPolicy, int64, error) {
+	return sps.syncPolicyRepo.ListSyncPolicies(ctx, page, pageSize, search)
+}
+
+func (sps *SyncPolicyService) GetSyncTask(ctx context.Context, id int) (*SyncTask, error) {
+	return sps.syncTaskRepo.GetSyncTask(ctx, id)
+}
+
+func (sps *SyncPolicyService) CreateSyncTask(ctx context.Context, syncTask *SyncTask) (*SyncTask, error) {
+	task, err := sps.syncTaskRepo.CreateSyncTask(ctx, syncTask)
+	if err == nil {
+		sps.notifyTaskCreated(task.ID)
+	}
+	return task, err
+}
+
+func (sps *SyncPolicyService) UpdateSyncTask(ctx context.Context, syncTask *SyncTask) error {
+	return sps.syncTaskRepo.UpdateSyncTask(ctx, syncTask)
+}
+
+func (sps *SyncPolicyService) ListSyncTasksByPolicyID(ctx context.Context, policyID int, page, pageSize int, status SyncTaskStatus) ([]*SyncTask, int64, error) {
+	return sps.syncTaskRepo.ListSyncTasksByPolicyID(ctx, policyID, page, pageSize, status)
+}
+
+func (sps *SyncPolicyService) CreateSyncTaskAndSyncJobs(ctx context.Context, policy *SyncPolicy) error {
+	task, jobs, err := sps.jobGenerator.Generate(ctx, policy)
+	if err != nil {
+		return err
+	}
+	task, err = sps.syncTaskRepo.CreateSyncTask(ctx, task)
+	if err != nil {
+		return err
+	}
+	for _, job := range jobs {
+		job.SyncTaskID = task.ID
+	}
+	if err := sps.syncJobService.CreateSyncJobs(ctx, jobs); err != nil {
+		log.Infow("CreateSyncJobs failed", "error", err)
+		task.Status = SyncTaskStatusFailed
+		task.CompletedTimestamp = time.Now().Unix()
+		if updateErr := sps.syncTaskRepo.UpdateSyncTask(ctx, task); updateErr != nil {
+			log.Errorw("failed to mark task as failed after job creation error", "taskID", task.ID, "error", updateErr)
+		}
+		return err
+	}
+	return nil
+}
+
+const claimBatchLimit = 32
+
+// ClaimDueSyncPolicies selects due policies and CAS-advances next_run_at for each successfully claimed row.
+func (sps *SyncPolicyService) ClaimDueSyncPolicies(ctx context.Context, nowMs int64) ([]job.DueJob, error) {
+	candidates, err := sps.syncPolicyRepo.SelectDuePolicies(ctx, nowMs, claimBatchLimit)
+	if err != nil {
+		return nil, err
+	}
+	var out []job.DueJob
+	for _, p := range candidates {
+		snapshot := p.NextRunAt
+		nextNext, ok := p.nextRunAtAfterClaim(nowMs)
+		if !ok {
+			continue
+		}
+		claimed, err := sps.syncPolicyRepo.AdvanceNextRunAtCAS(ctx, p.ID, snapshot, nextNext, nowMs)
+		if err != nil {
+			return nil, err
+		}
+		if !claimed {
+			continue
+		}
+		out = append(out, job.DueJob{
+			ID:          p.ID,
+			PolicyID:    p.ID,
+			TriggerType: int(p.TriggerType),
+			FireAtMs:    nowMs,
+		})
+	}
+	return out, nil
+}
+
+// CreatePendingSyncTask inserts a sync_tasks row for the policy; sync_task_processor will generate jobs and execute.
+func (sps *SyncPolicyService) CreatePendingSyncTask(ctx context.Context, policyID int, triggerType int) error {
+	if _, err := sps.syncPolicyRepo.GetSyncPolicy(ctx, policyID); err != nil {
+		return err
+	}
+	task := &SyncTask{
+		SyncPolicyID:       policyID,
+		TriggerType:        TriggerType(triggerType),
+		Status:             SyncTaskStatusPending,
+		StartedTimestamp:   0,
+		CompletedTimestamp: 0,
+		TotalItems:         0,
+		SuccessfulItems:    0,
+		CompletePercents:   0,
+	}
+	created, err := sps.syncTaskRepo.CreateSyncTask(ctx, task)
+	if err == nil {
+		sps.notifyTaskCreated(created.ID)
+	}
+	return err
+}
+
+// CreateSyncTaskAsync creates a pending sync task for async processing by syncTaskProcessor.
+// It only serves the user-initiated "sync now" API, so the task is always recorded as
+// manually triggered, regardless of the trigger type configured on the policy.
+func (sps *SyncPolicyService) CreateSyncTaskAsync(ctx context.Context, policy *SyncPolicy) (*SyncTask, error) {
+	task := &SyncTask{
+		SyncPolicyID: policy.ID,
+		TriggerType:  TriggerTypeManual,
+		Status:       SyncTaskStatusPending,
+	}
+	created, err := sps.syncTaskRepo.CreateSyncTask(ctx, task)
+	if err == nil {
+		sps.notifyTaskCreated(created.ID)
+	}
+	return created, err
+}
+
+// ClaimPendingSyncTasks selects pending tasks and CAS-claims them for execution.
+func (sps *SyncPolicyService) ClaimPendingSyncTasks(ctx context.Context, _ int64) ([]job.DueJob, error) {
+	candidates, err := sps.syncTaskRepo.SelectPendingTasks(ctx, claimBatchLimit)
+	if err != nil {
+		return nil, err
+	}
