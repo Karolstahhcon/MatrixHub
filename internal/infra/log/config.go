@@ -13,3 +13,8 @@
 // limitations under the License.
 
 package log
+
+type Config struct {
+	Level   string `yaml:"level"`
+	Encoder string `yaml:"encoder"`
+
