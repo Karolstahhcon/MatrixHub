@@ -1,0 +1,88 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "v1alpha1/cleanup.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "Cleanup"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/api/v1alpha1/cleanup/execute": {
+      "post": {
+        "summary": "Execute cleanup",
+        "operationId": "Cleanup_ExecuteCleanup",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1CleanupResult"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1alpha1ExecuteCleanupRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Cleanup"
+        ]
+      }
+    },
+    "/api/v1alpha1/cleanup/preview": {
+      "post": {
+        "summary": "Preview orphaned data (dry-run)",
+        "operationId": "Cleanup_PreviewCleanup",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1CleanupPreview"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1alpha1PreviewCleanupRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Cleanup"
+        ]
+      }
+    },
+    "/api/v1alpha1/cleanup/stats": {
+      "get": {
+        "summary": "Get storage statistics",
+        "operationId": "Cleanup_GetStorageStats",
