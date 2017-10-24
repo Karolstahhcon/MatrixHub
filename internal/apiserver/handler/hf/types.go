@@ -48,3 +48,54 @@ type accessToken struct {
 
 // treeEntry is the API response type for a tree entry, with JSON annotations.
 type treeEntry struct {
+	OID        string               `json:"oid"`
+	Path       string               `json:"path"`
+	Type       repository.EntryType `json:"type"`
+	Size       int64                `json:"size"`
+	LFS        *lfsPointer          `json:"lfs,omitempty"`
+	LastCommit *treeLastCommit      `json:"lastCommit,omitempty"`
+}
+
+// lfsPointer is the API response type for an LFS pointer, with JSON annotations.
+type lfsPointer struct {
+	OID         string `json:"oid"`
+	Size        int64  `json:"size"`
+	PointerSize int64  `json:"pointerSize"`
+}
+
+// treeLastCommit is the API response type for the last commit of a tree entry, with JSON annotations.
+type treeLastCommit struct {
+	ID    string `json:"id"`
+	Title string `json:"title"`
+	Date  string `json:"date"`
+}
+
+// treeSize represents the response for the Get folder size API.
+type treeSize struct {
+	Path string `json:"path"`
+	Size int64  `json:"size"`
+}
+
+// repoListItem represents a repository item in the list response for models, datasets, and spaces.
+type repoListItem struct {
+	RepoID        string   `json:"id"`
+	Likes         int      `json:"likes"`
+	TrendingScore int      `json:"trendingScore"`
+	Private       bool     `json:"private"`
+	Downloads     int      `json:"downloads"`
+	Tags          []string `json:"tags,omitempty"`
+	PipelineTag   string   `json:"pipeline_tag,omitempty"`
+	LibraryName   string   `json:"library_name,omitempty"`
+	ModelID       string   `json:"modelId,omitempty"`
+}
+
+// repoInfo represents the info response for HuggingFace API
+type repoInfo struct {
+	ID           string    `json:"id"`
+	ModelID      string    `json:"modelId,omitempty"`
+	SHA          string    `json:"sha"`
+	Private      bool      `json:"private"`
+	Disabled     bool      `json:"disabled"`
+	Gated        bool      `json:"gated"`
+	Downloads    int       `json:"downloads"`
+	Likes        int       `json:"likes"`
