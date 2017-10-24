@@ -58,33 +58,3 @@ function ActionCell({
       onClick={() => onDelete?.(row.original)}
     >
       {t('profile.sshKey.delete.action')}
-    </Anchor>
-  )
-}
-
-export type SshKeysTableProps = Omit<DataTableProps<SSHKey>, 'columns'> & {
-  onDelete?: (sshKey: SSHKey) => void
-}
-
-export function SshKeysTable({
-  data,
-  onDelete,
-  loading = false,
-  fetching = false,
-  onRefresh,
-  ...rest
-}: SshKeysTableProps) {
-  const { t } = useTranslation()
-
-  const columns: MRT_ColumnDef<SSHKey>[] = [
-    {
-      accessorKey: 'name',
-      header: t('profile.sshKey.name'),
-    },
-    {
-      accessorKey: 'status',
-      header: t('profile.sshKey.statusLabel'),
-      Cell: StatusCell,
-    },
-    {
-      accessorKey: 'expireAt',
