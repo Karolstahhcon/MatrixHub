@@ -28,33 +28,3 @@ export type CreateRobotAccountRequest = {
   name?: string
   description?: string
   expireDays?: number
-  platformPermissions?: string[]
-  projectPermissions?: string[]
-  projects?: string[]
-  projectScope?: RobotAccountProjectScope
-}
-
-export type CreateRobotAccountResponse = {
-  token?: string
-}
-
-export type ListRobotAccountsRequest = {
-  search?: string
-  page?: number
-  pageSize?: number
-}
-
-export type ListRobotAccountsResponse = {
-  items?: GetRobotAccountResponse[]
-  pagination?: MatrixhubV1alpha1Utils.Pagination
-}
-
-export type GetRobotAccountRequest = {
-  id?: number
-}
-
-export type GetRobotAccountResponse = {
-  id?: number
-  name?: string
-  description?: string
-  status?: RobotAccountStatus
