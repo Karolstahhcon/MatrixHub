@@ -17,3 +17,23 @@ GOBIN="${ROOT_DIR}/bin"
 PATH="${GOBIN}:${PATH}"
 
 # Install protoc
+install_protoc() {
+  local os_name=$(uname -s | tr '[:upper:]' '[:lower:]')
+  local arch_name=$(uname -m)
+  local protoc_version="33.5"
+  local protoc_binary="${ROOT_DIR}/bin/protoc"
+  if [[ -x "${protoc_binary}" ]]; then
+    # Extract version from "libprotoc <version>"
+    local installed_version
+    installed_version="$("${protoc_binary}" --version 2>/dev/null | awk '{print $2}')"
+    if [[ "${installed_version}" == "${protoc_version}" ]]; then
+      echo "protoc ${protoc_version} is already installed."
+      return
+    else
+      echo "Found protoc ${installed_version}, but ${protoc_version} is required. Reinstalling..."
+    fi
+  fi
+
+  if [[ "$arch_name" == "x86_64" || "$arch_name" == "amd64" ]]; then
+    arch_name="x86_64"
+  elif [[ "$arch_name" == "aarch64" || "$arch_name" == "arm64" ]]; then
