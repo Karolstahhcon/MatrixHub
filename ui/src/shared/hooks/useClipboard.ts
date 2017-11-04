@@ -34,39 +34,3 @@ function legacyCopy(value: string) {
 
 export function useClipboard({
   timeout = 2000,
-  legacy = false,
-}: UseClipboardOptions = {}): UseClipboardReturnValue {
-  const [copied, setCopied] = useState(false)
-  const [error, setError] = useState<Error | null>(null)
-  const copiedTimeout = useTimeout(() => setCopied(false), timeout, { autoInvoke: false })
-
-  const handleCopyResult = (succeeded: boolean) => {
-    setCopied(succeeded)
-
-    if (succeeded) {
-      copiedTimeout.start()
-    }
-  }
-
-  const copy = (value: string) => {
-    setError(null)
-
-    void (async () => {
-      let clipboardError: unknown
-      const isClipboardApiSupported = window.isSecureContext && 'clipboard' in navigator
-      let useLegacy = !isClipboardApiSupported || legacy
-
-      if (!useLegacy) {
-        try {
-          await navigator.clipboard.writeText(value)
-          handleCopyResult(true)
-
-          return
-        } catch (copyError) {
-          clipboardError = copyError
-          useLegacy = true
-        }
-      }
-
-      if (useLegacy) {
-        try {

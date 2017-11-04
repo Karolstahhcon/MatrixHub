@@ -18,3 +18,23 @@ export interface PaginationProps {
   totalLabel?: ReactNode
   totalLabelProps?: TextProps
   paginationProps?: Omit<
+    MantinePaginationProps,
+    'total' | 'value' | 'onChange'
+  >
+}
+
+export function Pagination({
+  total,
+  totalPages,
+  page,
+  onPageChange,
+  totalLabel,
+  totalLabelProps,
+  paginationProps,
+}: PaginationProps) {
+  const { t } = useTranslation()
+
+  if (total <= 0) {
+    return null
+  }
+
