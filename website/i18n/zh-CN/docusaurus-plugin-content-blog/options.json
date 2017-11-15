@@ -5,3 +5,6 @@
   },
   "description": {
     "message": "Blog",
+    "description": "The description for the blog used in SEO"
+  },
+  "sidebar.title": {
