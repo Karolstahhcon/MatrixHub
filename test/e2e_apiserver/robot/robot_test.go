@@ -156,3 +156,82 @@ var _ = Describe("Robot", Label("robot"), func() {
 	})
 
 	// ═══════════════════════════════════════════════════════════
+	// 2. GetRobotAccount / ListRobotAccounts APIs
+	// ═══════════════════════════════════════════════════════════
+	Context("GetRobotAccount and ListRobotAccounts APIs", func() {
+		var (
+			robotName string
+			robotID   int64
+		)
+
+		BeforeEach(func() {
+			robotName = generateRobotName("rb-get")
+			_, _, err := robotsApi.RobotsCreateRobotAccount(ctx, v1alpha1robot.V1alpha1CreateRobotAccountRequest{
+				Name:        robotName,
+				Description: "get-test robot",
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			listResp, _, err := robotsApi.RobotsListRobotAccounts(ctx, &v1alpha1robot.RobotsApiRobotsListRobotAccountsOpts{
+				Search: optional.NewString(robotPrefix + robotName),
+			})
+			Expect(err).NotTo(HaveOccurred())
+			for _, r := range listResp.Items {
+				if r.Name == robotPrefix+robotName {
+					robotID = r.Id
+					break
+				}
+			}
+			Expect(robotID).NotTo(BeZero())
+		})
+
+		AfterEach(func() {
+			if robotID != 0 {
+				_, _, _ = robotsApi.RobotsDeleteRobotAccount(ctx, robotID)
+			}
+		})
+
+		It("should get a robot account by ID with all expected fields", Label("R00006"), func() {
+			resp, _, err := robotsApi.RobotsGetRobotAccount(ctx, robotID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.Id).To(Equal(robotID))
+			Expect(resp.Name).To(Equal(robotPrefix + robotName))
+			Expect(resp.Description).To(Equal("get-test robot"))
+			Expect(resp.CreatedAt).NotTo(BeEmpty())
+
+			GinkgoWriter.Printf("GetRobot: id=%d, name=%s\n", resp.Id, resp.Name)
+		})
+
+		It("should fail to get a robot account with a non-existent ID", Label("R00007"), func() {
+			_, _, err := robotsApi.RobotsGetRobotAccount(ctx, 999999999)
+			Expect(err).To(HaveOccurred(), "non-existent robot ID must return an error")
+		})
+
+		It("should include the robot in the list", Label("R00008"), func() {
+			resp, _, err := robotsApi.RobotsListRobotAccounts(ctx, nil)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.Pagination).NotTo(BeNil())
+			Expect(resp.Pagination.Total).To(BeNumerically(">=", 1))
+
+			found := false
+			for _, r := range resp.Items {
+				if r.Id == robotID {
+					found = true
+					break
+				}
+			}
+			Expect(found).To(BeTrue(), "created robot must appear in list")
+		})
+
+		It("should support search in list", Label("R00009"), func() {
+			resp, _, err := robotsApi.RobotsListRobotAccounts(ctx, &v1alpha1robot.RobotsApiRobotsListRobotAccountsOpts{
+				Search: optional.NewString(robotPrefix + robotName),
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.Items).NotTo(BeEmpty())
+			Expect(resp.Items[0].Name).To(Equal(robotPrefix + robotName))
+		})
+	})
+
+	// ═══════════════════════════════════════════════════════════
+	// 3. UpdateRobotAccount API
