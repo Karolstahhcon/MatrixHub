@@ -30,35 +30,3 @@ func (testPayload) LoggerOutput(simple bool) []any {
 	return []any{"simple", simple}
 }
 
-func TestLoggerConfigurationAndNonFatalMethods(t *testing.T) {
-	logPath := filepath.Join(t.TempDir(), "matrixhub.log")
-	require.NoError(t, SetLoggerWithConfig(true, Config{FilePath: &logPath, FileMaxSize: 1, FileMaxBackups: 1, FileMaxAges: 1}))
-	t.Cleanup(func() { require.NoError(t, SetLoggerWithConfig(false, Config{})) })
-
-	Debug("debug")
-	Debugw("debugw", "key", "value")
-	Debugf("debugf %d", 1)
-	DebugWithPayload("debug payload", testPayload{})
-	Info("info")
-	Infow("infow", "key", "value")
-	Infof("infof %d", 1)
-	InfoWithPayload("info payload", testPayload{}, "key", "value")
-	Warn("warn")
-	Warnw("warnw", "key", "value")
-	Warnf("warnf %d", 1)
-	WarnWithPayload("warn payload", testPayload{}, "key", "value")
-	Error("error")
-	Errorw("errorw", "key", "value")
-	Errorf("errorf %d", 1)
-	ErrorWithPayload("error payload", testPayload{}, "key", "value")
-
-	named := NewLogger("domain")
-	require.NotNil(t, named.Logger("child"))
-	require.NotNil(t, named.LoggerWithLevel("warn-only", zapcore.WarnLevel))
-	require.NotNil(t, named.LoggerWithOptions("caller", zap.AddCallerSkip(1)))
-	named.Debug("debug")
-	named.Debugw("debugw", "key", "value")
-	named.Debugf("debugf %d", 1)
-	named.DebugWithPayload("debug payload", testPayload{}, "key", "value")
-	named.Info("info")
-	named.Infow("infow", "key", "value")
