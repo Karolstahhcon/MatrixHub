@@ -16,22 +16,3 @@ export default defineConfig(({ mode }) => {
     resolve: {
       dedupe: [
         'react',
-        'react-dom',
-        '@mantine/core',
-        '@mantine/hooks',
-        '@mantine/dates',
-        'dayjs',
-      ],
-    },
-    optimizeDeps: {
-      include: ['mantine-react-table'],
-    },
-    plugins: [
-      // Please make sure that '@tanstack/router-plugin' is passed before '@vitejs/plugin-react'
-      tanstackRouter({
-        target: 'react',
-        autoCodeSplitting: true,
-      }),
-      react({
-        babel: {
-          plugins: [['babel-plugin-react-compiler']],
