@@ -19,3 +19,24 @@ import (
 	"errors"
 	"fmt"
 
+	v1alpha1current_user "github.com/matrixhub-ai/matrixhub/test/client/v1alpha1/current_user"
+	v1alpha1project "github.com/matrixhub-ai/matrixhub/test/client/v1alpha1/project"
+)
+
+const protocolTestPassword = "Test@123456"
+
+// ProjectUserFixture is an isolated non-admin user with an explicit role in a
+// disposable project. Protocol tests use the user's credentials while setup
+// and cleanup continue to use the generated API clients.
+type ProjectUserFixture struct {
+	UserID      int32
+	Username    string
+	Cookie      string
+	Project     ProjectFixture
+	CurrentUser *v1alpha1current_user.CurrentUserApiService
+}
+
+// CreateProjectUserFixture creates a private project and grants the new user
+// the requested project role.
+func CreateProjectUserFixture(ctx context.Context, prefix string, projectRole v1alpha1project.V1alpha1ProjectRoleType) (*ProjectUserFixture, error) {
+	username := GenerateTestUsername(prefix)
