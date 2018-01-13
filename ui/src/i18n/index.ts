@@ -39,23 +39,3 @@ i18n
       escapeValue: false,
     },
     detection: {
-      order: ['localStorage', 'navigator'],
-      caches: [],
-      lookupLocalStorage: LANGUAGE_STORAGE_KEY,
-    },
-  })
-
-// Keep the document language in sync so `:lang()` / `html[lang]` selectors can
-// adapt layout to the active locale (e.g. inline label column widths).
-function setDocumentLanguage(lang: SupportedLanguage) {
-  if (typeof document === 'undefined') {
-    return
-  }
-
-  document.documentElement.lang = lang
-}
-
-const initialLanguage = normalizeLanguage(i18n.language) ?? DEFAULT_LANGUAGE
-
-setDayjsLocale(initialLanguage)
-setDocumentLanguage(initialLanguage)
