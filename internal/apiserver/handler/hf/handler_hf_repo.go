@@ -467,3 +467,237 @@ func (h *Handler) handleCreateTag(w http.ResponseWriter, r *http.Request) {
 		if ok, err := h.permissionHookFunc(r.Context(), permission.OperationUpdateRepo, ri.RepoName, permission.Context{
 			Ref: rev,
 		}); err != nil {
+			responseJSON(w, err.Error(), http.StatusInternalServerError)
+			return
+		} else if !ok {
+			responseJSON(w, "permission denied", http.StatusForbidden)
+			return
+		}
+	}
+
+	repoPath := h.storage.ResolvePath(ri.RepoName)
+	if repoPath == "" {
+		responseJSON(w, fmt.Errorf("repository %q not found", ri.RepoName), http.StatusNotFound)
+		return
+	}
+
+	repo, err := repository.Open(repoPath)
+	if err != nil {
+		if errors.Is(err, repository.ErrRepositoryNotExists) {
+			responseJSON(w, fmt.Errorf("repository %q not found", ri.RepoName), http.StatusNotFound)
+			return
+		}
+		responseJSON(w, fmt.Errorf("failed to open repository %q: %v", ri.RepoName, err), http.StatusInternalServerError)
+		return
+	}
+
+	var req createTagRequest
+	if r.Body != nil {
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			responseJSON(w, fmt.Errorf("invalid request body: %v", err), http.StatusBadRequest)
+			return
+		}
+	}
+
+	if req.Tag == "" {
+		responseJSON(w, fmt.Errorf("tag name is required"), http.StatusBadRequest)
+		return
+	}
+
+	// Check if tag already exists
+	exists, err := repo.TagExists(req.Tag)
+	if err != nil {
+		responseJSON(w, fmt.Errorf("failed to check tag %q: %v", req.Tag, err), http.StatusInternalServerError)
+		return
+	}
+	if exists {
+		responseJSON(w, fmt.Errorf("tag %q already exists", req.Tag), http.StatusConflict)
+		return
+	}
+
+	if h.preReceiveHookFunc != nil {
+		// Resolve the revision to a hash so the hook has the target commit
+		newRev, _ := repo.ResolveRevision(rev)
+		if ok, err := h.preReceiveHookFunc(r.Context(), ri.RepoName, []receive.RefUpdate{
+			receive.NewRefUpdate(receive.ZeroHash, newRev, "refs/tags/"+req.Tag, repo.RepoPath()),
+		}); err != nil {
+			responseJSON(w, err.Error(), http.StatusInternalServerError)
+			return
+		} else if !ok {
+			responseJSON(w, "pre-receive hook denied the tag creation", http.StatusForbidden)
+			return
+		}
+	}
+
+	if err := repo.CreateTag(req.Tag, rev); err != nil {
+		responseJSON(w, fmt.Errorf("failed to create tag %q: %v", req.Tag, err), http.StatusInternalServerError)
+		return
+	}
+
+	if h.postReceiveHookFunc != nil {
+		hash, _ := repo.RefHash(plumbing.NewTagReferenceName(req.Tag))
+		if hookErr := h.postReceiveHookFunc(r.Context(), ri.RepoName, []receive.RefUpdate{
+			receive.NewRefUpdate(receive.ZeroHash, hash, "refs/tags/"+req.Tag, repo.RepoPath()),
+		}); hookErr != nil {
+			slog.WarnContext(r.Context(), "post-receive hook error", "repo", ri.RepoName, "error", hookErr)
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+// handleDeleteTag handles DELETE /api/{repoType}/{repo}/tag/{rev}
+func (h *Handler) handleDeleteTag(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	ri := getRepoInformation(r)
+	rev := vars["rev"]
+
+	if h.permissionHookFunc != nil {
+		if ok, err := h.permissionHookFunc(r.Context(), permission.OperationUpdateRepo, ri.RepoName, permission.Context{
+			Ref: rev,
+		}); err != nil {
+			responseJSON(w, err.Error(), http.StatusInternalServerError)
+			return
+		} else if !ok {
+			responseJSON(w, "permission denied", http.StatusForbidden)
+			return
+		}
+	}
+
+	repoPath := h.storage.ResolvePath(ri.RepoName)
+	if repoPath == "" {
+		responseJSON(w, fmt.Errorf("repository %q not found", ri.RepoName), http.StatusNotFound)
+		return
+	}
+
+	repo, err := repository.Open(repoPath)
+	if err != nil {
+		if errors.Is(err, repository.ErrRepositoryNotExists) {
+			responseJSON(w, fmt.Errorf("repository %q not found", ri.RepoName), http.StatusNotFound)
+			return
+		}
+		responseJSON(w, fmt.Errorf("failed to open repository %q: %v", ri.RepoName, err), http.StatusInternalServerError)
+		return
+	}
+
+	exists, err := repo.TagExists(rev)
+	if err != nil {
+		responseJSON(w, fmt.Errorf("failed to check tag %q: %v", rev, err), http.StatusInternalServerError)
+		return
+	}
+	if !exists {
+		responseJSON(w, fmt.Errorf("tag %q not found", rev), http.StatusNotFound)
+		return
+	}
+
+	// Capture hash before deletion for pre/post hooks
+	oldHash, _ := repo.RefHash(plumbing.NewTagReferenceName(rev))
+
+	updates := []receive.RefUpdate{
+		receive.NewRefUpdate(oldHash, receive.ZeroHash, "refs/tags/"+rev, repo.RepoPath()),
+	}
+
+	if h.preReceiveHookFunc != nil {
+		if ok, err := h.preReceiveHookFunc(r.Context(), ri.RepoName, updates); err != nil {
+			responseJSON(w, err.Error(), http.StatusInternalServerError)
+			return
+		} else if !ok {
+			responseJSON(w, "pre-receive hook denied the tag deletion", http.StatusForbidden)
+			return
+		}
+	}
+
+	if err := repo.DeleteTag(rev); err != nil {
+		responseJSON(w, fmt.Errorf("failed to delete tag %q: %v", rev, err), http.StatusInternalServerError)
+		return
+	}
+
+	if h.postReceiveHookFunc != nil {
+		if hookErr := h.postReceiveHookFunc(r.Context(), ri.RepoName, updates); hookErr != nil {
+			slog.WarnContext(r.Context(), "post-receive hook error", "repo", ri.RepoName, "error", hookErr)
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+// handleListRefs handles GET /api/{repoType}/{repo}/refs
+func (h *Handler) handleListRefs(w http.ResponseWriter, r *http.Request) {
+	ri := getRepoInformation(r)
+
+	if h.permissionHookFunc != nil {
+		if ok, err := h.permissionHookFunc(r.Context(), permission.OperationReadRepo, ri.RepoName, permission.Context{}); err != nil {
+			responseJSON(w, err.Error(), http.StatusInternalServerError)
+			return
+		} else if !ok {
+			responseJSON(w, "permission denied", http.StatusForbidden)
+			return
+		}
+	}
+
+	repoPath := h.storage.ResolvePath(ri.RepoName)
+	if repoPath == "" {
+		responseJSON(w, fmt.Errorf("repository %q not found", ri.RepoName), http.StatusNotFound)
+		return
+	}
+
+	repo, err := h.openRepo(r.Context(), ri, repoPath, repository.GitUploadPack)
+	if err != nil {
+		if errors.Is(err, repository.ErrRepositoryNotExists) {
+			responseJSON(w, fmt.Errorf("repository %q not found", ri.RepoName), http.StatusNotFound)
+			return
+		}
+		responseJSON(w, fmt.Errorf("failed to open repository %q: %v", ri.RepoName, err), http.StatusInternalServerError)
+		return
+	}
+
+	// List branches
+	branchNames, err := repo.Branches()
+	if err != nil {
+		responseJSON(w, fmt.Errorf("failed to list branches: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	var branches []gitRefInfo
+	for _, name := range branchNames {
+		refName := plumbing.NewBranchReferenceName(name)
+		hash, err := repo.RefHash(refName)
+		if err != nil {
+			continue
+		}
+		branches = append(branches, gitRefInfo{
+			Name:         name,
+			Ref:          refName.String(),
+			TargetCommit: hash,
+		})
+	}
+
+	// List tags
+	tagNames, err := repo.Tags()
+	if err != nil {
+		tagNames = nil
+	}
+
+	var tags []gitRefInfo
+	for _, name := range tagNames {
+		refName := plumbing.NewTagReferenceName(name)
+		hash, err := repo.RefHash(refName)
+		if err != nil {
+			continue
+		}
+		tags = append(tags, gitRefInfo{
+			Name:         name,
+			Ref:          refName.String(),
+			TargetCommit: hash,
+		})
+	}
+
+	if branches == nil {
+		branches = []gitRefInfo{}
+	}
+	if tags == nil {
+		tags = []gitRefInfo{}
+	}
+
+	refs := gitRefs{
+		Branches: branches,

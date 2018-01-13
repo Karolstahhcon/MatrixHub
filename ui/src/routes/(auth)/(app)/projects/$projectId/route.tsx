@@ -48,3 +48,28 @@ function RouteComponent() {
       to: ProjectModelsRoute.to,
       params: { projectId },
     },
+    {
+      id: 'members',
+      label: t('projects.detail.tabs.members'),
+      to: ProjectMembersRoute.to,
+      params: { projectId },
+    },
+    ...(isAllowEdit
+      ? [{
+          id: 'settings',
+          label: t('projects.detail.tabs.settings'),
+          to: ProjectSettingsRoute.to,
+          params: { projectId },
+        }]
+      : []),
+  ])
+
+  const activeTab = tabRoutes.find(tab => pathname && matchRoute({
+    to: tab.to,
+    pending: true,
+  }))?.id || tabRoutes[0].id
+  const activeTabLabel = tabRoutes.find(tab => tab.id === activeTab)?.label || tabRoutes[0].label
+
+  return (
+    <Box>
+      <Space h="lg" />
