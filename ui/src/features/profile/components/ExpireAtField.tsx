@@ -14,37 +14,3 @@ interface ExpireAtFieldProps {
   error?: string
 }
 
-export function ExpireAtField({
-  value,
-  onChange,
-  error,
-}: ExpireAtFieldProps) {
-  const { t } = useTranslation()
-  const validityValue = value ? 'custom' : 'never'
-
-  const handleValidityChange = (next: string) => {
-    if (next === 'never') {
-      onChange('')
-    } else {
-      onChange(defaultExpireAt())
-    }
-  }
-
-  return (
-    <>
-      <Radio.Group
-        label={t('profile.validity')}
-        name="validity"
-        value={validityValue}
-        onChange={handleValidityChange}
-      >
-        <Group mt="xs">
-          <Radio
-            value="never"
-            label={t('profile.expireNever')}
-          />
-          <Radio
-            value="custom"
-            label={t('profile.expireCustom')}
-          />
-        </Group>
