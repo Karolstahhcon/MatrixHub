@@ -13,3 +13,19 @@ interface DisableRobotModalProps {
   opened: boolean
   onClose: () => void
 }
+
+export function DisableRobotModal({
+  opened,
+  robot,
+  onClose,
+}: DisableRobotModalProps) {
+  const { t } = useTranslation()
+  const mutation = useMutation(disableRobotAccountMutationOptions())
+
+  const handleConfirm = async () => {
+    await mutation.mutateAsync(robot)
+    onClose()
+  }
+
+  return (
+    <ModalWrapper
