@@ -36,3 +36,23 @@ echo "Cluster Name: ${E2E_CLUSTER_NAME}"
 echo "K8s Version:   ${E2E_KIND_IMAGE_TAG}"
 echo "================================================"
 
+# Check if kind is installed
+if ! command -v kind &> /dev/null; then
+    echo "Error: kind is not installed"
+    exit 1
+fi
+
+# Check kind version (require >= 0.27)
+KIND_VERSION=$(kind version 2>/dev/null | grep -oE 'kind v[0-9]+\.[0-9]+\.[0-9]+' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+MIN_KIND_VERSION="0.27.0"
+
+if [ -z "$KIND_VERSION" ]; then
+    echo "Error: Unable to determine kind version"
+    exit 1
+fi
+
+# Compare versions using sort
+if [ "$(printf '%s\n' "$MIN_KIND_VERSION" "$KIND_VERSION" | sort -V | head -n1)" != "$MIN_KIND_VERSION" ]; then
+    echo "Error: kind version $KIND_VERSION is too old (require >= $MIN_KIND_VERSION)"
+    exit 1
+fi
