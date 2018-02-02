@@ -25,3 +25,30 @@ export function ProjectSettingsPage() {
   const projectSettingForm = useForm({
     defaultValues: {
       type: project.type ?? ProjectType.PROJECT_TYPE_PRIVATE,
+    },
+    onSubmit: async ({ value }) => {
+      await mutation.mutateAsync({
+        name: projectId,
+        type: value.type,
+      })
+    },
+  })
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault()
+        projectSettingForm.handleSubmit()
+      }}
+    >
+      <Stack pt="lg" gap="md" align="flex-start">
+        <Stack gap="xs">
+          <projectSettingForm.Field name="type">
+            {field => (
+              <InputWrapper
+                label={(
+                  <ProjectTypeHintLabel
+                    label={t('projects.detail.settingsPage.projectType')}
+                  />
+                )}
+              >
