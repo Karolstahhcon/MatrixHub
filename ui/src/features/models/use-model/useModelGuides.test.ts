@@ -26,31 +26,3 @@ describe('resolveUseModelTask', () => {
         category: Category.TASK,
         name: 'Image-Text-to-Text',
       }],
-    })).toBe('image-text-to-text')
-  })
-
-  it('detects text generation from TASK labels', () => {
-    expect(resolveUseModelTask({
-      labels: [{
-        category: Category.TASK,
-        name: 'text-generation',
-      }],
-    })).toBe('text-generation')
-  })
-
-  it('does not guess a task for unsupported or missing TASK labels', () => {
-    expect(resolveUseModelTask({
-      labels: [{
-        category: Category.LIBRARY,
-        name: 'image-text-to-text',
-      }],
-    })).toBeNull()
-    expect(resolveUseModelTask({})).toBeNull()
-  })
-})
-
-describe('snippet builders', () => {
-  it('uses the configured HF endpoint', () => {
-    expect(buildEnvSnippet('https://hub.example.com').code)
-      .toContain('export HF_ENDPOINT="https://hub.example.com"')
-  })
