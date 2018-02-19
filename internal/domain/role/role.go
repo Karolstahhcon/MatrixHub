@@ -127,3 +127,68 @@ func (p PermissionList) Value() (driver.Value, error) {
 }
 
 // Scan implements sql.Scanner for database retrieval
+func (p *PermissionList) Scan(value interface{}) error {
+	if value == nil {
+		*p = nil
+		return nil
+	}
+	bytes, ok := value.([]byte)
+	if !ok {
+		return nil
+	}
+	return json.Unmarshal(bytes, p)
+}
+
+type PermissionCategory string
+
+func (p PermissionCategory) String() string {
+	return string(p)
+}
+
+type PermissionCategories struct {
+	Category    PermissionCategory
+	Permissions []Permission
+}
+
+type PermissionCategoriesList []PermissionCategories
+
+func (p PermissionCategoriesList) CheckPermissions(permissions []Permission) error {
+	permissionMap := make(map[Permission]bool)
+	for _, ps := range p {
+		for _, permission := range ps.Permissions {
+			permissionMap[permission] = true
+		}
+	}
+
+	for _, permission := range permissions {
+		if !permissionMap[permission] {
+			return fmt.Errorf("invalid permission: %s", permission)
+		}
+	}
+
+	return nil
+}
+
+var (
+	PlatformPermissions = PermissionCategoriesList{
+		{
+			Category: UserManagement,
+			Permissions: []Permission{
+				UserCreate, UserDelete, UserResetPassword, UserAuthorize,
+			},
+		},
+		{
+			Category: RegistryManagement,
+			Permissions: []Permission{
+				RegistryCreate, RegistryDelete, RegistryUpdate,
+			},
+		},
+		{
+			Category: SyncRemote,
+			Permissions: []Permission{
+				SyncCreate, SyncDelete, SyncUpdate, SyncRun,
+			},
+		},
+		{
+			Category: ProjectManagement,
+			Permissions: []Permission{

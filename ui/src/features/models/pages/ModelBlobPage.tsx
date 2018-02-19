@@ -23,29 +23,3 @@ export function ModelBlobPage() {
   } = useParams()
 
   const {
-    data: file, isLoading: isFileLoading, error: fileError,
-  } = useModelBlob(projectId, modelId, {
-    revision,
-    path,
-  })
-  // hook calls needs to be unconditional, but it returns empty state when file is undefined
-  const {
-    content, isLoading: isContentLoading, error: contentError,
-  } = useFileContent(file)
-
-  let body: React.ReactNode
-
-  if (fileError) {
-    body = (
-      <Stack gap="md">
-        <Alert variant="light" color="red" title="Error" icon={<IconInfoCircle />}>
-          {fileError instanceof Error || 'message' in fileError ? fileError.message : String(fileError)}
-        </Alert>
-      </Stack>
-    )
-  } else if (isFileLoading) {
-    body = (
-      <Center p="xl"><Loader /></Center>
-    )
-  } else if (!file) {
-    body = (
