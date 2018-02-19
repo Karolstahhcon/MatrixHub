@@ -89,3 +89,34 @@ export function revokeUserAdminMutationOptions() {
     sysadminFlag: false,
     successMessage: i18n.t('routes.admin.users.notifications.revokeAdminSuccess'),
     errorMessage: i18n.t('routes.admin.users.notifications.revokeAdminError'),
+  })
+}
+
+export function deleteUserMutationOptions() {
+  return mutationOptions({
+    mutationFn: ({ id }: DeleteUserRequest) =>
+      Users.DeleteUser({
+        id: requireUserId(id),
+      }),
+    meta: {
+      successMessage: i18n.t('routes.admin.users.notifications.deleteSuccess'),
+      errorMessage: i18n.t('routes.admin.users.notifications.deleteError'),
+      invalidates: [adminUserKeys.lists()],
+    } satisfies NotificationMeta,
+  })
+}
+
+export function batchDeleteUsersMutationOptions() {
+  return mutationOptions({
+    mutationFn: async (users: readonly User[]) => {
+      if (users.length === 0) {
+        throw new Error(i18n.t('routes.admin.users.errors.noUsersSelected'))
+      }
+
+      const ids = users.map(user => requireUserId(user.id))
+      // TODO: Use a backend batch-delete API when available to avoid partial-success states.
+      const results = await Promise.allSettled(
+        ids.map(id => Users.DeleteUser({ id })),
+      )
+      const failed = results.filter(
+        (result): result is PromiseRejectedResult => result.status === 'rejected',
