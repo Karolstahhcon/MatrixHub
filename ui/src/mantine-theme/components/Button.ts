@@ -8,13 +8,3 @@ const buttonSizeMap = {
   sm: {
     height: rem(32),
     paddingX: rem(16),
-  },
-  md: {
-    height: rem(40),
-    paddingX: rem(20),
-  },
-  lg: {
-    height: rem(48),
-    paddingX: rem(24),
-  },
-  xl: {
