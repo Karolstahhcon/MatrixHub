@@ -33,3 +33,15 @@ export function RegistriesPage() {
   const {
     onSearchChange,
     onRefresh,
+    onPageChange,
+  } = useRouteListState({
+    search,
+    navigate,
+    records: registries,
+    getRecordId: getRegistryRowId,
+    refresh: refreshRegistries,
+  })
+
+  return (
+    <RegistriesTable
+      data={registries}
