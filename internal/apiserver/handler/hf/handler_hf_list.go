@@ -78,3 +78,163 @@ func (h *Handler) handleListRepos(w http.ResponseWriter, r *http.Request, repoTy
 		baseDir = filepath.Join(reposDir, repoType)
 	}
 
+	entries := discoverRepos(baseDir, isModel, f.author)
+	items := buildRepoListItems(entries, isModel, f.search, f.filterTags)
+
+	// Sort results
+	sortRepoItems(items, f.sortField)
+
+	// Apply cursor offset
+	if f.offset > 0 && f.offset < len(items) {
+		items = items[f.offset:]
+	} else if f.offset >= len(items) {
+		items = nil
+	}
+
+	// Apply limit and set Link header if there are more results
+	if f.limit > 0 && len(items) > f.limit {
+		items = items[:f.limit]
+
+		nextCursor := encodeCursorOffset(f.offset + f.limit)
+		nextURL := buildNextURL(r, nextCursor)
+		w.Header().Set("Link", fmt.Sprintf("<%s>; rel=\"next\"", nextURL))
+	}
+
+	if items == nil {
+		items = []repoListItem{}
+	}
+
+	responseJSON(w, items, http.StatusOK)
+}
+
+// repoEntry represents a discovered repository on disk.
+type repoEntry struct {
+	fullName string // "namespace/repo"
+	repoPath string // absolute path to the .git directory
+}
+
+// isSafePathComponent reports whether component is a single, non-traversing path component.
+func isSafePathComponent(component string) bool {
+	if component == "" || component == "." || component == ".." {
+		return false
+	}
+	if filepath.IsAbs(component) {
+		return false
+	}
+	return !strings.ContainsAny(component, `/\\`)
+}
+
+// resolveContainedPath resolves a safe path component below root and rejects
+// paths that escape root, including through symbolic links.
+func resolveContainedPath(root, component string) (string, error) {
+	if !isSafePathComponent(component) {
+		return "", fmt.Errorf("invalid path component %q", component)
+	}
+
+	absRoot, err := filepath.Abs(root)
+	if err != nil {
+		return "", err
+	}
+	resolvedRoot, err := filepath.EvalSymlinks(absRoot)
+	if err != nil {
+		return "", err
+	}
+
+	absPath, err := filepath.Abs(filepath.Join(root, component))
+	if err != nil {
+		return "", err
+	}
+	resolvedPath, err := filepath.EvalSymlinks(absPath)
+	if err != nil {
+		return "", err
+	}
+
+	rel, err := filepath.Rel(resolvedRoot, resolvedPath)
+	if err != nil {
+		return "", err
+	}
+	if filepath.IsAbs(rel) || rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
+		return "", fmt.Errorf("path %q escapes root %q", component, root)
+	}
+	return resolvedPath, nil
+}
+
+// discoverRepos walks the base directory and returns all valid repository entries,
+// applying namespace-level filters (author, skipping non-model prefixes).
+func discoverRepos(baseDir string, isModel bool, author string) []repoEntry {
+	if author != "" {
+		return discoverReposInNamespace(baseDir, author)
+	}
+	namespaces, err := os.ReadDir(baseDir)
+	if err != nil {
+		return nil
+	}
+
+	var entries []repoEntry
+	for _, nsEntry := range namespaces {
+		if !nsEntry.IsDir() {
+			continue
+		}
+		nsName := nsEntry.Name()
+
+		// For models, skip the datasets/ and spaces/ directories
+		if isModel && (nsName == "datasets" || nsName == "spaces") {
+			continue
+		}
+		entries = append(entries, discoverReposInNamespace(baseDir, nsName)...)
+	}
+	return entries
+}
+
+// discoverReposInNamespace returns all valid repository entries within a single namespace directory.
+func discoverReposInNamespace(baseDir, nsName string) []repoEntry {
+	// Keep the user-controlled namespace as a local path component, then resolve
+	// it beneath the trusted repositories directory before accessing the file system.
+	if !filepath.IsLocal(nsName) {
+		return nil
+	}
+	if !isSafePathComponent(nsName) {
+		return nil
+	}
+	nsPath, err := resolveContainedPath(baseDir, nsName)
+	if err != nil {
+		return nil
+	}
+
+	repos, err := os.ReadDir(nsPath)
+	if err != nil {
+		return nil
+	}
+
+	var entries []repoEntry
+	for _, repoDir := range repos {
+		if !repoDir.IsDir() || !strings.HasSuffix(repoDir.Name(), ".git") {
+			continue
+		}
+		repoPath := filepath.Join(nsPath, repoDir.Name())
+		if !repository.IsRepository(repoPath) {
+			continue
+		}
+		name := strings.TrimSuffix(repoDir.Name(), ".git")
+		entries = append(entries, repoEntry{
+			fullName: nsName + "/" + name,
+			repoPath: repoPath,
+		})
+	}
+	return entries
+}
+
+// buildRepoListItems converts discovered repo entries into list items,
+// applying search and tag filters and reading metadata from each repository.
+func buildRepoListItems(entries []repoEntry, isModel bool, search string, filterTags []string) []repoListItem {
+	var items []repoListItem
+	for _, e := range entries {
+		if search != "" && !strings.Contains(strings.ToLower(e.fullName), strings.ToLower(search)) {
+			continue
+		}
+
+		item := repoListItem{
+			RepoID: e.fullName,
+		}
+		if isModel {
+			item.ModelID = e.fullName
