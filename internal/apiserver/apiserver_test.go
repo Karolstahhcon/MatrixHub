@@ -66,3 +66,37 @@ func TestInitPresetsSkipsDisabledPresets(t *testing.T) {
 }
 
 func TestInitPresetsWaitsForRepositoryReconciliation(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	presetRepo := presetmocks.NewMockIPresetRepo(ctrl)
+	modelRepo := modelmocks.NewMockIModelRepo(ctrl)
+	projectRepo := projectmocks.NewMockIProjectRepo(ctrl)
+	gitRepo := gitmocks.NewMockIGitRepo(ctrl)
+	manifest := preset.DefaultManifest()
+	modelCount := int32(len(manifest.Models))
+	registryID := 3
+
+	seed := presetRepo.EXPECT().SeedIfEmpty(gomock.Any(), manifest).Return(true, nil)
+	modelRepo.EXPECT().GetByProjectAndName(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(&model.Model{}, nil).Times(len(manifest.Models)).After(seed)
+	projectRepo.EXPECT().GetProjectByName(gomock.Any(), gomock.Any()).
+		Return(&project.Project{RegistryID: &registryID}, nil).Times(len(manifest.Models))
+	gitRepo.EXPECT().RepositoryExists(gomock.Any(), "models", gomock.Any(), gomock.Any()).
+		Return(false, nil).Times(len(manifest.Models))
+
+	started := make(chan struct{}, len(manifest.Models))
+	release := make(chan struct{})
+	reconciled := make(chan struct{})
+	var created atomic.Int32
+	gitRepo.EXPECT().CreateRepository(gomock.Any(), "models", gomock.Any(), gomock.Any()).
+		DoAndReturn(func(context.Context, string, string, string) error {
+			started <- struct{}{}
+			<-release
+			if created.Add(1) == modelCount {
+				close(reconciled)
+			}
+			return nil
+		}).Times(len(manifest.Models))
+
+	server := &APIServer{
+		config: &config.Config{},
+		repos: &repo.Repos{
