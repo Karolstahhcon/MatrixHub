@@ -1,0 +1,9 @@
+# Snapshot of guides/recipes/router/base.values.yaml from llm-d commit
+# 7029aac48505752dd51344ce552acc81b0deb774.
+router:
+  epp:
+    replicas: 1
+    flags:
+      v: 2
+    pluginsConfigFile: default-plugins.yaml
+    resources:
