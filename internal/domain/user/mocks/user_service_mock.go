@@ -15,3 +15,37 @@ import (
 
 	user "github.com/matrixhub-ai/matrixhub/internal/domain/user"
 	gomock "go.uber.org/mock/gomock"
+)
+
+// MockIUserService is a mock of IUserService interface.
+type MockIUserService struct {
+	ctrl     *gomock.Controller
+	recorder *MockIUserServiceMockRecorder
+	isgomock struct{}
+}
+
+// MockIUserServiceMockRecorder is the mock recorder for MockIUserService.
+type MockIUserServiceMockRecorder struct {
+	mock *MockIUserService
+}
+
+// NewMockIUserService creates a new mock instance.
+func NewMockIUserService(ctrl *gomock.Controller) *MockIUserService {
+	mock := &MockIUserService{ctrl: ctrl}
+	mock.recorder = &MockIUserServiceMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockIUserService) EXPECT() *MockIUserServiceMockRecorder {
+	return m.recorder
+}
+
+// GetCurrentUser mocks base method.
+func (m *MockIUserService) GetCurrentUser(ctx context.Context) (*user.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCurrentUser", ctx)
+	ret0, _ := ret[0].(*user.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
