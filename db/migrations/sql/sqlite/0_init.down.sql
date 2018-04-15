@@ -1,0 +1,9 @@
+DROP TABLE IF EXISTS robots_projects;
+DROP TABLE IF EXISTS robots;
+DROP TABLE IF EXISTS sessions;
+DROP TABLE IF EXISTS sync_jobs;
+DROP TABLE IF EXISTS sync_tasks;
+DROP TABLE IF EXISTS sync_policies;
+DROP TABLE IF EXISTS ssh_keys;
+DROP TABLE IF EXISTS access_tokens;
+DROP TABLE IF EXISTS datasets_labels;
