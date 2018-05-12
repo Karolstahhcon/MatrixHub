@@ -11,16 +11,3 @@ export function CreateReplicationAction() {
   const [opened, {
     open, close,
   }] = useDisclosure(false)
-
-  return (
-    <>
-      <Button
-        onClick={open}
-        leftSection={<Icon size={16} />}
-      >
-        {t('routes.admin.replications.toolbar.create')}
-      </Button>
-
-      {opened && (
-        <ReplicationFormModal
-          mode="create"
