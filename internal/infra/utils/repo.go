@@ -18,3 +18,13 @@ import "strings"
 
 var repoTypePrefixes = []struct {
 	prefix   string
+	repoType string
+}{
+	{"datasets/", "datasets"},
+	{"spaces/", "spaces"},
+}
+
+func ParseFromRepoName(repoName string) (repoType, project, name string, ok bool) {
+	repoType = "models"
+	namespacedName := repoName
+	for _, p := range repoTypePrefixes {

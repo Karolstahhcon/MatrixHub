@@ -311,3 +311,316 @@ func TestGitRepoGetBlobResolvesRevisions(t *testing.T) {
 			want: git.TreeEntry{
 				Name: "README.md", Path: "README.md", Type: git.FileTypeFile, Size: 6,
 				URL: "/test-project/test-model/resolve/main/README.md",
+			},
+			wantCommit: fixture.second,
+		},
+		{
+			name:     "full commit SHA",
+			revision: fixture.first,
+			path:     "README.md",
+			want: git.TreeEntry{
+				Name: "README.md", Path: "README.md", Type: git.FileTypeFile, Size: 2,
+				URL: "/test-project/test-model/resolve/" + fixture.first + "/README.md",
+			},
+			wantCommit: fixture.first,
+		},
+		{
+			name:     "unknown revision",
+			revision: "missing",
+			path:     "README.md",
+			wantErr:  "failed to resolve revision",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			entry, err := fixture.git.GetBlob(ctx, "model", repoTestProject, repoTestName, test.revision, test.path)
+			if test.wantErr != "" {
+				require.ErrorContains(t, err, test.wantErr)
+				require.Nil(t, entry)
+				return
+			}
+
+			require.NoError(t, err)
+			require.NotNil(t, entry.Commit)
+			require.Equal(t, test.wantCommit, entry.Commit.ID)
+			require.False(t, entry.Commit.CommitterDate.IsZero())
+			require.Equal(t, entry.Commit.CommitterDate, entry.Commit.CreatedAt)
+			entry.Commit = nil
+			require.NotEmpty(t, entry.Hash)
+			entry.Hash = ""
+			require.Equal(t, test.want, *entry)
+		})
+	}
+}
+
+func TestExtractMetadataRejectsMissingRepository(t *testing.T) {
+	g := NewGitDB(hfdstorage.NewStorage(hfdstorage.WithRootDir(t.TempDir())), nil)
+
+	_, err := g.ExtractMetadata(context.Background(), "model", repoTestProject, repoTestName)
+
+	require.ErrorContains(t, err, "failed to open git repo")
+}
+
+func TestReadSafetensorsHeaderFrom(t *testing.T) {
+	header := []byte(`{"__metadata__":{"format":"pt"}}`)
+	prefix := func(length uint64) []byte {
+		return binary.LittleEndian.AppendUint64(nil, length)
+	}
+	valid := append(prefix(uint64(len(header))), header...)
+
+	for _, test := range []struct {
+		name          string
+		input         []byte
+		want          []byte
+		wantRemaining []byte
+		wantErr       error
+		wantErrText   string
+	}{
+		{
+			name:          "stops after the header",
+			input:         append(append([]byte{}, valid...), "tensor-bytes"...),
+			want:          valid,
+			wantRemaining: []byte("tensor-bytes"),
+		},
+		{
+			name:  "empty header",
+			input: prefix(0),
+			want:  prefix(0),
+		},
+		{
+			name:    "missing length prefix",
+			input:   nil,
+			wantErr: io.EOF,
+		},
+		{
+			name:    "truncated length prefix",
+			input:   []byte{1, 2, 3},
+			wantErr: io.ErrUnexpectedEOF,
+		},
+		{
+			name:    "truncated header",
+			input:   append(prefix(uint64(len(header))), header[:4]...),
+			wantErr: io.ErrUnexpectedEOF,
+		},
+		{
+			name:        "header over the size limit",
+			input:       prefix(maxSafetensorsHeaderBytes + 1),
+			wantErrText: "safetensors header too large: 67108865 bytes",
+		},
+		{
+			name:        "length prefix overflowing int",
+			input:       prefix(math.MaxUint64),
+			wantErrText: "safetensors header too large: 18446744073709551615 bytes",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			reader := bytes.NewReader(test.input)
+
+			got, err := readSafetensorsHeaderFrom(reader)
+
+			switch {
+			case test.wantErr != nil:
+				require.ErrorIs(t, err, test.wantErr)
+				require.Nil(t, got)
+			case test.wantErrText != "":
+				require.EqualError(t, err, test.wantErrText)
+				require.Nil(t, got)
+			default:
+				require.NoError(t, err)
+				require.Equal(t, test.want, got)
+				remaining, err := io.ReadAll(reader)
+				require.NoError(t, err)
+				require.Equal(t, string(test.wantRemaining), string(remaining))
+			}
+		})
+	}
+}
+
+func TestParseSafetensorsIndex(t *testing.T) {
+	for _, test := range []struct {
+		name          string
+		indexJSON     string
+		wantTotalSize int64
+		wantPaths     []string
+	}{
+		{
+			name: "sharded index lists each shard once",
+			indexJSON: `{"metadata":{"total_size":4096},"weight_map":{
+				"model.embed_tokens.weight":"model-00001-of-00002.safetensors",
+				"model.norm.weight":"./model-00001-of-00002.safetensors",
+				"lm_head.weight":"model-00002-of-00002.safetensors",
+				"model.layers.0.weight":"nested/../model-00002-of-00002.safetensors"}}`,
+			wantTotalSize: 4096,
+			wantPaths:     []string{"model-00001-of-00002.safetensors", "model-00002-of-00002.safetensors"},
+		},
+		{
+			name: "skips paths outside the repository and non-safetensors files",
+			indexJSON: `{"weight_map":{
+				"a":"shards/model.safetensors",
+				"b":"../escape.safetensors",
+				"c":"shards/../../escape.safetensors",
+				"d":"/absolute.safetensors",
+				"e":"pytorch_model.bin",
+				"f":"",
+				"g":"."}}`,
+			wantPaths: []string{"shards/model.safetensors"},
+		},
+		{
+			name:          "index without weight map",
+			indexJSON:     `{"metadata":{"total_size":1}}`,
+			wantTotalSize: 1,
+		},
+		{
+			name:      "malformed JSON",
+			indexJSON: `{"weight_map":`,
+		},
+		{
+			name:      "unexpected field type",
+			indexJSON: `{"metadata":{"total_size":"4096"},"weight_map":{"a":"model.safetensors"}}`,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			index := parseSafetensorsIndex([]byte(test.indexJSON))
+
+			require.Equal(t, test.wantTotalSize, index.Metadata.TotalSize)
+			require.ElementsMatch(t, test.wantPaths, index.safetensorsPaths())
+		})
+	}
+}
+
+func TestLFSPointerSize(t *testing.T) {
+	ctx := context.Background()
+	store := hfdstorage.NewStorage(hfdstorage.WithRootDir(t.TempDir()))
+	repo := initRepoTestRepository(t, ctx, store)
+	files := map[string][]byte{
+		"pointer.safetensors":       repoTestLFSPointer(repoTestMissingOID, "1024"),
+		"regular.safetensors":       []byte("not an lfs pointer"),
+		"empty-object.safetensors":  repoTestLFSPointer(repoTestMissingOID, "0"),
+		"size-overflow.safetensors": repoTestLFSPointer(repoTestMissingOID, "9223372036854775808"),
+		"oversized.safetensors":     bytes.Repeat([]byte("a"), 2048),
+	}
+	commitRepoTestFiles(t, ctx, repo, files)
+
+	for _, test := range []struct {
+		path     string
+		wantSize int64
+		wantOK   bool
+	}{
+		{path: "pointer.safetensors", wantSize: 1024, wantOK: true},
+		{path: "regular.safetensors"},
+		{path: "empty-object.safetensors"},
+		{path: "size-overflow.safetensors"},
+		{path: "oversized.safetensors"},
+		{path: "missing.safetensors"},
+	} {
+		t.Run(test.path, func(t *testing.T) {
+			size, ok := lfsPointerSize(repo, "main", test.path)
+
+			require.Equal(t, test.wantOK, ok)
+			require.Equal(t, test.wantSize, size)
+		})
+	}
+}
+
+func TestGitRepoOpenBlobContent(t *testing.T) {
+	ctx := context.Background()
+	store := hfdstorage.NewStorage(hfdstorage.WithRootDir(t.TempDir()))
+	repo := initRepoTestRepository(t, ctx, store)
+	storedObject := []byte("content of an LFS object fetched earlier")
+	commitRepoTestFiles(t, ctx, repo, map[string][]byte{
+		"config.json":         []byte(`{"torch_dtype":"bfloat16"}`),
+		"stored.safetensors":  storeRepoTestLFSObject(t, store, storedObject),
+		"pending.safetensors": repoTestLFSPointer(repoTestMissingOID, "1024"),
+	})
+	// A mirror without in-flight downloads stands in for a proxy whose object
+	// was neither queued nor fetched.
+	idleMirror := mirror.NewMirror(mirror.WithCacheDir(t.TempDir()))
+
+	for _, test := range []struct {
+		name    string
+		mirror  *mirror.Mirror
+		path    string
+		want    []byte
+		wantErr string
+	}{
+		{
+			name: "regular file is read from git",
+			path: "config.json",
+			want: []byte(`{"torch_dtype":"bfloat16"}`),
+		},
+		{
+			name: "LFS pointer is resolved from the local object store",
+			path: "stored.safetensors",
+			want: storedObject,
+		},
+		{
+			name:    "missing LFS object without mirror",
+			path:    "pending.safetensors",
+			wantErr: "lfs object " + repoTestMissingOID + " is not available locally",
+		},
+		{
+			name:    "missing LFS object not downloading in mirror",
+			mirror:  idleMirror,
+			path:    "pending.safetensors",
+			wantErr: "lfs object " + repoTestMissingOID + " is not available locally",
+		},
+		{
+			name:    "missing file",
+			path:    "missing.safetensors",
+			wantErr: "file not found",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			g := NewGitDB(store, test.mirror).(*gitRepo)
+
+			rc, err := g.openBlobContent(repo, "main", test.path)
+			if test.wantErr != "" {
+				require.ErrorContains(t, err, test.wantErr)
+				require.Nil(t, rc)
+				return
+			}
+
+			require.NoError(t, err)
+			content, err := io.ReadAll(rc)
+			require.NoError(t, rc.Close())
+			require.NoError(t, err)
+			require.Equal(t, test.want, content)
+		})
+	}
+}
+
+func TestExtractMetadataReadsShardHeadersWithoutIndexTotalSize(t *testing.T) {
+	ctx := context.Background()
+	store := hfdstorage.NewStorage(hfdstorage.WithRootDir(t.TempDir()))
+	repo := initRepoTestRepository(t, ctx, store)
+
+	gitShard := buildRepoTestSafetensorsFile(t, map[string][]int64{"model.embed_tokens.weight": {2, 3}}, 12)
+	lfsShard := buildRepoTestSafetensorsFile(t, map[string][]int64{"lm_head.weight": {4, 5}}, 40)
+	index, err := json.Marshal(map[string]any{
+		"metadata": map[string]any{"format": "pt"},
+		"weight_map": map[string]string{
+			"model.embed_tokens.weight": "model-00001-of-00003.safetensors",
+			"model.norm.weight":         "./model-00001-of-00003.safetensors",
+			"lm_head.weight":            "model-00002-of-00003.safetensors",
+			"model.layers.0.weight":     "model-00003-of-00003.safetensors",
+		},
+	})
+	require.NoError(t, err)
+	commitRepoTestFiles(t, ctx, repo, map[string][]byte{
+		"model.safetensors.index.json":     index,
+		"model-00001-of-00003.safetensors": gitShard,
+		"model-00002-of-00003.safetensors": storeRepoTestLFSObject(t, store, lfsShard),
+		"model-00003-of-00003.safetensors": repoTestLFSPointer(repoTestMissingOID, "4096"),
+	})
+
+	files, err := NewGitDB(store, nil).ExtractMetadata(ctx, "models", repoTestProject, repoTestName)
+
+	require.NoError(t, err)
+	require.Equal(t, index, files.SafetensorsIndexJSON)
+	// Readable shards contribute their header, whether the content lives in git
+	// or in the LFS store; shards whose object is missing fall back to the size
+	// recorded in their pointer.
+	require.Equal(t, map[string][]byte{
+		"model-00001-of-00003.safetensors": repoTestSafetensorsHeader(t, gitShard),
+		"model-00002-of-00003.safetensors": repoTestSafetensorsHeader(t, lfsShard),
+	}, files.SafetensorsFiles)
+	require.Equal(t, map[string]int64{"model-00003-of-00003.safetensors": 4096}, files.SafetensorsSizes)
