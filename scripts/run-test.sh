@@ -32,3 +32,73 @@ LABEL_FILTER=${1:-}
 MATRIXHUB_BASE_URL="${MATRIXHUB_BASE_URL:-http://localhost:3001}"
 
 # URL by which MatrixHub reaches itself, resolved inside the deployment rather
+# than by the test process. No default: tests that need it skip when it is
+# empty, which is safer than guessing an address the server cannot route to.
+MATRIXHUB_SELF_URL="${MATRIXHUB_SELF_URL:-}"
+
+# SSH endpoint reached by Git CLI tests. This is deliberately separate from
+# MATRIXHUB_BASE_URL because HTTP and SSH commonly use different NodePorts.
+MATRIXHUB_SSH_HOST="${MATRIXHUB_SSH_HOST:-127.0.0.1}"
+MATRIXHUB_SSH_PORT="${MATRIXHUB_SSH_PORT:-2222}"
+
+echo "================================================"
+echo "MatrixHub E2E Test Runner"
+echo "================================================"
+echo "Label filter: ${LABEL_FILTER:-<all>}"
+echo "Base URL:   ${MATRIXHUB_BASE_URL}"
+echo "Self URL:   ${MATRIXHUB_SELF_URL:-<unset, self-registry tests skipped>}"
+echo "SSH:        ${MATRIXHUB_SSH_HOST}:${MATRIXHUB_SSH_PORT}"
+echo "================================================"
+
+# Step 1: Wait for service to be ready
+echo ""
+echo "Waiting for MatrixHub service to be ready..."
+TIMEOUT=60
+ELAPSED=0
+INTERVAL=5
+
+while [ $ELAPSED -lt $TIMEOUT ]; do
+    echo "[$(($ELAPSED))s] Checking service health..."
+
+    if curl -s -o /dev/null "${MATRIXHUB_BASE_URL}" 2>&1; then
+        echo ""
+        echo "✓ MatrixHub service is ready!"
+        break
+    fi
+
+    echo "  → Waiting for service to be ready..."
+    sleep $INTERVAL
+    ELAPSED=$(($ELAPSED + $INTERVAL))
+done
+
+if [ $ELAPSED -ge $TIMEOUT ]; then
+    echo ""
+    echo "ERROR: Timeout waiting for MatrixHub service at ${MATRIXHUB_BASE_URL}"
+    echo ""
+    echo "Please ensure MatrixHub is running first."
+    exit 1
+fi
+
+# Step 2: Run E2E tests with ginkgo
+echo ""
+echo "Running E2E tests..."
+echo ""
+
+export MATRIXHUB_BASE_URL="${MATRIXHUB_BASE_URL}"
+export MATRIXHUB_SELF_URL="${MATRIXHUB_SELF_URL}"
+export MATRIXHUB_SSH_HOST="${MATRIXHUB_SSH_HOST}"
+export MATRIXHUB_SSH_PORT="${MATRIXHUB_SSH_PORT}"
+
+# Optional: record all API traffic through a mitmproxy container and print an
+# API-coverage report. Opt-in so plain local runs need no docker/mitmproxy.
+E2E_API_COVERAGE="${E2E_API_COVERAGE:-false}"
+if [ "${E2E_API_COVERAGE}" = "true" ]; then
+    # Go's http.ProxyFromEnvironment bypasses "localhost" and loopback IPs, so a
+    # loopback base URL is never routed through the proxy and nothing is
+    # recorded. Warn loudly rather than emit a silently-empty report.
+    case "${MATRIXHUB_BASE_URL}" in
+        *localhost*|*127.0.0.1*|*\[::1\]*)
+            echo "WARNING: E2E_API_COVERAGE=true but MATRIXHUB_BASE_URL (${MATRIXHUB_BASE_URL}) is loopback."
+            echo "         Go bypasses the proxy for loopback hosts, so no API traffic will be recorded."
+            echo "         Point MATRIXHUB_BASE_URL at a non-loopback hostname (e.g. http://matrixhub.local:PORT)."
+            ;;

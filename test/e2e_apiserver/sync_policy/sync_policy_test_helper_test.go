@@ -46,27 +46,3 @@ func pollUntilTaskStatus(ctx context.Context, api *v1alpha1.SyncPolicyApiService
 
 		resp, _, err := api.SyncPolicyGetSyncTask(ctx, policyID, taskID)
 		if err != nil {
-			return nil, err
-		}
-		if resp.SyncTask != nil && resp.SyncTask.Status != nil && *resp.SyncTask.Status == targetStatus {
-			return resp.SyncTask, nil
-		}
-
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		default:
-		}
-		time.Sleep(5 * time.Second)
-	}
-}
-
-// waitForTaskCompletion polls until the sync task reaches a terminal status (Succeeded, Failed, or Stopped).
-func waitForTaskCompletion(ctx context.Context, api *v1alpha1.SyncPolicyApiService, policyID int32, taskID int32, timeout time.Duration) (*v1alpha1.V1alpha1SyncTask, error) {
-	deadline := time.Now().Add(timeout)
-	for {
-		if time.Now().After(deadline) {
-			return nil, fmt.Errorf("timeout waiting for task %d to complete", taskID)
-		}
-
-		resp, _, err := api.SyncPolicyGetSyncTask(ctx, policyID, taskID)
