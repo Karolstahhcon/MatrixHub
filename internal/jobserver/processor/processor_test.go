@@ -56,3 +56,62 @@ func TestProcessor_ExecuteOnFirstPoll(t *testing.T) {
 	base.Wait()
 }
 
+func TestProcessor_WaitReturnsAfterCancel(t *testing.T) {
+	execute := func(ctx context.Context, policyID int, triggerType int) error { return nil }
+	pollDueFn := func(ctx context.Context, nowMs int64) ([]job.DueJob, error) { return nil, nil }
+	base := newProcessor(ProcessorSyncPolicy, time.Hour, 1, time.Second, execute, pollDueFn)
+	ctx, cancel := context.WithCancel(context.Background())
+	base.Start(ctx)
+	cancel()
+	done := make(chan struct{})
+	go func() {
+		base.Wait()
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("Wait() did not return after context cancel")
+	}
+}
+
+func TestProcessor_TriggerClaimsSpecificID(t *testing.T) {
+	executedCh := make(chan int, 1)
+	pollCalls := 0
+	base := newProcessor(
+		ProcessorSyncTask,
+		time.Hour,
+		1,
+		time.Second,
+		func(_ context.Context, id int, _ int) error {
+			executedCh <- id
+			return nil
+		},
+		func(context.Context, int64) ([]job.DueJob, error) {
+			pollCalls++
+			return nil, nil
+		},
+	)
+	base.claimOne = func(_ context.Context, id int) (job.DueJob, bool, error) {
+		if id != 42 {
+			t.Fatalf("expected trigger for ID 42, got %d", id)
+		}
+		return job.DueJob{ID: id}, true, nil
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	base.Start(ctx)
+	if !base.Trigger(42) {
+		t.Fatal("Trigger(42) returned false")
+	}
+	select {
+	case id := <-executedCh:
+		if id != 42 {
+			t.Fatalf("expected execute for ID 42, got %d", id)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("triggered work was not executed")
+	}
+	cancel()
+	base.Wait()
+	if pollCalls != 1 {
