@@ -25,3 +25,17 @@ export function createProjectMutationOptions() {
         }),
       }),
     meta: {
+      errorMessage: i18n.t('projects.createModal.createFailed'),
+      invalidates: [projectKeys.lists(), authKeys.projectRoles()],
+    } satisfies NotificationMeta,
+  })
+}
+
+export function deleteProjectMutationOptions() {
+  return mutationOptions({
+    mutationFn: (name: string) =>
+      Projects.DeleteProject({ name }),
+    meta: {
+      errorMessage: i18n.t('projects.deleteModal.deleteFailed'),
+      invalidates: [projectKeys.lists(), authKeys.projectRoles()],
+    } satisfies NotificationMeta,
