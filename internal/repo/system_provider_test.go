@@ -14,19 +14,3 @@
 
 package repo
 
-import (
-	"context"
-	"testing"
-
-	"github.com/stretchr/testify/require"
-
-	"github.com/matrixhub-ai/matrixhub/internal/domain/system"
-	"github.com/matrixhub-ai/matrixhub/internal/infra/config"
-)
-
-func TestSystemProvider_GetPublicConfig(t *testing.T) {
-	for _, test := range []struct {
-		name       string
-		cfg        *config.Config
-		wantHfBase string
-	}{
