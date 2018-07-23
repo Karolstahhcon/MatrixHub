@@ -18,24 +18,3 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"testing"
-
-	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/encoding/protojson"
-
-	"github.com/matrixhub-ai/matrixhub/api/go/v1alpha1"
-	"github.com/matrixhub-ai/matrixhub/internal/domain/system"
-	"github.com/matrixhub-ai/matrixhub/internal/infra/config"
-	"github.com/matrixhub-ai/matrixhub/internal/repo"
-)
-
-type systemHandlerTestService struct {
-	cfg *system.PublicConfig
-	err error
-}
-
-func (s systemHandlerTestService) GetPublicConfig(context.Context) (*system.PublicConfig, error) {
-	return s.cfg, s.err
-}
-
