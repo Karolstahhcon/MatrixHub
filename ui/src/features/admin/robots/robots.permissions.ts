@@ -8,3 +8,13 @@ export interface RobotPermissionItem {
 export interface RobotPermissionCategory {
   key: string
   name: string
+  permissions: RobotPermissionItem[]
+}
+
+function transformPermissionCategories(
+  categories: RoleCategory[] | undefined,
+): RobotPermissionCategory[] {
+  return (categories ?? []).map((category) => {
+    const key = category.name ?? ''
+
+    return {

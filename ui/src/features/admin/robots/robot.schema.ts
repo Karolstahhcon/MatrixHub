@@ -25,31 +25,3 @@ export const createRobotAccountFormSchema = (t: TFunction) => z.object({
     field: t('routes.admin.robots.fields.description'),
   })),
   expiryMode: robotExpiryModeSchema,
-  expireDays: z.number().int().min(1, t('common.validation.minNumber', {
-    min: 1,
-    field: t('routes.admin.robots.fields.expiry'),
-  })).optional(),
-  platformPermissions: z.array(z.string()),
-  projectPermissions: z.array(z.string()),
-  projectScope: robotProjectScopeSchema,
-  projects: z.array(z.string()),
-}).superRefine((value, ctx) => {
-  if (value.expiryMode === 'days' && value.expireDays == null) {
-    ctx.addIssue({
-      code: 'custom',
-      message: t('common.validation.fieldRequired', {
-        field: t('routes.admin.robots.fields.expiry'),
-      }),
-      path: ['expireDays'],
-    })
-  }
-})
-
-export const ROBOT_TOKEN_MIN_LENGTH = 8
-export const ROBOT_TOKEN_MAX_LENGTH = 20
-export const ROBOT_TOKEN_COMPLEXITY_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).*$/
-
-export const refreshRobotTokenFormDefaults = {
-  autoGenerate: true,
-  token: '',
-  confirmToken: '',
