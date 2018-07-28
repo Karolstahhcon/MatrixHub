@@ -7,3 +7,32 @@
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package project_test
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/matrixhub-ai/matrixhub/internal/domain/project"
+	"github.com/matrixhub-ai/matrixhub/internal/domain/role"
+)
+
+func TestProjectDomainRules(t *testing.T) {
+	registryID := 7
+	proxied := &project.Project{Type: project.ProjectTypePublic, RegistryID: &registryID}
+	require.Equal(t, "projects", proxied.TableName())
+	require.True(t, proxied.HasProxy())
+	require.True(t, proxied.IsPublic())
+
+	private := &project.Project{Type: project.ProjectTypePrivate}
+	require.False(t, private.HasProxy())
+	require.False(t, private.IsPublic())
+	require.Equal(t, "members_roles_projects", (project.ProjectMember{}).TableName())
+}
+

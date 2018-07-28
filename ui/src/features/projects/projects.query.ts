@@ -20,3 +20,25 @@ export const projectKeys = {
     page: number }) =>
     [...projectKeys.lists(), params] as const,
   detail: (projectId: string) => ['projects', projectId] as const,
+}
+
+// -- Query options factory --
+
+// list owned projects, support pagination and name filter
+export function projectsQueryOptions(search: ProjectsSearch) {
+  return queryOptions({
+    queryKey: projectKeys.list({
+      query: search.query,
+      page: search.page,
+    }),
+    queryFn: () => Projects.ListProjects({
+      name: search.query || undefined,
+      page: search.page,
+      pageSize: DEFAULT_PROJECTS_PAGE_SIZE,
+      permissionFilter: ProjectPermissionFilter.PERMISSION_FILTER_MANAGED_ONLY,
+    }),
+  })
+}
+
+export function projectDetailQueryOptions(projectId: string) {
+  return queryOptions({
