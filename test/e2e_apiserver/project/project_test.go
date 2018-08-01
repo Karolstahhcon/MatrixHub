@@ -269,3 +269,545 @@ var _ = Describe("Project", Label("project"), func() {
 			for _, p := range listResp.Projects {
 				if p.Name == projectName {
 					found = true
+					break
+				}
+			}
+			Expect(found).To(BeTrue(), "created project should be in the list")
+
+			GinkgoWriter.Printf("List response: found %d projects\n", len(listResp.Projects))
+		})
+
+		It("should filter projects by name", Label("L00006"), func() {
+			projectName := tools.GenerateTestProjectName("filter-test")
+			projectType := v1alpha1project.PRIVATE_V1alpha1ProjectType
+
+			// Create a project
+			_, _, err := projectsApi.ProjectsCreateProject(ctx, v1alpha1project.V1alpha1CreateProjectRequest{
+				Name:  projectName,
+				Type_: &projectType,
+			})
+			Expect(err).NotTo(HaveOccurred())
+			defer func() {
+				_, _, _ = projectsApi.ProjectsDeleteProject(ctx, projectName)
+			}()
+
+			// Search with name filter
+			listResp, _, err := projectsApi.ProjectsListProjects(ctx, &v1alpha1project.ProjectsApiProjectsListProjectsOpts{
+				Name:     optional.NewString("filter-test"),
+				Page:     optional.NewInt32(1),
+				PageSize: optional.NewInt32(10),
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(listResp.Projects)).To(BeNumerically(">=", 1), "should find at least one project")
+
+			GinkgoWriter.Printf("Filter response: found %d projects with 'filter-test'\n", len(listResp.Projects))
+		})
+	})
+
+	Context("DeleteProject API", func() {
+		It("should delete an existing project", Label("L00007"), func() {
+			projectName := tools.GenerateTestProjectName("delete-test")
+			projectType := v1alpha1project.PRIVATE_V1alpha1ProjectType
+			GinkgoWriter.Printf("Delete project test: %v\n", projectName)
+
+			// Create project
+			_, _, err := projectsApi.ProjectsCreateProject(ctx, v1alpha1project.V1alpha1CreateProjectRequest{
+				Name:  projectName,
+				Type_: &projectType,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			// Delete project
+			_, _, err = projectsApi.ProjectsDeleteProject(ctx, projectName)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify project is deleted
+			_, _, err = projectsApi.ProjectsGetProject(ctx, projectName)
+			Expect(err).To(HaveOccurred(), "get should fail after delete")
+
+			GinkgoWriter.Printf("Delete response: success\n")
+		})
+
+		It("should fail to delete a non-existent project", Label("L00008"), func() {
+			_, _, err := projectsApi.ProjectsDeleteProject(ctx, "non-existent-project-xyz")
+			Expect(err).To(HaveOccurred())
+
+			GinkgoWriter.Printf("Delete non-existent error: %v\n", err)
+		})
+	})
+
+	Context("UpdateProject API", func() {
+		It("should update project type from public to private", Label("L00023"), func() {
+			projectName := tools.GenerateTestProjectName("update-test")
+			publicType := v1alpha1project.PUBLIC_V1alpha1ProjectType
+			privateType := v1alpha1project.PRIVATE_V1alpha1ProjectType
+
+			// Create public project
+			_, _, err := projectsApi.ProjectsCreateProject(ctx, v1alpha1project.V1alpha1CreateProjectRequest{
+				Name:  projectName,
+				Type_: &publicType,
+			})
+			Expect(err).NotTo(HaveOccurred())
+			defer func() {
+				_, _, _ = projectsApi.ProjectsDeleteProject(ctx, projectName)
+			}()
+
+			// Update to private
+			_, _, err = projectsApi.ProjectsUpdateProject(ctx, projectName, v1alpha1project.ProjectsUpdateProjectBody{
+				Type_: &privateType,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify update
+			getResp, _, err := projectsApi.ProjectsGetProject(ctx, projectName)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(*getResp.Type_).To(Equal(v1alpha1project.PRIVATE_V1alpha1ProjectType))
+
+			GinkgoWriter.Printf("Update project type response: success\n")
+		})
+
+		It("should update project type from private to public", Label("L00024"), func() {
+			projectName := tools.GenerateTestProjectName("update-test-private")
+			privateType := v1alpha1project.PRIVATE_V1alpha1ProjectType
+			publicType := v1alpha1project.PUBLIC_V1alpha1ProjectType
+
+			// Create private project
+			_, _, err := projectsApi.ProjectsCreateProject(ctx, v1alpha1project.V1alpha1CreateProjectRequest{
+				Name:  projectName,
+				Type_: &privateType,
+			})
+			Expect(err).NotTo(HaveOccurred())
+			defer func() {
+				_, _, _ = projectsApi.ProjectsDeleteProject(ctx, projectName)
+			}()
+
+			// Update to public
+			_, _, err = projectsApi.ProjectsUpdateProject(ctx, projectName, v1alpha1project.ProjectsUpdateProjectBody{
+				Type_: &publicType,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify update
+			getResp, _, err := projectsApi.ProjectsGetProject(ctx, projectName)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(*getResp.Type_).To(Equal(v1alpha1project.PUBLIC_V1alpha1ProjectType))
+
+			GinkgoWriter.Printf("Update project type to public response: success\n")
+		})
+	})
+
+	Context("ProjectMember API", func() {
+		var projectName string
+
+		BeforeEach(func() {
+			projectName = tools.GenerateTestProjectName("member-test")
+			projectType := v1alpha1project.PRIVATE_V1alpha1ProjectType
+			_, _, err := projectsApi.ProjectsCreateProject(ctx, v1alpha1project.V1alpha1CreateProjectRequest{
+				Name:  projectName,
+				Type_: &projectType,
+			})
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			_, _, _ = projectsApi.ProjectsDeleteProject(ctx, projectName)
+		})
+
+		It("should list project members", Label("L00009"), func() {
+			listResp, _, err := projectsApi.ProjectsListProjectMembers(ctx, projectName, &v1alpha1project.ProjectsApiProjectsListProjectMembersOpts{
+				Page:     optional.NewInt32(1),
+				PageSize: optional.NewInt32(10),
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(listResp.Members).NotTo(BeNil())
+
+			GinkgoWriter.Printf("List members response: found %d members\n", len(listResp.Members))
+		})
+
+		It("should add a member with viewer role", Label("L00010"), func() {
+			memberID, _, err := tools.CreateUserAndLoginWithID(tools.GenerateTestUsername("viewer"), "Test@123456", false)
+			Expect(err).NotTo(HaveOccurred())
+			memberType := v1alpha1project.USER_V1alpha1MemberType
+			role := v1alpha1project.VIEWER_V1alpha1ProjectRoleType
+
+			_, _, err = projectsApi.ProjectsAddProjectMemberWithRole(ctx, projectName, v1alpha1project.ProjectsAddProjectMemberWithRoleBody{
+				MemberId:   memberID,
+				MemberType: &memberType,
+				Role:       &role,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify member is added with viewer role
+			listResp, _, err := projectsApi.ProjectsListProjectMembers(ctx, projectName, &v1alpha1project.ProjectsApiProjectsListProjectMembersOpts{
+				Page:     optional.NewInt32(1),
+				PageSize: optional.NewInt32(10),
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			var found bool
+			for _, m := range listResp.Members {
+				if m.MemberId == memberID {
+					found = true
+					Expect(*m.Role).To(Equal(v1alpha1project.VIEWER_V1alpha1ProjectRoleType))
+					break
+				}
+			}
+			Expect(found).To(BeTrue(), "member should be added with viewer role")
+
+			GinkgoWriter.Printf("Add member with viewer role response: success\n")
+
+			// Cleanup
+			memberToRemove := v1alpha1project.USER_V1alpha1MemberType
+			_, _, _ = projectsApi.ProjectsRemoveProjectMembers(ctx, projectName, v1alpha1project.ProjectsRemoveProjectMembersBody{
+				Members: []v1alpha1project.V1alpha1MemberToRemove{
+					{MemberId: memberID, MemberType: &memberToRemove},
+				},
+			})
+		})
+
+		It("should add a member with editor role", Label("L00025"), func() {
+			memberID, _, err := tools.CreateUserAndLoginWithID(tools.GenerateTestUsername("editor"), "Test@123456", false)
+			Expect(err).NotTo(HaveOccurred())
+			memberType := v1alpha1project.USER_V1alpha1MemberType
+			role := v1alpha1project.EDITOR_V1alpha1ProjectRoleType
+
+			_, _, err = projectsApi.ProjectsAddProjectMemberWithRole(ctx, projectName, v1alpha1project.ProjectsAddProjectMemberWithRoleBody{
+				MemberId:   memberID,
+				MemberType: &memberType,
+				Role:       &role,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify member is added with editor role
+			listResp, _, err := projectsApi.ProjectsListProjectMembers(ctx, projectName, &v1alpha1project.ProjectsApiProjectsListProjectMembersOpts{
+				Page:     optional.NewInt32(1),
+				PageSize: optional.NewInt32(10),
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			var found bool
+			for _, m := range listResp.Members {
+				if m.MemberId == memberID {
+					found = true
+					Expect(*m.Role).To(Equal(v1alpha1project.EDITOR_V1alpha1ProjectRoleType))
+					break
+				}
+			}
+			Expect(found).To(BeTrue(), "member should be added with editor role")
+
+			GinkgoWriter.Printf("Add member with editor role response: success\n")
+
+			// Cleanup
+			memberToRemove := v1alpha1project.USER_V1alpha1MemberType
+			_, _, _ = projectsApi.ProjectsRemoveProjectMembers(ctx, projectName, v1alpha1project.ProjectsRemoveProjectMembersBody{
+				Members: []v1alpha1project.V1alpha1MemberToRemove{
+					{MemberId: memberID, MemberType: &memberToRemove},
+				},
+			})
+		})
+
+		It("should add a member with admin role", Label("L00026"), func() {
+			memberID, _, err := tools.CreateUserAndLoginWithID(tools.GenerateTestUsername("admin"), "Test@123456", false)
+			Expect(err).NotTo(HaveOccurred())
+			memberType := v1alpha1project.USER_V1alpha1MemberType
+			role := v1alpha1project.ADMIN_V1alpha1ProjectRoleType
+
+			_, _, err = projectsApi.ProjectsAddProjectMemberWithRole(ctx, projectName, v1alpha1project.ProjectsAddProjectMemberWithRoleBody{
+				MemberId:   memberID,
+				MemberType: &memberType,
+				Role:       &role,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify member is added with admin role
+			listResp, _, err := projectsApi.ProjectsListProjectMembers(ctx, projectName, &v1alpha1project.ProjectsApiProjectsListProjectMembersOpts{
+				Page:     optional.NewInt32(1),
+				PageSize: optional.NewInt32(10),
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			var found bool
+			for _, m := range listResp.Members {
+				if m.MemberId == memberID {
+					found = true
+					Expect(*m.Role).To(Equal(v1alpha1project.ADMIN_V1alpha1ProjectRoleType))
+					break
+				}
+			}
+			Expect(found).To(BeTrue(), "member should be added with admin role")
+
+			GinkgoWriter.Printf("Add member with admin role response: success\n")
+
+			// Cleanup
+			memberToRemove := v1alpha1project.USER_V1alpha1MemberType
+			_, _, _ = projectsApi.ProjectsRemoveProjectMembers(ctx, projectName, v1alpha1project.ProjectsRemoveProjectMembersBody{
+				Members: []v1alpha1project.V1alpha1MemberToRemove{
+					{MemberId: memberID, MemberType: &memberToRemove},
+				},
+			})
+		})
+
+		It("should fail to add duplicate member to project", Label("L00027"), func() {
+			memberID, _, err := tools.CreateUserAndLoginWithID(tools.GenerateTestUsername("duplicate"), "Test@123456", false)
+			Expect(err).NotTo(HaveOccurred())
+			memberType := v1alpha1project.USER_V1alpha1MemberType
+			role := v1alpha1project.VIEWER_V1alpha1ProjectRoleType
+
+			// Add member first time
+			_, _, err = projectsApi.ProjectsAddProjectMemberWithRole(ctx, projectName, v1alpha1project.ProjectsAddProjectMemberWithRoleBody{
+				MemberId:   memberID,
+				MemberType: &memberType,
+				Role:       &role,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			// Try to add same member again
+			_, _, err = projectsApi.ProjectsAddProjectMemberWithRole(ctx, projectName, v1alpha1project.ProjectsAddProjectMemberWithRoleBody{
+				MemberId:   memberID,
+				MemberType: &memberType,
+				Role:       &role,
+			})
+			Expect(err).To(HaveOccurred(), "adding duplicate member should fail")
+
+			GinkgoWriter.Printf("Duplicate member error: %v\n", err)
+
+			// Cleanup
+			_, _, _ = projectsApi.ProjectsRemoveProjectMembers(ctx, projectName, v1alpha1project.ProjectsRemoveProjectMembersBody{
+				Members: []v1alpha1project.V1alpha1MemberToRemove{
+					{MemberId: memberID, MemberType: &memberType},
+				},
+			})
+		})
+
+		It("should update member role from viewer to editor", Label("L00011"), func() {
+			memberID, _, err := tools.CreateUserAndLoginWithID(tools.GenerateTestUsername("role-update"), "Test@123456", false)
+			Expect(err).NotTo(HaveOccurred())
+			memberType := v1alpha1project.USER_V1alpha1MemberType
+			viewerRole := v1alpha1project.VIEWER_V1alpha1ProjectRoleType
+			editorRole := v1alpha1project.EDITOR_V1alpha1ProjectRoleType
+
+			// Add member first with viewer role
+			_, _, err = projectsApi.ProjectsAddProjectMemberWithRole(ctx, projectName, v1alpha1project.ProjectsAddProjectMemberWithRoleBody{
+				MemberId:   memberID,
+				MemberType: &memberType,
+				Role:       &viewerRole,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			// Update role to editor
+			_, _, err = projectsApi.ProjectsUpdateProjectMemberRole(ctx, projectName, memberID, v1alpha1project.ProjectsUpdateProjectMemberRoleBody{
+				MemberType: &memberType,
+				Role:       &editorRole,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify role is updated
+			listResp, _, err := projectsApi.ProjectsListProjectMembers(ctx, projectName, &v1alpha1project.ProjectsApiProjectsListProjectMembersOpts{
+				Page:     optional.NewInt32(1),
+				PageSize: optional.NewInt32(10),
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			var found bool
+			for _, m := range listResp.Members {
+				if m.MemberId == memberID {
+					found = true
+					Expect(*m.Role).To(Equal(v1alpha1project.EDITOR_V1alpha1ProjectRoleType))
+					break
+				}
+			}
+			Expect(found).To(BeTrue(), "member should have updated role")
+
+			GinkgoWriter.Printf("Update member role response: success\n")
+
+			// Cleanup
+			_, _, _ = projectsApi.ProjectsRemoveProjectMembers(ctx, projectName, v1alpha1project.ProjectsRemoveProjectMembersBody{
+				Members: []v1alpha1project.V1alpha1MemberToRemove{
+					{MemberId: memberID, MemberType: &memberType},
+				},
+			})
+		})
+
+		It("should remove single member from project", Label("L00012"), func() {
+			memberID, _, err := tools.CreateUserAndLoginWithID(tools.GenerateTestUsername("remove"), "Test@123456", false)
+			Expect(err).NotTo(HaveOccurred())
+			memberType := v1alpha1project.USER_V1alpha1MemberType
+			role := v1alpha1project.VIEWER_V1alpha1ProjectRoleType
+
+			// Add member first
+			_, _, err = projectsApi.ProjectsAddProjectMemberWithRole(ctx, projectName, v1alpha1project.ProjectsAddProjectMemberWithRoleBody{
+				MemberId:   memberID,
+				MemberType: &memberType,
+				Role:       &role,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			// Remove member
+			_, _, err = projectsApi.ProjectsRemoveProjectMembers(ctx, projectName, v1alpha1project.ProjectsRemoveProjectMembersBody{
+				Members: []v1alpha1project.V1alpha1MemberToRemove{
+					{MemberId: memberID, MemberType: &memberType},
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify member is removed
+			listResp, _, err := projectsApi.ProjectsListProjectMembers(ctx, projectName, &v1alpha1project.ProjectsApiProjectsListProjectMembersOpts{
+				Page:     optional.NewInt32(1),
+				PageSize: optional.NewInt32(10),
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			for _, m := range listResp.Members {
+				Expect(m.MemberId).NotTo(Equal(memberID), "member should be removed")
+			}
+
+			GinkgoWriter.Printf("Remove member response: success\n")
+		})
+
+		It("should batch remove members from project", Label("L00028"), func() {
+			member1, _, err := tools.CreateUserAndLoginWithID(tools.GenerateTestUsername("batch1"), "Test@123456", false)
+			Expect(err).NotTo(HaveOccurred())
+			member2, _, err := tools.CreateUserAndLoginWithID(tools.GenerateTestUsername("batch2"), "Test@123456", false)
+			Expect(err).NotTo(HaveOccurred())
+			member3, _, err := tools.CreateUserAndLoginWithID(tools.GenerateTestUsername("batch3"), "Test@123456", false)
+			Expect(err).NotTo(HaveOccurred())
+			memberType := v1alpha1project.USER_V1alpha1MemberType
+			role := v1alpha1project.VIEWER_V1alpha1ProjectRoleType
+
+			// Add members first
+			for _, memberID := range []int32{member1, member2, member3} {
+				_, _, err := projectsApi.ProjectsAddProjectMemberWithRole(ctx, projectName, v1alpha1project.ProjectsAddProjectMemberWithRoleBody{
+					MemberId:   memberID,
+					MemberType: &memberType,
+					Role:       &role,
+				})
+				Expect(err).NotTo(HaveOccurred())
+			}
+
+			// Batch remove members
+			_, _, err = projectsApi.ProjectsRemoveProjectMembers(ctx, projectName, v1alpha1project.ProjectsRemoveProjectMembersBody{
+				Members: []v1alpha1project.V1alpha1MemberToRemove{
+					{MemberId: member1, MemberType: &memberType},
+					{MemberId: member2, MemberType: &memberType},
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify members are removed
+			listResp, _, err := projectsApi.ProjectsListProjectMembers(ctx, projectName, &v1alpha1project.ProjectsApiProjectsListProjectMembersOpts{
+				Page:     optional.NewInt32(1),
+				PageSize: optional.NewInt32(10),
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			for _, m := range listResp.Members {
+				Expect(m.MemberId).NotTo(Equal(member1), "member1 should be removed")
+				Expect(m.MemberId).NotTo(Equal(member2), "member2 should be removed")
+			}
+
+			// member3 should still exist
+			var member3Found bool
+			for _, m := range listResp.Members {
+				if m.MemberId == member3 {
+					member3Found = true
+					break
+				}
+			}
+			Expect(member3Found).To(BeTrue(), "member3 should still exist")
+
+			GinkgoWriter.Printf("Batch remove members response: success\n")
+
+			// Cleanup remaining member
+			_, _, _ = projectsApi.ProjectsRemoveProjectMembers(ctx, projectName, v1alpha1project.ProjectsRemoveProjectMembersBody{
+				Members: []v1alpha1project.V1alpha1MemberToRemove{
+					{MemberId: member3, MemberType: &memberType},
+				},
+			})
+		})
+
+		It("should list members with pagination", Label("L00030"), func() {
+			// Add multiple members
+			memberType := v1alpha1project.USER_V1alpha1MemberType
+			role := v1alpha1project.VIEWER_V1alpha1ProjectRoleType
+			var memberIDs []int32
+			for i := 0; i < 15; i++ {
+				memberID, _, err := tools.CreateUserAndLoginWithID(tools.GenerateTestUsername(fmt.Sprintf("page-%d", i)), "Test@123456", false)
+				Expect(err).NotTo(HaveOccurred())
+				memberIDs = append(memberIDs, memberID)
+				_, _, _ = projectsApi.ProjectsAddProjectMemberWithRole(ctx, projectName, v1alpha1project.ProjectsAddProjectMemberWithRoleBody{
+					MemberId:   memberID,
+					MemberType: &memberType,
+					Role:       &role,
+				})
+			}
+
+			// Get first page
+			page1Resp, _, err := projectsApi.ProjectsListProjectMembers(ctx, projectName, &v1alpha1project.ProjectsApiProjectsListProjectMembersOpts{
+				Page:     optional.NewInt32(1),
+				PageSize: optional.NewInt32(10),
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(page1Resp.Members)).To(BeNumerically("<=", 10))
+
+			GinkgoWriter.Printf("Page 1: found %d members, total=%d\n", len(page1Resp.Members), page1Resp.Pagination.Total)
+
+			// Cleanup
+			for _, memberID := range memberIDs {
+				_, _, _ = projectsApi.ProjectsRemoveProjectMembers(ctx, projectName, v1alpha1project.ProjectsRemoveProjectMembersBody{
+					Members: []v1alpha1project.V1alpha1MemberToRemove{
+						{MemberId: memberID, MemberType: &memberType},
+					},
+				})
+			}
+		})
+	})
+
+	Context("Multi-user permission tests", func() {
+		var (
+			viewerUsername    string
+			viewerPassword    string
+			viewerCookie      string
+			viewerID          int32
+			editorUsername    string
+			editorPassword    string
+			editorCookie      string
+			editorID          int32
+			projAdminUsername string
+			projAdminPassword string
+			projAdminCookie   string
+			projAdminID       int32
+		)
+
+		BeforeEach(func() {
+			viewerPassword = "Test@123456"
+			editorPassword = "Test@123456"
+			projAdminPassword = "Test@123456"
+
+			// Create viewer user
+			viewerUsername = tools.GenerateTestUsername("viewer")
+			var err error
+			viewerID, viewerCookie, err = tools.CreateUserAndLoginWithID(viewerUsername, viewerPassword, false)
+			Expect(err).NotTo(HaveOccurred(), "Failed to create and login viewer user")
+
+			// Create editor user
+			editorUsername = tools.GenerateTestUsername("editor")
+			editorID, editorCookie, err = tools.CreateUserAndLoginWithID(editorUsername, editorPassword, false)
+			Expect(err).NotTo(HaveOccurred(), "Failed to create and login editor user")
+
+			// Create project admin user
+			projAdminUsername = tools.GenerateTestUsername("projadmin")
+			projAdminID, projAdminCookie, err = tools.CreateUserAndLoginWithID(projAdminUsername, projAdminPassword, false)
+			Expect(err).NotTo(HaveOccurred(), "Failed to create and login projAdmin user")
+		})
+
+		Context("Platform-level permission", func() {
+			It("should deny normal user from creating users", Label("L00035"), func() {
+				viewerUserApi := tools.CreateUserClientWithCookie(viewerCookie)
+				_, _, err := viewerUserApi.UsersCreateUser(ctx, v1alpha1user.V1alpha1CreateUserRequest{
+					Username: "should-not-be-created",
+					Password: "Test@123456",
+				})
+				Expect(err).To(HaveOccurred(), "Normal user should not be able to create users")
+				GinkgoWriter.Printf("Normal user correctly denied creating user: %v\n", err)
+			})
+		})
