@@ -6,3 +6,11 @@ services:
     devices:
       - /dev/fuse
     cap_add:
+      - SYS_ADMIN
+    command:
+      - --addr=:9527
+      - --s3-repositories
+      - --s3-endpoint=http://s3:9000
+      - --s3-sign-endpoint=http://localhost:9000
+      - --s3-access-key=minioadmin
+      - --s3-secret-key=minioadmin
