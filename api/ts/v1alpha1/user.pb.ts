@@ -23,28 +23,3 @@ export type User = {
 }
 
 export type CreateUserRequest = {
-  username?: string
-  password?: string
-  isAdmin?: boolean
-}
-
-export type CreateUserResponse = {
-}
-
-export type ListUsersRequest = {
-  page?: number
-  pageSize?: number
-  search?: string
-  excludeProject?: string
-}
-
-export type ListUsersResponse = {
-  users?: User[]
-  pagination?: MatrixhubV1alpha1Utils.Pagination
-}
-
-export type GetUserRequest = {
-  id?: number
-}
-
-export type GetUserResponse = {
