@@ -29,3 +29,34 @@ service CurrentUser {
     option (google.api.http) = {
       post: "/api/v1alpha1/current-user/access-tokens"
       body: "*"
+    };
+  }
+  rpc DeleteAccessToken(DeleteAccessTokenRequest) returns (DeleteAccessTokenResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1alpha1/current-user/access-tokens/{id}"
+    };
+  }
+
+  rpc GetProjectRoles(GetProjectRolesRequest) returns (GetProjectRolesResponse) {
+    option (google.api.http) = {
+      get: "/api/v1alpha1/current-user/projects/role"
+    };
+  }
+
+  rpc CreateSSHKey(CreateSSHKeyRequest) returns (CreateSSHKeyResponse) {
+    option (google.api.http) = {
+      post: "/api/v1alpha1/current-user/ssh-keys"
+      body: "*"
+    };
+  }
+  rpc DeleteSSHKey(DeleteSSHKeyRequest) returns (DeleteSSHKeyResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1alpha1/current-user/ssh-keys/{id}"
+    };
+  }
+  rpc ListSSHKeys(ListSSHKeysRequest) returns (ListSSHKeysResponse) {
+    option (google.api.http) = {
+      get: "/api/v1alpha1/current-user/ssh-keys"
+    };
+  }
+}
