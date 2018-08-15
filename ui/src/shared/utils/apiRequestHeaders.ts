@@ -23,28 +23,3 @@ export type ApiRequestHeaderProvider = () => HeadersInit | null | undefined
 // Keep cross-cutting SDK headers in one provider list so future headers can be
 // added here without wrapping every generated SDK call.
 const apiRequestHeaderProviders: ApiRequestHeaderProvider[] = [
-  () => ({
-    'Accept-Language': currentAcceptLanguage(),
-  }),
-]
-
-function currentAcceptLanguage() {
-  return (
-    normalizeLanguage(i18n.resolvedLanguage)
-    ?? normalizeLanguage(i18n.language)
-    ?? DEFAULT_LANGUAGE
-  )
-}
-
-function isRequest(input: FetchInput): input is Request {
-  return typeof Request !== 'undefined' && input instanceof Request
-}
-
-function requestUrl(input: FetchInput) {
-  try {
-    return new URL(isRequest(input) ? input.url : input, window.location.origin)
-  } catch {
-    return null
-  }
-}
-
