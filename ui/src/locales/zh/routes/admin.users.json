@@ -23,28 +23,3 @@
     "no": "否"
   },
   "source": {
-    "local": "内置"
-  },
-  "actions": {
-    "setAdmin": "设为管理员",
-    "revokeAdmin": "取消管理权限",
-    "resetPassword": "重置密码",
-    "delete": "删除"
-  },
-  "createModal": {
-    "title": "创建用户"
-  },
-  "resetPasswordModal": {
-    "title": "重置密码",
-    "submit": "重置密码"
-  },
-  "deleteModal": {
-    "title": "删除用户",
-    "description": "确认删除 {{username}} 吗？此操作不可撤销。",
-    "submit": "删除"
-  },
-  "batchDeleteModal": {
-    "title": "批量删除用户",
-    "description": "确定要删除 {{usernames}} 等 {{count}} 个用户吗？",
-    "submit": "删除 {{count}} 个用户"
-  },
