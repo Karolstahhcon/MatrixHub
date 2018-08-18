@@ -20,3 +20,25 @@ export interface SearchToolbarProps {
 }
 
 export function SearchToolbar({
+  searchPlaceholder,
+  searchValue = '',
+  onSearchChange,
+  toolbarProps,
+  searchInputProps,
+  children,
+}: SearchToolbarProps) {
+  const showSearch = Boolean(searchPlaceholder && onSearchChange)
+
+  return (
+    <Flex
+      justify="space-between"
+      align="center"
+      wrap="nowrap"
+      gap="md"
+      {...toolbarProps}
+    >
+      {showSearch && (
+        <SearchInput
+          placeholder={searchPlaceholder as string}
+          value={searchValue}
+          onChange={onSearchChange}

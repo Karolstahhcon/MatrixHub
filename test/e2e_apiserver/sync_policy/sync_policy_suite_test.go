@@ -13,3 +13,10 @@
 // limitations under the License.
 
 package sync_policy_test
+
+import (
+	"testing"
+
+	testenv "github.com/matrixhub-ai/matrixhub/test/e2e_apiserver/init"
+
+	. "github.com/onsi/ginkgo/v2"
