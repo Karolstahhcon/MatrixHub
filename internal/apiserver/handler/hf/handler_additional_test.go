@@ -45,3 +45,99 @@ func TestHuggingFaceTree(t *testing.T) {
 
 	response := doHFRequest(t, server.Client(), http.MethodGet,
 		server.URL+"/api/models/test-user/tree-model/tree/main?recursive=true&expand=true", "")
+	require.Equal(t, http.StatusOK, response.StatusCode)
+
+	var entries []treeEntry
+	require.NoError(t, json.NewDecoder(response.Body).Decode(&entries))
+	require.NotEmpty(t, entries)
+	var readme *treeEntry
+	for i := range entries {
+		if entries[i].Path == "README.md" {
+			readme = &entries[i]
+			break
+		}
+	}
+	require.NotNil(t, readme)
+	require.NotEmpty(t, readme.OID)
+	require.Positive(t, readme.Size)
+	require.NotNil(t, readme.LastCommit)
+}
+
+func TestHuggingFaceValidateYAML(t *testing.T) {
+	server, _ := setupTestServer(t)
+	response := doHFRequest(t, server.Client(), http.MethodPost, server.URL+"/api/validate-yaml", "---\nlicense: apache-2.0\n---")
+	require.Equal(t, http.StatusOK, response.StatusCode)
+	var result struct {
+		Errors   []string `json:"errors"`
+		Warnings []string `json:"warnings"`
+	}
+	require.NoError(t, json.NewDecoder(response.Body).Decode(&result))
+	require.Empty(t, result.Errors)
+	require.Empty(t, result.Warnings)
+}
+
+func TestHuggingFaceHandlerOptionsAndFallback(t *testing.T) {
+	middleware := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("X-Test-Middleware", "true")
+			next.ServeHTTP(w, r)
+		})
+	}
+	next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusTeapot)
+	})
+	handler := NewHandler(
+		WithMiddlewares(middleware),
+		WithStorage(storage.NewStorage(storage.WithRootDir(t.TempDir()))),
+		WithNext(next),
+		WithPermissionHookFunc(nil),
+		WithPreReceiveHookFunc(nil),
+		WithPostReceiveHookFunc(nil),
+		WithLFSStorage(nil),
+		WithMirror(nil),
+		WithServices(nil, nil, nil),
+	)
+
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/not-hugging-face", nil))
+	require.Equal(t, http.StatusTeapot, response.Code)
+
+	response = httptest.NewRecorder()
+	handler.Router().ServeHTTP(response, httptest.NewRequest(http.MethodPost, "/api/validate-yaml", nil))
+	require.Equal(t, http.StatusOK, response.Code)
+	require.Equal(t, "true", response.Header().Get("X-Test-Middleware"))
+}
+
+func TestHuggingFaceReadPermissionFailures(t *testing.T) {
+	tests := []struct {
+		name       string
+		allowed    bool
+		err        error
+		wantStatus int
+		wantBody   string
+	}{
+		{name: "denied", wantStatus: http.StatusForbidden, wantBody: "permission denied"},
+		{name: "hook error", err: errors.New("permission backend unavailable"), wantStatus: http.StatusInternalServerError, wantBody: "permission backend unavailable"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler := NewHandler(
+				WithStorage(storage.NewStorage(storage.WithRootDir(t.TempDir()))),
+				WithPermissionHookFunc(func(_ context.Context, operation permission.Operation, repo string, _ permission.Context) (bool, error) {
+					require.Equal(t, permission.OperationReadRepo, operation)
+					require.Equal(t, "org/model", repo)
+					return tt.allowed, tt.err
+				}),
+			)
+			response := httptest.NewRecorder()
+			handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/api/models/org/model/tree/main", nil))
+			require.Equal(t, tt.wantStatus, response.Code)
+			require.Contains(t, response.Body.String(), tt.wantBody)
+		})
+	}
+}
+
+func TestHuggingFaceRejectsMalformedRequests(t *testing.T) {
+	server, _ := setupTestServer(t)
+	tests := []struct {
+		name       string

@@ -22,15 +22,3 @@ import (
 
 	"github.com/matrixhub-ai/matrixhub/internal/domain/auth"
 	"github.com/matrixhub-ai/matrixhub/internal/domain/robot"
-	"github.com/matrixhub-ai/matrixhub/internal/infra/utils"
-)
-
-type RobotAuthenticator struct {
-	robotRepo robot.IRobotRepo
-}
-
-func NewRobotAuthenticator(robotRepo robot.IRobotRepo) *RobotAuthenticator {
-	return &RobotAuthenticator{robotRepo: robotRepo}
-}
-
-func (a *RobotAuthenticator) Authenticate(ctx context.Context, r *http.Request) (auth.Identity, bool, bool, error) {
