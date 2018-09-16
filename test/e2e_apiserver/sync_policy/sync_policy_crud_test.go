@@ -159,3 +159,165 @@ var _ = Describe("SyncPolicy CRUD APIs", Label("sync-policy"), func() {
 			Expect(getResp.SyncPolicy.TriggerTypeSchedule).NotTo(BeNil())
 			Expect(getResp.SyncPolicy.TriggerTypeSchedule.Cron).To(Equal("*/5 * * * *"))
 		})
+	})
+
+	Context("List", func() {
+		It("should list policies with pagination and search", Label("SP0003"), func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+			defer cancel()
+
+			project, err := tools.CreateProjectFixture(ctx, "e2e-list-project")
+			Expect(err).NotTo(HaveOccurred())
+			defer project.Cleanup(ctx)
+
+			registry, err := tools.CreateHuggingFaceRegistryFixture(ctx, "e2e-list-registry", "https://hf-mirror.com")
+			Expect(err).NotTo(HaveOccurred())
+			defer registry.Cleanup(ctx)
+			Expect(registry.ID).To(BeNumerically(">", 0))
+
+			// Create two policies
+			prefix := fmt.Sprintf("e2e-list-%d", time.Now().UnixNano())
+			name1 := prefix + "-policy-1"
+			name2 := prefix + "-policy-2"
+
+			req1 := v1alpha1.V1alpha1CreateSyncPolicyRequest{
+				Name:        name1,
+				Description: "list test 1",
+				PolicyType:  ptrPolicyType(v1alpha1.PULL_BASE_V1alpha1SyncPolicyType),
+				TriggerType: ptrTriggerType(v1alpha1.MANUAL_V1alpha1TriggerType),
+				PullBasePolicy: &v1alpha1.V1alpha1PullBasePolicy{
+					SourceRegistryId:  registry.ID,
+					ResourceName:      "demo-org/demo-model",
+					ResourceTypes:     []v1alpha1.V1alpha1ResourceType{v1alpha1.MODEL_V1alpha1ResourceType},
+					TargetProjectName: project.Name,
+				},
+			}
+			resp1, _, err := api.SyncPolicyCreateSyncPolicy(ctx, req1)
+			Expect(err).NotTo(HaveOccurred())
+			pid1 := resp1.SyncPolicy.Id
+			defer func() {
+				_, _, _ = api.SyncPolicyDeleteSyncPolicy(ctx, pid1)
+			}()
+
+			req2 := v1alpha1.V1alpha1CreateSyncPolicyRequest{
+				Name:        name2,
+				Description: "list test 2",
+				PolicyType:  ptrPolicyType(v1alpha1.PULL_BASE_V1alpha1SyncPolicyType),
+				TriggerType: ptrTriggerType(v1alpha1.MANUAL_V1alpha1TriggerType),
+				PullBasePolicy: &v1alpha1.V1alpha1PullBasePolicy{
+					SourceRegistryId:  registry.ID,
+					ResourceName:      "demo-org/demo-model-2",
+					ResourceTypes:     []v1alpha1.V1alpha1ResourceType{v1alpha1.MODEL_V1alpha1ResourceType},
+					TargetProjectName: project.Name,
+				},
+			}
+			resp2, _, err := api.SyncPolicyCreateSyncPolicy(ctx, req2)
+			Expect(err).NotTo(HaveOccurred())
+			pid2 := resp2.SyncPolicy.Id
+			defer func() {
+				_, _, _ = api.SyncPolicyDeleteSyncPolicy(ctx, pid2)
+			}()
+
+			// List with search
+			listResp, _, err := api.SyncPolicyListSyncPolicies(ctx, &v1alpha1.SyncPolicyApiSyncPolicyListSyncPoliciesOpts{
+				Page:     optional.NewInt32(1),
+				PageSize: optional.NewInt32(20),
+				Search:   optional.NewString(prefix),
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(listResp.Pagination).NotTo(BeNil())
+			Expect(listResp.Pagination.Page).To(Equal(int32(1)))
+			Expect(listResp.Pagination.PageSize).To(Equal(int32(20)))
+			Expect(listResp.Pagination.Total).To(BeNumerically(">=", 2))
+
+			// Verify both policies are in the list
+			var found1, found2 bool
+			for _, p := range listResp.SyncPolicies {
+				if p.Name == name1 {
+					found1 = true
+				}
+				if p.Name == name2 {
+					found2 = true
+				}
+			}
+			Expect(found1).To(BeTrue(), "expected to find policy 1 in list")
+			Expect(found2).To(BeTrue(), "expected to find policy 2 in list")
+		})
+	})
+
+	Context("Switch", func() {
+		It("should disable and enable a policy", Label("SP0004"), func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+			defer cancel()
+
+			project, err := tools.CreateProjectFixture(ctx, "e2e-switch-project")
+			Expect(err).NotTo(HaveOccurred())
+			defer project.Cleanup(ctx)
+
+			registry, err := tools.CreateHuggingFaceRegistryFixture(ctx, "e2e-switch-registry", "https://hf-mirror.com")
+			Expect(err).NotTo(HaveOccurred())
+			defer registry.Cleanup(ctx)
+			Expect(registry.ID).To(BeNumerically(">", 0))
+
+			name := fmt.Sprintf("e2e-switch-%d", time.Now().UnixNano())
+			req := v1alpha1.V1alpha1CreateSyncPolicyRequest{
+				Name:        name,
+				Description: "switch test",
+				PolicyType:  ptrPolicyType(v1alpha1.PULL_BASE_V1alpha1SyncPolicyType),
+				TriggerType: ptrTriggerType(v1alpha1.MANUAL_V1alpha1TriggerType),
+				PullBasePolicy: &v1alpha1.V1alpha1PullBasePolicy{
+					SourceRegistryId:  registry.ID,
+					ResourceName:      "demo-org/demo-model",
+					ResourceTypes:     []v1alpha1.V1alpha1ResourceType{v1alpha1.MODEL_V1alpha1ResourceType},
+					TargetProjectName: project.Name,
+				},
+			}
+
+			resp, _, err := api.SyncPolicyCreateSyncPolicy(ctx, req)
+			Expect(err).NotTo(HaveOccurred())
+			pid := resp.SyncPolicy.Id
+			defer func() {
+				_, _, _ = api.SyncPolicyDeleteSyncPolicy(ctx, pid)
+			}()
+
+			// Disable
+			switchReq := v1alpha1.SyncPolicyUpdateSyncPolicySwitchBody{
+				IsDisabled: true,
+			}
+			switchResp, _, err := api.SyncPolicyUpdateSyncPolicySwitch(ctx, pid, switchReq)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(switchResp.SyncPolicy.IsDisabled).To(BeTrue())
+
+			// Verify via Get
+			getResp, _, err := api.SyncPolicyGetSyncPolicy(ctx, pid)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(getResp.SyncPolicy.IsDisabled).To(BeTrue())
+
+			// Enable
+			switchReq2 := v1alpha1.SyncPolicyUpdateSyncPolicySwitchBody{
+				IsDisabled: false,
+			}
+			switchResp2, _, err := api.SyncPolicyUpdateSyncPolicySwitch(ctx, pid, switchReq2)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(switchResp2.SyncPolicy.IsDisabled).To(BeFalse())
+
+			// Verify via Get
+			getResp2, _, err := api.SyncPolicyGetSyncPolicy(ctx, pid)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(getResp2.SyncPolicy.IsDisabled).To(BeFalse())
+		})
+	})
+
+	Context("Delete", func() {
+		It("should delete a policy", Label("SP0005"), func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+			defer cancel()
+
+			project, err := tools.CreateProjectFixture(ctx, "e2e-delete-project")
+			Expect(err).NotTo(HaveOccurred())
+			defer project.Cleanup(ctx)
+
+			registry, err := tools.CreateHuggingFaceRegistryFixture(ctx, "e2e-delete-registry", "https://hf-mirror.com")
+			Expect(err).NotTo(HaveOccurred())
+			defer registry.Cleanup(ctx)
+			Expect(registry.ID).To(BeNumerically(">", 0))

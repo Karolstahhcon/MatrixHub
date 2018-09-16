@@ -19,25 +19,3 @@ interface FileContentState {
  * Binary files are skipped — the caller should show a fallback card instead.
  */
 export function useFileContent(file: File | undefined): FileContentState {
-  const category = classifyFile(file?.name)
-  const url = file?.url
-  const shouldFetch = category !== 'binary' && !!url
-
-  const [state, setState] = useState<FileContentState>({
-    content: undefined,
-    isLoading: shouldFetch,
-    error: null,
-  })
-
-  useEffect(() => {
-    if (!shouldFetch || !url) {
-      return
-    }
-
-    const controller = new AbortController()
-
-    let targetUrl = url
-    const isAbsoluteUrl = url.startsWith('http://') || url.startsWith('https://')
-
-    if (!isAbsoluteUrl) {
-      if (import.meta.env.DEV) {
