@@ -13,3 +13,10 @@ export function deleteSshKeyMutationOptions() {
       CurrentUser.DeleteSSHKey({ id }),
     meta: {
       successMessage: i18n.t('profile.sshKey.delete.success'),
+      invalidates: [profileKeys.sshKeys],
+    } satisfies NotificationMeta,
+  })
+}
+
+export function createSshKeyMutationOptions() {
+  return mutationOptions({
