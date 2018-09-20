@@ -21,11 +21,3 @@ type Identity struct {
 
 func (i Identity) GetID() int {
 	return i.ID
-}
-
-func (i Identity) GetName() string {
-	return i.Name
-}
-
-func (i Identity) TypeName() string {
-	return "user"
