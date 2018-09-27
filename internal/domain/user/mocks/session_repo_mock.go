@@ -49,3 +49,55 @@ func (m *MockISessionRepo) CommitAndWriteSessionCookie(ctx context.Context) erro
 	ret := m.ctrl.Call(m, "CommitAndWriteSessionCookie", ctx)
 	ret0, _ := ret[0].(error)
 	return ret0
+}
+
+// CommitAndWriteSessionCookie indicates an expected call of CommitAndWriteSessionCookie.
+func (mr *MockISessionRepoMockRecorder) CommitAndWriteSessionCookie(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CommitAndWriteSessionCookie", reflect.TypeOf((*MockISessionRepo)(nil).CommitAndWriteSessionCookie), ctx)
+}
+
+// GetSessionConfig mocks base method.
+func (m *MockISessionRepo) GetSessionConfig() user.SessionConfig {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSessionConfig")
+	ret0, _ := ret[0].(user.SessionConfig)
+	return ret0
+}
+
+// GetSessionConfig indicates an expected call of GetSessionConfig.
+func (mr *MockISessionRepoMockRecorder) GetSessionConfig() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSessionConfig", reflect.TypeOf((*MockISessionRepo)(nil).GetSessionConfig))
+}
+
+// GetSessionCookie mocks base method.
+func (m *MockISessionRepo) GetSessionCookie() scs.SessionCookie {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSessionCookie")
+	ret0, _ := ret[0].(scs.SessionCookie)
+	return ret0
+}
+
+// GetSessionCookie indicates an expected call of GetSessionCookie.
+func (mr *MockISessionRepoMockRecorder) GetSessionCookie() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSessionCookie", reflect.TypeOf((*MockISessionRepo)(nil).GetSessionCookie))
+}
+
+// LoadSession mocks base method.
+func (m *MockISessionRepo) LoadSession(ctx context.Context) (context.Context, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LoadSession", ctx)
+	ret0, _ := ret[0].(context.Context)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// LoadSession indicates an expected call of LoadSession.
+func (mr *MockISessionRepoMockRecorder) LoadSession(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadSession", reflect.TypeOf((*MockISessionRepo)(nil).LoadSession), ctx)
+}
+
+// Manager mocks base method.

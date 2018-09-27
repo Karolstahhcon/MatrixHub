@@ -25,16 +25,3 @@ var ErrInUse = errors.New("registry is still in use")
 
 type Registry struct {
 	ID             int `gorm:"primarykey"`
-	Name           string
-	Description    string
-	Type           string
-	URL            string
-	CredentialType string
-	AuthInfo       string
-	Insecure       bool
-	Status         int
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
-}
-
-func (Registry) TableName() string {
