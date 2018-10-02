@@ -12,3 +12,10 @@ function RouteComponent() {
   } = Route.useParams()
   const treePath = Route.useParams({ select: s => s['_splat'] })
 
+  return (
+    <div>
+      Dataset Tree Page
+      <br />
+      Project ID:
+      {' '}
+      {projectId}
