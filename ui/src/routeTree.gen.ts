@@ -546,3 +546,277 @@ export interface FileRouteTypes {
     | '/(auth)/admin/robots/new'
     | '/(auth)/(app)/datasets/'
     | '/(auth)/(app)/models/'
+    | '/(auth)/(app)/profile/'
+    | '/(auth)/(app)/projects/'
+    | '/(auth)/admin/robots/'
+    | '/(auth)/admin/replications_/$replicationId/executions'
+    | '/(auth)/admin/robots/$robotId/edit'
+    | '/(auth)/(app)/projects/$projectId/'
+    | '/(auth)/(app)/projects_/$projectId/datasets/$datasetId'
+    | '/(auth)/(app)/projects_/$projectId/models/$modelId'
+    | '/(auth)/admin/replications_/$replicationId/executions_/$executionId'
+    | '/(auth)/(app)/projects/$projectId/datasets/'
+    | '/(auth)/(app)/projects/$projectId/members/'
+    | '/(auth)/(app)/projects/$projectId/models/'
+    | '/(auth)/(app)/projects/$projectId/settings/'
+    | '/(auth)/(app)/projects_/$projectId/models/$modelId/'
+    | '/(auth)/(app)/projects_/$projectId/datasets/$datasetId/settings/'
+    | '/(auth)/(app)/projects_/$projectId/models/$modelId/settings/'
+    | '/(auth)/(app)/projects_/$projectId/datasets/$datasetId/blob/$ref/$'
+    | '/(auth)/(app)/projects_/$projectId/datasets/$datasetId/tree/$ref/$'
+    | '/(auth)/(app)/projects_/$projectId/models/$modelId/blob/$ref/$'
+    | '/(auth)/(app)/projects_/$projectId/models/$modelId/tree/$ref/$'
+    | '/(auth)/(app)/projects_/$projectId/datasets/$datasetId/commit/$commitId/'
+    | '/(auth)/(app)/projects_/$projectId/datasets/$datasetId/commits/$ref/'
+    | '/(auth)/(app)/projects_/$projectId/models/$modelId/commit/$commitId/'
+    | '/(auth)/(app)/projects_/$projectId/models/$modelId/commits/$ref/'
+  fileRoutesById: FileRoutesById
+}
+export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
+  authRouteRoute: typeof authRouteRouteWithChildren
+  SplatRoute: typeof SplatRoute
+  LoginRoute: typeof LoginRoute
+}
+
+declare module '@tanstack/react-router' {
+  interface FileRoutesByPath {
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$': {
+      id: '/$'
+      path: '/$'
+      fullPath: '/$'
+      preLoaderRoute: typeof SplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(auth)': {
+      id: '/(auth)'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof authRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(auth)/admin': {
+      id: '/(auth)/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof authAdminRouteRouteImport
+      parentRoute: typeof authRouteRoute
+    }
+    '/(auth)/(app)': {
+      id: '/(auth)/(app)'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof authappRouteRouteImport
+      parentRoute: typeof authRouteRoute
+    }
+    '/(auth)/admin/': {
+      id: '/(auth)/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof authAdminIndexRouteImport
+      parentRoute: typeof authAdminRouteRoute
+    }
+    '/(auth)/admin/users': {
+      id: '/(auth)/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof authAdminUsersRouteImport
+      parentRoute: typeof authAdminRouteRoute
+    }
+    '/(auth)/admin/replications': {
+      id: '/(auth)/admin/replications'
+      path: '/replications'
+      fullPath: '/admin/replications'
+      preLoaderRoute: typeof authAdminReplicationsRouteImport
+      parentRoute: typeof authAdminRouteRoute
+    }
+    '/(auth)/admin/registries': {
+      id: '/(auth)/admin/registries'
+      path: '/registries'
+      fullPath: '/admin/registries'
+      preLoaderRoute: typeof authAdminRegistriesRouteImport
+      parentRoute: typeof authAdminRouteRoute
+    }
+    '/(auth)/admin/robots': {
+      id: '/(auth)/admin/robots'
+      path: '/robots'
+      fullPath: '/admin/robots'
+      preLoaderRoute: typeof authAdminRobotsRouteRouteImport
+      parentRoute: typeof authAdminRouteRoute
+    }
+    '/(auth)/(app)/profile': {
+      id: '/(auth)/(app)/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof authappProfileRouteRouteImport
+      parentRoute: typeof authappRouteRoute
+    }
+    '/(auth)/admin/robots/': {
+      id: '/(auth)/admin/robots/'
+      path: '/'
+      fullPath: '/admin/robots/'
+      preLoaderRoute: typeof authAdminRobotsIndexRouteImport
+      parentRoute: typeof authAdminRobotsRouteRoute
+    }
+    '/(auth)/(app)/projects/': {
+      id: '/(auth)/(app)/projects/'
+      path: '/projects'
+      fullPath: '/projects/'
+      preLoaderRoute: typeof authappProjectsIndexRouteImport
+      parentRoute: typeof authappRouteRoute
+    }
+    '/(auth)/(app)/profile/': {
+      id: '/(auth)/(app)/profile/'
+      path: '/'
+      fullPath: '/profile/'
+      preLoaderRoute: typeof authappProfileIndexRouteImport
+      parentRoute: typeof authappProfileRouteRoute
+    }
+    '/(auth)/(app)/models/': {
+      id: '/(auth)/(app)/models/'
+      path: '/models'
+      fullPath: '/models/'
+      preLoaderRoute: typeof authappModelsIndexRouteImport
+      parentRoute: typeof authappRouteRoute
+    }
+    '/(auth)/(app)/datasets/': {
+      id: '/(auth)/(app)/datasets/'
+      path: '/datasets'
+      fullPath: '/datasets/'
+      preLoaderRoute: typeof authappDatasetsIndexRouteImport
+      parentRoute: typeof authappRouteRoute
+    }
+    '/(auth)/admin/robots/new': {
+      id: '/(auth)/admin/robots/new'
+      path: '/new'
+      fullPath: '/admin/robots/new'
+      preLoaderRoute: typeof authAdminRobotsNewRouteImport
+      parentRoute: typeof authAdminRobotsRouteRoute
+    }
+    '/(auth)/(app)/profile/ssh-keys': {
+      id: '/(auth)/(app)/profile/ssh-keys'
+      path: '/ssh-keys'
+      fullPath: '/profile/ssh-keys'
+      preLoaderRoute: typeof authappProfileSshKeysRouteImport
+      parentRoute: typeof authappProfileRouteRoute
+    }
+    '/(auth)/(app)/profile/security': {
+      id: '/(auth)/(app)/profile/security'
+      path: '/security'
+      fullPath: '/profile/security'
+      preLoaderRoute: typeof authappProfileSecurityRouteImport
+      parentRoute: typeof authappProfileRouteRoute
+    }
+    '/(auth)/(app)/profile/access-token': {
+      id: '/(auth)/(app)/profile/access-token'
+      path: '/access-token'
+      fullPath: '/profile/access-token'
+      preLoaderRoute: typeof authappProfileAccessTokenRouteImport
+      parentRoute: typeof authappProfileRouteRoute
+    }
+    '/(auth)/(app)/models/new': {
+      id: '/(auth)/(app)/models/new'
+      path: '/models/new'
+      fullPath: '/models/new'
+      preLoaderRoute: typeof authappModelsNewRouteImport
+      parentRoute: typeof authappRouteRoute
+    }
+    '/(auth)/(app)/datasets/new': {
+      id: '/(auth)/(app)/datasets/new'
+      path: '/datasets/new'
+      fullPath: '/datasets/new'
+      preLoaderRoute: typeof authappDatasetsNewRouteImport
+      parentRoute: typeof authappRouteRoute
+    }
+    '/(auth)/(app)/projects/$projectId': {
+      id: '/(auth)/(app)/projects/$projectId'
+      path: '/projects/$projectId'
+      fullPath: '/projects/$projectId'
+      preLoaderRoute: typeof authappProjectsProjectIdRouteRouteImport
+      parentRoute: typeof authappRouteRoute
+    }
+    '/(auth)/(app)/projects/$projectId/': {
+      id: '/(auth)/(app)/projects/$projectId/'
+      path: '/'
+      fullPath: '/projects/$projectId/'
+      preLoaderRoute: typeof authappProjectsProjectIdIndexRouteImport
+      parentRoute: typeof authappProjectsProjectIdRouteRoute
+    }
+    '/(auth)/admin/robots/$robotId/edit': {
+      id: '/(auth)/admin/robots/$robotId/edit'
+      path: '/$robotId/edit'
+      fullPath: '/admin/robots/$robotId/edit'
+      preLoaderRoute: typeof authAdminRobotsRobotIdEditRouteImport
+      parentRoute: typeof authAdminRobotsRouteRoute
+    }
+    '/(auth)/admin/replications_/$replicationId/executions': {
+      id: '/(auth)/admin/replications_/$replicationId/executions'
+      path: '/replications/$replicationId/executions'
+      fullPath: '/admin/replications/$replicationId/executions'
+      preLoaderRoute: typeof authAdminReplicationsReplicationIdExecutionsRouteImport
+      parentRoute: typeof authAdminRouteRoute
+    }
+    '/(auth)/(app)/projects/$projectId/settings/': {
+      id: '/(auth)/(app)/projects/$projectId/settings/'
+      path: '/settings'
+      fullPath: '/projects/$projectId/settings/'
+      preLoaderRoute: typeof authappProjectsProjectIdSettingsIndexRouteImport
+      parentRoute: typeof authappProjectsProjectIdRouteRoute
+    }
+    '/(auth)/(app)/projects/$projectId/models/': {
+      id: '/(auth)/(app)/projects/$projectId/models/'
+      path: '/models'
+      fullPath: '/projects/$projectId/models/'
+      preLoaderRoute: typeof authappProjectsProjectIdModelsIndexRouteImport
+      parentRoute: typeof authappProjectsProjectIdRouteRoute
+    }
+    '/(auth)/(app)/projects/$projectId/members/': {
+      id: '/(auth)/(app)/projects/$projectId/members/'
+      path: '/members'
+      fullPath: '/projects/$projectId/members/'
+      preLoaderRoute: typeof authappProjectsProjectIdMembersIndexRouteImport
+      parentRoute: typeof authappProjectsProjectIdRouteRoute
+    }
+    '/(auth)/(app)/projects/$projectId/datasets/': {
+      id: '/(auth)/(app)/projects/$projectId/datasets/'
+      path: '/datasets'
+      fullPath: '/projects/$projectId/datasets/'
+      preLoaderRoute: typeof authappProjectsProjectIdDatasetsIndexRouteImport
+      parentRoute: typeof authappProjectsProjectIdRouteRoute
+    }
+    '/(auth)/admin/replications_/$replicationId/executions_/$executionId': {
+      id: '/(auth)/admin/replications_/$replicationId/executions_/$executionId'
+      path: '/replications/$replicationId/executions/$executionId'
+      fullPath: '/admin/replications/$replicationId/executions/$executionId'
+      preLoaderRoute: typeof authAdminReplicationsReplicationIdExecutionsExecutionIdRouteImport
+      parentRoute: typeof authAdminRouteRoute
+    }
+    '/(auth)/(app)/projects_/$projectId/models/$modelId': {
+      id: '/(auth)/(app)/projects_/$projectId/models/$modelId'
+      path: '/projects/$projectId/models/$modelId'
+      fullPath: '/projects/$projectId/models/$modelId'
+      preLoaderRoute: typeof authappProjectsProjectIdModelsModelIdRouteRouteImport
+      parentRoute: typeof authappRouteRoute
+    }
+    '/(auth)/(app)/projects_/$projectId/datasets/$datasetId': {
+      id: '/(auth)/(app)/projects_/$projectId/datasets/$datasetId'
+      path: '/projects/$projectId/datasets/$datasetId'
+      fullPath: '/projects/$projectId/datasets/$datasetId'
+      preLoaderRoute: typeof authappProjectsProjectIdDatasetsDatasetIdRouteRouteImport
+      parentRoute: typeof authappRouteRoute
+    }
+    '/(auth)/(app)/projects_/$projectId/models/$modelId/': {
