@@ -103,3 +103,56 @@ function ActionsCell({
   return (
     <Group gap="md" wrap="nowrap">
       <Anchor
+        component="button"
+        type="button"
+        size="sm"
+        c={isSelf ? 'dimmed' : undefined}
+        style={isSelf ? { cursor: 'not-allowed' } : undefined}
+        onClick={isSelf ? undefined : () => meta?.onEditRole?.(row.original)}
+      >
+        {t('projects.detail.membersPage.actions.editRole')}
+      </Anchor>
+      <Anchor
+        component="button"
+        type="button"
+        size="sm"
+        c={isSelf ? 'dimmed' : 'red'}
+        style={isSelf ? { cursor: 'not-allowed' } : undefined}
+        onClick={isSelf ? undefined : () => meta?.onRemove?.(row.original)}
+      >
+        {t('projects.detail.membersPage.actions.remove')}
+      </Anchor>
+    </Group>
+  )
+}
+
+export function MembersTable({
+  data,
+  pagination,
+  page,
+  loading,
+  searchValue,
+  onSearchChange,
+  onRefresh,
+  currentRole,
+  currentUsername,
+  onEditRole,
+  onRemove,
+  onBatchDelete,
+  rowSelection,
+  onRowSelectionChange,
+  onPageChange,
+  selectedCount,
+  toolbarExtra,
+  ...rest
+}: MembersTableProps) {
+  const {
+    t,
+  } = useTranslation()
+
+  const isAdmin = currentRole === ProjectRoleType.ROLE_TYPE_PROJECT_ADMIN
+
+  const columns: MRT_ColumnDef<ProjectMember>[] = [
+    {
+      accessorKey: 'memberName',
+      header: t('projects.detail.membersPage.table.name'),
