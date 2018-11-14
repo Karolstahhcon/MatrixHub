@@ -21,27 +21,3 @@ export function RegistriesPage() {
   const {
     data,
     isLoading,
-    isFetching,
-  } = useRegistries(search)
-  const registries = data?.registries ?? []
-  const pagination = data?.pagination
-
-  const refreshRegistries = () => queryClient.invalidateQueries({
-    queryKey: adminRegistryKeys.lists(),
-  })
-
-  const {
-    onSearchChange,
-    onRefresh,
-    onPageChange,
-  } = useRouteListState({
-    search,
-    navigate,
-    records: registries,
-    getRecordId: getRegistryRowId,
-    refresh: refreshRegistries,
-  })
-
-  return (
-    <RegistriesTable
-      data={registries}
