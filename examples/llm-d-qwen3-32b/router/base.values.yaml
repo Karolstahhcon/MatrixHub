@@ -7,3 +7,13 @@ router:
       v: 2
     pluginsConfigFile: default-plugins.yaml
     resources:
+      requests:
+        cpu: "4"
+        memory: 8Gi
+      limits:
+        memory: 16Gi
+
+  inferencePool:
+    failureMode: FailOpen
+
+  modelServers:
