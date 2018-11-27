@@ -1,0 +1,29 @@
+import { Projects } from '@matrixhub/api-ts/v1alpha1/project.pb'
+import {
+  keepPreviousData,
+  queryOptions,
+  useQuery,
+} from '@tanstack/react-query'
+import { z } from 'zod'
+
+export const MEMBERS_PAGE_SIZE = 10
+
+export const membersSearchDefaults = {
+  q: '',
+  page: 1,
+}
+
+export const membersSearchSchema = z.object({
+  q: z.string().trim().optional().default(membersSearchDefaults.q).catch(membersSearchDefaults.q),
+  page: z.coerce.number().int().positive().optional().default(membersSearchDefaults.page).catch(membersSearchDefaults.page),
+})
+
+export type MembersSearch = z.infer<typeof membersSearchSchema>
+
+// -- Query key factory --
+
+export const memberKeys = {
+  all: ['projectMembers'] as const,
+  lists: () => [...memberKeys.all, 'list'] as const,
+  list: (projectId: string, params: {
+    q: string
