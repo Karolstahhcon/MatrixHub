@@ -52,3 +52,57 @@ func TestApplyIsBestEffort(t *testing.T) {
 			manifest := preset.DefaultManifest()
 			if test.enabled {
 				repo.EXPECT().SeedIfEmpty(gomock.Any(), manifest).Return(test.applied, test.err)
+			}
+			service := preset.NewService(test.enabled, manifest, repo, nil, nil, nil)
+			require.NotPanics(t, func() { service.Apply(context.Background()) })
+		})
+	}
+}
+
+func TestReconcileDisabled(t *testing.T) {
+	service := preset.NewService(false, preset.DefaultManifest(), nil, nil, nil, nil)
+	require.NotPanics(t, func() { service.Reconcile(context.Background()) })
+}
+
+func TestReconcileRepairsOnlyExistingProxyModelsWithoutRemoteAccess(t *testing.T) {
+	now := time.Now()
+	for _, test := range []struct {
+		name        string
+		mod         model.Model
+		deleted     bool
+		local       bool
+		repoExists  bool
+		createError error
+	}{
+		{name: "deleted record", deleted: true},
+		{name: "local project", local: true},
+		{name: "missing repository"},
+		{name: "existing repository", repoExists: true},
+		{name: "synchronized model still repairs repository", mod: model.Model{SyncedAt: &now}},
+		{name: "README is unchanged", mod: model.Model{ReadmeContent: "custom"}},
+		{name: "size is unchanged", mod: model.Model{Size: 1}},
+		{name: "labels are unchanged", mod: model.Model{Labels: []model.Label{{Name: "custom"}}}},
+		{name: "parameter count is unchanged", mod: model.Model{ParameterCount: 1}},
+		{name: "repository repair failure", createError: errors.New("disk unavailable")},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			models := modelmocks.NewMockIModelRepo(ctrl)
+			projects := projectmocks.NewMockIProjectRepo(ctrl)
+			git := gitmocks.NewMockIGitRepo(ctrl)
+			manifest := &preset.Manifest{Models: []preset.ModelSpec{{Project: "project", Name: "model"}}}
+
+			if test.deleted {
+				models.EXPECT().GetByProjectAndName(gomock.Any(), "project", "model").
+					Return(nil, errors.New("record not found"))
+			} else {
+				models.EXPECT().GetByProjectAndName(gomock.Any(), "project", "model").Return(&test.mod, nil)
+				prj := &project.Project{}
+				if !test.local {
+					id := 3
+					prj.RegistryID = &id
+					git.EXPECT().RepositoryExists(gomock.Any(), "models", "project", "model").Return(test.repoExists, nil)
+					if !test.repoExists {
+						git.EXPECT().CreateRepository(gomock.Any(), "models", "project", "model").Return(test.createError)
+					}
+				}
