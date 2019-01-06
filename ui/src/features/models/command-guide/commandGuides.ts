@@ -14,19 +14,3 @@ export function buildInstallHfSnippet(): GuideSnippet {
   }
 }
 
-/** Download only needs the endpoint; upload also needs a token to write. */
-export function buildHfEnvSnippet(type: ModelCommandType, hfEndpoint: string): GuideSnippet {
-  const lines = [`export HF_ENDPOINT="${hfEndpoint}"`]
-
-  if (type === 'upload') {
-    lines.push(`export HF_TOKEN="${HF_TOKEN_PLACEHOLDER}"`)
-  }
-
-  return {
-    lang: 'bash',
-    code: lines.join('\n'),
-  }
-}
-
-export function buildDownloadSnippet(modelPath: string): GuideSnippet {
-  return {
