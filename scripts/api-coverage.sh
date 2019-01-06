@@ -46,3 +46,51 @@ API_COVERAGE_OPENAPI_DIR="${API_COVERAGE_OPENAPI_DIR:-./api/openapiv2}"
 # Merged swagger spec passed to the recorder for the "total" coverage figure.
 API_COVERAGE_MERGED_SWAGGER="${API_COVERAGE_MERGED_SWAGGER:-./merged_swagger.json}"
 
+# Randomized container name so concurrent runs on one host do not collide.
+API_COVERAGE_CONTAINER="${API_COVERAGE_CONTAINER:-matrixhub_api_coverage_${RANDOM}${RANDOM}}"
+
+# Merge every *.swagger.json under $1 into a single swagger doc at $2.
+# Combines paths + definitions; keeps the first file's top-level fields.
+function api_coverage::merge_swagger() {
+    local source_dir="${1:-${API_COVERAGE_OPENAPI_DIR}}"
+    local output_file="${2:-${API_COVERAGE_MERGED_SWAGGER}}"
+
+    if [ ! -d "${source_dir}" ]; then
+        echo "api-coverage: openapi dir not found: ${source_dir}" >&2
+        return 1
+    fi
+
+    local files=()
+    while IFS= read -r f; do
+        files+=("${f}")
+    done < <(find "${source_dir}" -type f -name "*.swagger.json" | sort)
+    if [ "${#files[@]}" -eq 0 ]; then
+        echo "api-coverage: no *.swagger.json found under ${source_dir}" >&2
+        return 1
+    fi
+
+    local main="${files[0]}"
+
+    local tmp
+    tmp=$(mktemp -d)
+    jq -s 'map(.paths) | add' "${files[@]}" > "${tmp}/paths.json"
+    jq -s 'map(.definitions) | add' "${files[@]}" > "${tmp}/definitions.json"
+    jq 'del(.paths, .definitions)' "${main}" > "${tmp}/base.json"
+    jq -s '
+      .[0] as $base |
+      .[1] as $paths |
+      .[2] as $defs |
+      $base + {paths: $paths} + {definitions: $defs}
+    ' "${tmp}/base.json" "${tmp}/paths.json" "${tmp}/definitions.json" > "${output_file}"
+    rm -rf "${tmp}"
+
+    echo "api-coverage: merged ${#files[@]} specs into ${output_file}"
+}
+
+# Start the recorder container and export proxy env for the test process.
+# Picks a random high port; the container runs on the host network so it can
+# both listen on that port and forward to the service (via matrixhub.local).
+function api_coverage::start() {
+    local port=$(( (RANDOM % 30000) + 30000 ))
+
+    export http_proxy="http://127.0.0.1:${port}"

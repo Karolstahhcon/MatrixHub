@@ -2267,3 +2267,759 @@ type GetModelCommitRequestValidationError struct {
 	field  string
 	reason string
 	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetModelCommitRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetModelCommitRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetModelCommitRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetModelCommitRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetModelCommitRequestValidationError) ErrorName() string {
+	return "GetModelCommitRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetModelCommitRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetModelCommitRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetModelCommitRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetModelCommitRequestValidationError{}
+
+var _GetModelCommitRequest_Name_NotInLookup = map[string]struct{}{
+	"models":   {},
+	"datasets": {},
+	"spaces":   {},
+	"resolve":  {},
+}
+
+// Validate checks the field values on GetModelTreeRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetModelTreeRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetModelTreeRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetModelTreeRequestMultiError, or nil if none found.
+func (m *GetModelTreeRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetModelTreeRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetProject()) < 1 {
+		err := GetModelTreeRequestValidationError{
+			field:  "Project",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if _, ok := _GetModelTreeRequest_Name_NotInLookup[m.GetName()]; ok {
+		err := GetModelTreeRequestValidationError{
+			field:  "Name",
+			reason: "value must not be in list [models datasets spaces resolve]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetName()) < 1 {
+		err := GetModelTreeRequestValidationError{
+			field:  "Name",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	// no validation rules for Revision
+
+	// no validation rules for Path
+
+	if len(errors) > 0 {
+		return GetModelTreeRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetModelTreeRequestMultiError is an error wrapping multiple validation
+// errors returned by GetModelTreeRequest.ValidateAll() if the designated
+// constraints aren't met.
+type GetModelTreeRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetModelTreeRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetModelTreeRequestMultiError) AllErrors() []error { return m }
+
+// GetModelTreeRequestValidationError is the validation error returned by
+// GetModelTreeRequest.Validate if the designated constraints aren't met.
+type GetModelTreeRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetModelTreeRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetModelTreeRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetModelTreeRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetModelTreeRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetModelTreeRequestValidationError) ErrorName() string {
+	return "GetModelTreeRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetModelTreeRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetModelTreeRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetModelTreeRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetModelTreeRequestValidationError{}
+
+var _GetModelTreeRequest_Name_NotInLookup = map[string]struct{}{
+	"models":   {},
+	"datasets": {},
+	"spaces":   {},
+	"resolve":  {},
+}
+
+// Validate checks the field values on File with the rules defined in the proto
+// definition for this message. If any rules are violated, the first error
+// encountered is returned, or nil if there are no violations.
+func (m *File) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on File with the rules defined in the
+// proto definition for this message. If any rules are violated, the result is
+// a list of violation errors wrapped in FileMultiError, or nil if none found.
+func (m *File) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *File) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Name
+
+	// no validation rules for Type
+
+	// no validation rules for Path
+
+	// no validation rules for Size
+
+	// no validation rules for Lfs
+
+	// no validation rules for Sha256
+
+	if all {
+		switch v := interface{}(m.GetCommit()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, FileValidationError{
+					field:  "Commit",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, FileValidationError{
+					field:  "Commit",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetCommit()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return FileValidationError{
+				field:  "Commit",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	// no validation rules for Url
+
+	if len(errors) > 0 {
+		return FileMultiError(errors)
+	}
+
+	return nil
+}
+
+// FileMultiError is an error wrapping multiple validation errors returned by
+// File.ValidateAll() if the designated constraints aren't met.
+type FileMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m FileMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m FileMultiError) AllErrors() []error { return m }
+
+// FileValidationError is the validation error returned by File.Validate if the
+// designated constraints aren't met.
+type FileValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e FileValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e FileValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e FileValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e FileValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e FileValidationError) ErrorName() string { return "FileValidationError" }
+
+// Error satisfies the builtin error interface
+func (e FileValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sFile.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = FileValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = FileValidationError{}
+
+// Validate checks the field values on GetModelTreeResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetModelTreeResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetModelTreeResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetModelTreeResponseMultiError, or nil if none found.
+func (m *GetModelTreeResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetModelTreeResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetItems() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, GetModelTreeResponseValidationError{
+						field:  fmt.Sprintf("Items[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, GetModelTreeResponseValidationError{
+						field:  fmt.Sprintf("Items[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return GetModelTreeResponseValidationError{
+					field:  fmt.Sprintf("Items[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return GetModelTreeResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetModelTreeResponseMultiError is an error wrapping multiple validation
+// errors returned by GetModelTreeResponse.ValidateAll() if the designated
+// constraints aren't met.
+type GetModelTreeResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetModelTreeResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetModelTreeResponseMultiError) AllErrors() []error { return m }
+
+// GetModelTreeResponseValidationError is the validation error returned by
+// GetModelTreeResponse.Validate if the designated constraints aren't met.
+type GetModelTreeResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetModelTreeResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetModelTreeResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetModelTreeResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetModelTreeResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetModelTreeResponseValidationError) ErrorName() string {
+	return "GetModelTreeResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetModelTreeResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetModelTreeResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetModelTreeResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetModelTreeResponseValidationError{}
+
+// Validate checks the field values on GetModelBlobRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetModelBlobRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetModelBlobRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetModelBlobRequestMultiError, or nil if none found.
+func (m *GetModelBlobRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetModelBlobRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetProject()) < 1 {
+		err := GetModelBlobRequestValidationError{
+			field:  "Project",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if _, ok := _GetModelBlobRequest_Name_NotInLookup[m.GetName()]; ok {
+		err := GetModelBlobRequestValidationError{
+			field:  "Name",
+			reason: "value must not be in list [models datasets spaces resolve]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetName()) < 1 {
+		err := GetModelBlobRequestValidationError{
+			field:  "Name",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	// no validation rules for Revision
+
+	// no validation rules for Path
+
+	if len(errors) > 0 {
+		return GetModelBlobRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetModelBlobRequestMultiError is an error wrapping multiple validation
+// errors returned by GetModelBlobRequest.ValidateAll() if the designated
+// constraints aren't met.
+type GetModelBlobRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetModelBlobRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetModelBlobRequestMultiError) AllErrors() []error { return m }
+
+// GetModelBlobRequestValidationError is the validation error returned by
+// GetModelBlobRequest.Validate if the designated constraints aren't met.
+type GetModelBlobRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetModelBlobRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetModelBlobRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetModelBlobRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetModelBlobRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetModelBlobRequestValidationError) ErrorName() string {
+	return "GetModelBlobRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetModelBlobRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetModelBlobRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetModelBlobRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetModelBlobRequestValidationError{}
+
+var _GetModelBlobRequest_Name_NotInLookup = map[string]struct{}{
+	"models":   {},
+	"datasets": {},
+	"spaces":   {},
+	"resolve":  {},
+}
+
+// Validate checks the field values on Model with the rules defined in the
+// proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *Model) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on Model with the rules defined in the
+// proto definition for this message. If any rules are violated, the result is
+// a list of violation errors wrapped in ModelMultiError, or nil if none found.
+func (m *Model) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *Model) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Id
+
+	// no validation rules for Name
+
+	// no validation rules for Nickname
+
+	// no validation rules for DefaultBranch
+
+	// no validation rules for CreatedAt
+
+	// no validation rules for UpdatedAt
+
+	if all {
+		switch v := interface{}(m.GetCloneUrls()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, ModelValidationError{
+					field:  "CloneUrls",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, ModelValidationError{
+					field:  "CloneUrls",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetCloneUrls()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return ModelValidationError{
+				field:  "CloneUrls",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	for idx, item := range m.GetLabels() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ModelValidationError{
+						field:  fmt.Sprintf("Labels[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ModelValidationError{
+						field:  fmt.Sprintf("Labels[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ModelValidationError{
+					field:  fmt.Sprintf("Labels[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	// no validation rules for Project
+
+	// no validation rules for ReadmeContent
+
+	// no validation rules for Size
+
+	// no validation rules for ParameterCount
+
+	// no validation rules for Popular
+
+	// no validation rules for SyncedAt
+
+	if len(errors) > 0 {
+		return ModelMultiError(errors)
+	}
+
+	return nil
+}
+
+// ModelMultiError is an error wrapping multiple validation errors returned by
+// Model.ValidateAll() if the designated constraints aren't met.
+type ModelMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ModelMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ModelMultiError) AllErrors() []error { return m }
