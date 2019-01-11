@@ -8,3 +8,23 @@ const buttonSizeMap = {
   sm: {
     height: rem(32),
     paddingX: rem(16),
+  },
+  md: {
+    height: rem(40),
+    paddingX: rem(20),
+  },
+  lg: {
+    height: rem(48),
+    paddingX: rem(24),
+  },
+  xl: {
+    height: rem(56),
+    paddingX: rem(32),
+  },
+} as const
+
+const isMappedButtonSize = (size: unknown): size is keyof typeof buttonSizeMap => (
+  typeof size === 'string' && Object.prototype.hasOwnProperty.call(buttonSizeMap, size)
+)
+
+export const buttonTheme = Button.extend({
