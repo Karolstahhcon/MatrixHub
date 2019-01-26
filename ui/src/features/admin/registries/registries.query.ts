@@ -38,17 +38,3 @@ export function registriesQueryOptions(search: RegistriesSearch) {
       return {
         registries: response.registries ?? [],
         pagination: response.pagination,
-      }
-    },
-  })
-}
-
-/**
- * Every registry in one page, for selectors such as project creation.
- * Shares the `lists()` key prefix so registry mutations invalidate it too.
- */
-export function allRegistriesQueryOptions() {
-  return queryOptions({
-    queryKey: adminRegistryKeys.allList(),
-    queryFn: async () => {
-      const response = await Registries.ListRegistries({ pageSize: -1 })
