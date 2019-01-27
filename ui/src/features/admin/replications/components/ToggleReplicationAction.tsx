@@ -27,13 +27,3 @@ export function ToggleReplicationAction({
     await mutation.mutateAsync({
       syncPolicyId: syncPolicy.id,
       isDisabled: nextIsDisabled,
-    })
-  }
-
-  return (
-    <Button
-      variant="transparent"
-      size="compact-sm"
-      color="blue"
-      disabled={disabled || mutation.isPending}
-      loading={mutation.isPending}
