@@ -18,3 +18,13 @@ function transformPermissionCategories(
     const key = category.name ?? ''
 
     return {
+      key,
+      name: category.name ?? '',
+      permissions: (category.permissions ?? []).map((permission) => {
+        const value = permission.permission ?? permission.name ?? ''
+
+        return {
+          value,
+          name: permission.name ?? value,
+        }
+      }).filter(item => item.value),
