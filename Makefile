@@ -116,3 +116,62 @@ local-run: ## Run MatrixHub locally (web + API)
 	$(MAKE) -j2 local-run-api local-run-ui
 
 .PHONY: local-run-built-ui
+local-run-built-ui: local-build-ui ## Build UI and run API server serving it
+	go run ./cmd/matrixhub apiserver -c $(LOCAL_CONFIG)
+
+##@ Verification
+
+.PHONY: verify
+verify: verify.go verify.ui verify.workflow verify.govulncheck ## Run locally runnable CI static checks
+
+.PHONY: verify.go
+verify.go: lint verify.mocks ## Run Go lint and mock generation checks
+
+.PHONY: lint
+lint: ## Run golangci-lint
+	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION) run
+
+.PHONY: lint-fix
+lint-fix: ## Run golangci-lint with --fix option
+	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION) run --fix
+
+.PHONY: verify.mocks
+verify.mocks: ## Verify generated gomock files
+	bash ./scripts/verify-mocks.sh
+
+.PHONY: verify.ui
+verify.ui: ## Run UI lint, typecheck, and build
+	cd ui && pnpm install --frozen-lockfile
+	cd ui && pnpm run lint
+	cd ui && pnpm run typecheck
+	cd ui && pnpm run build
+
+.PHONY: verify.workflow
+verify.workflow: ## Run GitHub Actions workflow and release-note automation checks
+	go run github.com/rhysd/actionlint/cmd/actionlint@$(ACTIONLINT_VERSION) -color -shellcheck=
+	bash ./scripts/verify-action-refs.sh
+	bash -n scripts/changelog.sh scripts/changelog.test.sh
+	bash scripts/changelog.test.sh
+
+.PHONY: verify.govulncheck
+verify.govulncheck: ## Run Go vulnerability reachability checks
+	go run golang.org/x/vuln/cmd/govulncheck@$(GOVULNCHECK_VERSION) ./...
+
+##@ Testing
+
+.PHONY: test.unit
+test.unit: ## Run all unit tests
+	bash ./scripts/unit-test.sh
+
+.PHONY: test.unit.coverage
+test.unit.coverage: ## Run all unit tests with coverage
+	COVERAGE=true COVERAGE_PROFILE="$(UNIT_TEST_COVERAGE_PROFILE)" bash ./scripts/unit-test.sh
+
+.PHONY: test.sqlite
+test.sqlite: ## Run SQLite migration, repository, and session contract tests
+	CGO_ENABLED=1 go test -count=1 ./internal/infra/config ./internal/infra/db ./internal/repo
+
+.PHONY: deploy.kind-cluster
+deploy.kind-cluster: ## Setup KIND cluster
+	./scripts/setup-kind-cluster.sh
+

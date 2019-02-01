@@ -69,3 +69,39 @@ func (r *presetDB) SeedIfEmpty(ctx context.Context, manifest *preset.Manifest) (
 			}
 			registryIDs[spec.Name] = reg.ID
 		}
+
+		var admin user.User
+		err := tx.Where("username = ?", "admin").Take(&admin).Error
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("find preset project administrator: %w", err)
+		}
+		hasAdmin := err == nil
+		if !hasAdmin {
+			log.Warn("preset project memberships skipped: admin user is missing")
+		}
+
+		projectIDs := make(map[string]int, len(manifest.Projects))
+		for _, spec := range manifest.Projects {
+			registryID, ok := registryIDs[spec.Registry]
+			if !ok {
+				return fmt.Errorf("preset project %s references unknown registry %s", spec.Name, spec.Registry)
+			}
+			prj := &project.Project{
+				Name: spec.Name, Type: project.ProjectTypePublic,
+				RegistryID: &registryID, Organization: spec.Organization,
+			}
+			if err := tx.Create(prj).Error; err != nil {
+				return fmt.Errorf("create preset project %s: %w", spec.Name, err)
+			}
+			projectIDs[spec.Name] = prj.ID
+			if hasAdmin {
+				member := &project.ProjectMember{
+					ProjectID: &prj.ID, MemberID: admin.ID,
+					MemberType: project.MemberTypeUser, RoleID: role.ProjectRoleAdmin,
+				}
+				if err := tx.Create(member).Error; err != nil {
+					return fmt.Errorf("create preset project membership %s: %w", spec.Name, err)
+				}
+			}
+		}
+
