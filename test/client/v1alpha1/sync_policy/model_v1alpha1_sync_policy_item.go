@@ -8,3 +8,8 @@
  */
 
 package v1alpha1
+
+type V1alpha1SyncPolicyItem struct {
+	Id int32 `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
