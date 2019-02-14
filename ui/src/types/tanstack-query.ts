@@ -5,3 +5,6 @@ export interface NotificationMeta {
   /** Notification title shown on error */
   errorMessage?: string
   /** Skip all notifications for this query/mutation */
+  skipNotification?: boolean
+  /** Refetch this query when the current UI language changes */
+  localeDependent?: boolean

@@ -9,8 +9,3 @@
 
 package v1alpha1
 
-type V1alpha1SyncJob struct {
-	Id int32 `json:"id,omitempty"`
-	SyncTaskId int32 `json:"syncTaskId,omitempty"`
-	ResourceType *V1alpha1ResourceType `json:"resourceType,omitempty"`
-	ResourceName string `json:"resourceName,omitempty"`
