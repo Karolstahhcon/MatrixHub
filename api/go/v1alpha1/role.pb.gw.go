@@ -88,33 +88,3 @@ func RegisterRolesHandlerServer(ctx context.Context, mux *runtime.ServeMux, serv
 
 // RegisterRolesHandlerFromEndpoint is same as RegisterRolesHandler but
 // automatically dials to "endpoint" and closes the connection when "ctx" gets done.
-func RegisterRolesHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
-	conn, err := grpc.NewClient(endpoint, opts...)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err != nil {
-			if cerr := conn.Close(); cerr != nil {
-				grpclog.Errorf("Failed to close conn to %s: %v", endpoint, cerr)
-			}
-			return
-		}
-		go func() {
-			<-ctx.Done()
-			if cerr := conn.Close(); cerr != nil {
-				grpclog.Errorf("Failed to close conn to %s: %v", endpoint, cerr)
-			}
-		}()
-	}()
-	return RegisterRolesHandler(ctx, mux, conn)
-}
-
-// RegisterRolesHandler registers the http handlers for service Roles to "mux".
-// The handlers forward requests to the grpc endpoint over "conn".
-func RegisterRolesHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	return RegisterRolesHandlerClient(ctx, mux, NewRolesClient(conn))
-}
-
-// RegisterRolesHandlerClient registers the http handlers for service Roles
-// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "RolesClient".

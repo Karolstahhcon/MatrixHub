@@ -158,3 +158,83 @@ func (r *ProjectDBRepo) ListProjects(ctx context.Context, name string, projectTy
 		if err = query.Order("projects.name ASC").Find(&projects).Error; err != nil {
 			return nil, 0, err
 		}
+	} else {
+		offset := (page - 1) * pageSize
+		if err = query.Order("projects.name ASC").Offset(offset).Limit(pageSize).Find(&projects).Error; err != nil {
+			return nil, 0, err
+		}
+	}
+
+	return
+}
+
+func (r *ProjectDBRepo) userProjectIDsWithAnyPermission(ctx context.Context, userID int, perms []role.Permission) ([]int, error) {
+	type binding struct {
+		ProjectID   int
+		Permissions role.PermissionList
+	}
+	var bindings []binding
+	err := r.db.WithContext(ctx).
+		Table("members_roles_projects AS mrp").
+		Select("mrp.project_id AS project_id, roles.permissions AS permissions").
+		Joins("INNER JOIN roles ON roles.id = mrp.role_id").
+		Where("mrp.member_id = ? AND mrp.member_type = ? AND mrp.project_id IS NOT NULL",
+			userID, project.MemberTypeUser).
+		Scan(&bindings).Error
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make([]int, 0, len(bindings))
+	for _, b := range bindings {
+		for _, perm := range perms {
+			if role.MatchPermissions(b.Permissions, perm) {
+				ids = append(ids, b.ProjectID)
+				break
+			}
+		}
+	}
+	return ids, nil
+}
+
+func (r *ProjectDBRepo) UpdateProject(ctx context.Context, p *project.Project) error {
+	return r.db.WithContext(ctx).Save(p).Error
+}
+
+func (r *ProjectDBRepo) DeleteProject(ctx context.Context, id int) error {
+	return r.db.WithContext(ctx).Delete(&project.Project{}, id).Error
+}
+
+func (r *ProjectDBRepo) ListProjectMembers(ctx context.Context, projectID int, memberName string, page, pageSize int) ([]*project.ProjectMember, int64, error) {
+	var members []*project.ProjectMember
+	var total int64
+
+	// Count query
+	countQuery := r.db.WithContext(ctx).Model(&project.ProjectMember{}).Where("project_id = ?", projectID)
+	if memberName != "" {
+		countQuery = countQuery.Where("EXISTS (SELECT 1 FROM users WHERE users.id = members_roles_projects.member_id AND users.username LIKE ?)", "%"+memberName+"%")
+	}
+	if err := countQuery.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	query := r.db.WithContext(ctx).
+		Select(`members_roles_projects.*, COALESCE(users.username, '') as member_name`).
+		Table("members_roles_projects").
+		Joins("LEFT JOIN users ON users.id = members_roles_projects.member_id").
+		Where("members_roles_projects.project_id = ?", projectID)
+
+	if memberName != "" {
+		query = query.Where("users.username LIKE ?", "%"+memberName+"%")
+	}
+
+	if utils.IsFullPageData(page, pageSize) {
+		if err := query.Order("users.username ASC").Find(&members).Error; err != nil {
+			return nil, 0, err
+		}
+	} else {
+		offset := (page - 1) * pageSize
+		if err := query.Order("users.username ASC").Offset(offset).Limit(pageSize).Find(&members).Error; err != nil {
+			return nil, 0, err
+		}
+	}
