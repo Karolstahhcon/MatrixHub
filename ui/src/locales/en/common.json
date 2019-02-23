@@ -10,29 +10,3 @@
   "gotIt": "Got it",
   "cancel": "Cancel",
   "colon": ": ",
-  "moreInfo": "More information",
-  "backgroundRefreshFailed": "Background refresh failed",
-  "operationFailed": "Operation failed",
-  "fileTree": {
-    "searchPlaceholder": "Search file name",
-    "commitsCount": "{{count}} commits",
-    "name": "Name",
-    "size": "Size",
-    "lastCommit": "Last commit",
-    "lastUpdate": "Last update",
-    "download": "Download",
-    "updatedTime": "Updated: {{time}}",
-    "preview": "Preview",
-    "code": "Code",
-    "pathNotFound": "\"{{path}}\" does not exist on branch \"{{branch}}\"",
-    "backToRoot": "Go to root directory"
-  },
-  "errorPage": {
-    "backToHome": "Take me back to home page",
-    "404": {
-      "title": "Page not found",
-      "description": "The page you are looking for does not exist or may have been moved."
-    },
-    "403": {
-      "title": "Access denied",
-      "description": "Sorry, your account does not have sufficient permissions to access this page."
