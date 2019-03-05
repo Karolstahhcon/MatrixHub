@@ -78,30 +78,3 @@
     0 16px 24px 0 rgba(0, 0, 0, 0.08),
     0 0 6px 0 rgba(0, 0, 0, 0.06);
   padding: 4px;
-}
-
-.menuItem {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 8px 12px;
-  border-radius: 4px;
-  color: var(--mantine-color-gray-8);
-  transition:
-    background-color 150ms ease,
-    color 150ms ease,
-    opacity 150ms ease;
-}
-
-.menuItem:not([data-disabled='true']):hover {
-  background: var(--mantine-color-gray-0);
-}
-
-.menuItem[data-selected='true'] {
-  color: var(--mantine-color-cyan-6);
-}
-
-.menuItem[data-disabled='true'] {
-  background: var(--mantine-color-gray-0);
-  color: var(--mantine-color-gray-5);
