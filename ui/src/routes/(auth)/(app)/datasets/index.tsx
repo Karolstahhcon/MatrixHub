@@ -16,9 +16,3 @@ function RouteComponent() {
         flexShrink: 0,
       }}
       >
-        search
-      </div>
-      <div style={{
-        flex: 1,
-        minWidth: 0,
-      }}

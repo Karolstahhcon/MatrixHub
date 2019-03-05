@@ -12,10 +12,3 @@
 .card[data-interactive]:hover {
   border-color: var(--mantine-color-cyan-6);
   cursor: pointer;
-}
-
-.card[data-interactive]:focus-visible,
-.card[data-interactive]:focus-within {
-  border-color: var(--mantine-color-cyan-6);
-}
-
