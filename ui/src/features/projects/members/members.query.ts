@@ -27,3 +27,17 @@ export const memberKeys = {
   lists: () => [...memberKeys.all, 'list'] as const,
   list: (projectId: string, params: {
     q: string
+    page: number
+  }) => [...memberKeys.lists(), projectId, params] as const,
+}
+
+// -- Query options factory --
+
+export function membersQueryOptions(projectId: string, search: MembersSearch) {
+  return queryOptions({
+    queryKey: memberKeys.list(projectId, {
+      q: search.q ?? '',
+      page: search.page ?? 1,
+    }),
+    queryFn: () => Projects.ListProjectMembers({
+      name: projectId,
