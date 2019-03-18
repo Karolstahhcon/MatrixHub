@@ -25,3 +25,30 @@ import (
 )
 
 type stubAuthenticator struct {
+	identity auth.Identity
+	next, ok bool
+	err      error
+	calls    int
+}
+
+func (stub *stubAuthenticator) Authenticate(context.Context, *http.Request) (auth.Identity, bool, bool, error) {
+	stub.calls++
+	return stub.identity, stub.next, stub.ok, stub.err
+}
+
+func (stub *stubAuthenticator) AuthenticateToken(ctx context.Context, _, _ string) (auth.Identity, bool, bool, error) {
+	return stub.Authenticate(ctx, nil)
+}
+
+func TestMultiAuthenticator(t *testing.T) {
+	identity := user.NewUserIdentity(1, "alice")
+	storageErr := errors.New("database unavailable")
+	for _, test := range []struct {
+		name     string
+		stubs    []*stubAuthenticator
+		calls    []int
+		success  int
+		next, ok bool
+		err      error
+	}{
+		{"next", []*stubAuthenticator{{next: true}, {next: true}}, []int{1, 1}, -1, true, false, nil},
