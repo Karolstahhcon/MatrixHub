@@ -140,3 +140,74 @@ func prepareSQLiteFile(dsn string) (path string, created bool, err error) {
 	}
 
 	exists, err := restrictSQLiteFilePermission(path)
+	switch {
+	case err != nil:
+		return "", false, err
+	case exists:
+		return path, false, nil
+	case !createAllowed:
+		// Preserve mode=ro, mode=rw and immutable fail-if-missing semantics.
+		// The SQLite driver will return the authoritative open error.
+		return path, false, nil
+	}
+
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_RDWR, 0o600)
+	if err != nil {
+		return "", false, fmt.Errorf("create sqlite database securely: %w", err)
+	}
+	if err = file.Close(); err != nil {
+		_ = os.Remove(path)
+		return "", false, fmt.Errorf("close sqlite database after secure creation: %w", err)
+	}
+
+	return path, true, nil
+}
+
+func sqliteFilePath(dsn string) (path string, fileBacked bool, createAllowed bool, err error) {
+	if strings.HasPrefix(dsn, "file:") {
+		parsed, parseErr := url.Parse(dsn)
+		if parseErr != nil {
+			return "", false, false, fmt.Errorf("parse sqlite DSN: %w", parseErr)
+		}
+		if parsed.Host != "" && parsed.Host != "localhost" {
+			return "", false, false, fmt.Errorf("unsupported sqlite file URI host %q", parsed.Host)
+		}
+		mode := parsed.Query().Get("mode")
+		if mode == "memory" {
+			return "", false, false, nil
+		}
+		path = parsed.Path
+		if path == "" {
+			path, err = url.PathUnescape(parsed.Opaque)
+			if err != nil {
+				return "", false, false, fmt.Errorf("decode sqlite database path: %w", err)
+			}
+		}
+		if path == "" || path == ":memory:" {
+			return "", false, false, nil
+		}
+		path = sqliteURIPathToNative(path, runtime.GOOS)
+		createAllowed = (mode == "" || mode == "rwc") && !sqliteTruthy(parsed.Query().Get("immutable"))
+	} else {
+		path, _, _ = strings.Cut(dsn, "?")
+		if path == ":memory:" {
+			return "", false, false, nil
+		}
+		createAllowed = true
+	}
+
+	path, err = filepath.Abs(path)
+	if err != nil {
+		return "", false, false, fmt.Errorf("resolve sqlite database path: %w", err)
+	}
+	return path, true, createAllowed, nil
+}
+
+func sqliteURIPathToNative(path, goos string) string {
+	if goos == "windows" {
+		if len(path) >= 3 && path[0] == '/' && path[2] == ':' &&
+			((path[1] >= 'A' && path[1] <= 'Z') || (path[1] >= 'a' && path[1] <= 'z')) {
+			path = path[1:]
+		}
+		return strings.ReplaceAll(path, "/", `\`)
+	}

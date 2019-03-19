@@ -106,3 +106,57 @@ func TestReconcileRepairsOnlyExistingProxyModelsWithoutRemoteAccess(t *testing.T
 						git.EXPECT().CreateRepository(gomock.Any(), "models", "project", "model").Return(test.createError)
 					}
 				}
+				projects.EXPECT().GetProjectByName(gomock.Any(), "project").Return(prj, nil)
+			}
+			service := preset.NewService(true, manifest, nil, projects, models, git)
+			service.Reconcile(context.Background())
+		})
+	}
+}
+
+func TestReconcileRetriesMissingRepositoryOnNextStartup(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	models := modelmocks.NewMockIModelRepo(ctrl)
+	projects := projectmocks.NewMockIProjectRepo(ctrl)
+	git := gitmocks.NewMockIGitRepo(ctrl)
+	registryID := 3
+	manifest := &preset.Manifest{Models: []preset.ModelSpec{{Project: "project", Name: "model"}}}
+	models.EXPECT().GetByProjectAndName(gomock.Any(), "project", "model").Return(&model.Model{}, nil).Times(3)
+	projects.EXPECT().GetProjectByName(gomock.Any(), "project").
+		Return(&project.Project{RegistryID: &registryID}, nil).Times(3)
+	gomock.InOrder(
+		git.EXPECT().RepositoryExists(gomock.Any(), "models", "project", "model").Return(false, nil),
+		git.EXPECT().CreateRepository(gomock.Any(), "models", "project", "model").Return(errors.New("disk unavailable")),
+		git.EXPECT().RepositoryExists(gomock.Any(), "models", "project", "model").Return(false, nil),
+		git.EXPECT().CreateRepository(gomock.Any(), "models", "project", "model").Return(nil),
+		git.EXPECT().RepositoryExists(gomock.Any(), "models", "project", "model").Return(true, nil),
+	)
+	for range 3 {
+		service := preset.NewService(true, manifest, nil, projects, models, git)
+		service.Reconcile(context.Background())
+	}
+}
+
+func TestReconcileConcurrencyAndCancellation(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	models := modelmocks.NewMockIModelRepo(ctrl)
+	projects := projectmocks.NewMockIProjectRepo(ctrl)
+	git := gitmocks.NewMockIGitRepo(ctrl)
+	manifest := &preset.Manifest{}
+	for i := range 4 {
+		manifest.Models = append(manifest.Models, preset.ModelSpec{Project: "project", Name: strconv.Itoa(i)})
+	}
+	registryID := 3
+	models.EXPECT().GetByProjectAndName(gomock.Any(), "project", gomock.Any()).Return(&model.Model{}, nil).Times(2)
+	projects.EXPECT().GetProjectByName(gomock.Any(), "project").
+		Return(&project.Project{RegistryID: &registryID}, nil).Times(2)
+	git.EXPECT().RepositoryExists(gomock.Any(), "models", "project", gomock.Any()).Return(false, nil).Times(2)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	var active atomic.Int32
+	git.EXPECT().CreateRepository(gomock.Any(), "models", "project", gomock.Any()).
+		DoAndReturn(func(ctx context.Context, _, _, _ string) error {
+			active.Add(1)
+			<-ctx.Done()
+			return ctx.Err()
+		}).Times(2)
