@@ -24,16 +24,3 @@
     "description": "The label for category 'Guides' in sidebar 'tutorialSidebar'"
   },
   "sidebar.tutorialSidebar.category.Integrations": {
-    "message": "集成",
-    "description": "The label for category 'Integrations' in sidebar 'tutorialSidebar'"
-  },
-  "sidebar.tutorialSidebar.category.Operations": {
-    "message": "运维管理",
-    "description": "The label for category 'Operations' in sidebar 'tutorialSidebar'"
-  },
-  "sidebar.tutorialSidebar.category.Security": {
-    "message": "安全",
-    "description": "The label for category 'Security' in sidebar 'tutorialSidebar'"
-  },
-  "sidebar.tutorialSidebar.category.Reference": {
-    "message": "参考",
