@@ -36,3 +36,41 @@ function robotStatusMutationOptions({
       ...robot,
       status,
     }),
+    meta: {
+      successMessage,
+      errorMessage,
+      invalidates: [adminRobotKeys.lists()],
+    } satisfies NotificationMeta,
+  })
+}
+
+export function createRobotAccountMutationOptions() {
+  return mutationOptions({
+    mutationFn: (input: CreateRobotAccountRequest) => Robots.CreateRobotAccount(input),
+    meta: {
+      successMessage: i18n.t('routes.admin.robots.notifications.createSuccess'),
+      errorMessage: i18n.t('routes.admin.robots.notifications.createError'),
+      invalidates: [adminRobotKeys.lists()],
+    } satisfies NotificationMeta,
+  })
+}
+
+export function updateRobotAccountMutationOptions() {
+  return mutationOptions({
+    mutationFn: (input: UpdateRobotAccountRequest) => Robots.UpdateRobotAccount({
+      ...input,
+      id: requireRobotId(input.id),
+    }),
+    meta: {
+      successMessage: i18n.t('routes.admin.robots.notifications.updateSuccess'),
+      errorMessage: i18n.t('routes.admin.robots.notifications.updateError'),
+      invalidates: [adminRobotKeys.lists(), adminRobotKeys.details()],
+    } satisfies NotificationMeta,
+  })
+}
+
+export function enableRobotAccountMutationOptions() {
+  return robotStatusMutationOptions({
+    status: RobotAccountStatus.ROBOT_ACCOUNT_STATUS_ENABLED,
+    successMessage: i18n.t('routes.admin.robots.notifications.enableSuccess'),
+    errorMessage: i18n.t('routes.admin.robots.notifications.enableError'),
