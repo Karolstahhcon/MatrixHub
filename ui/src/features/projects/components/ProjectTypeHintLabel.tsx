@@ -56,3 +56,32 @@ function PermissionDocLink({ children }: { children?: ReactNode }) {
 
 interface ProjectTypeHintLabelProps {
   label: ReactNode
+}
+
+/**
+ * Project visibility label with an interactive hint.
+ *
+ * Uses Popover rather than the shared FieldHintLabel tooltip because the hint
+ * contains a link: Mantine tooltips are `pointer-events: none`, so a link
+ * inside one cannot be clicked. The open state is controlled so that the hint
+ * responds to keyboard focus as well as hover.
+ */
+export function ProjectTypeHintLabel({ label }: ProjectTypeHintLabelProps) {
+  const { t } = useTranslation()
+  const [opened, setOpened] = useState(false)
+
+  return (
+    <Group
+      component="span"
+      gap={4}
+      align="center"
+      wrap="nowrap"
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+      }}
+    >
+      <Text component="span" inherit>
+        {label}
+      </Text>
+      <Popover
