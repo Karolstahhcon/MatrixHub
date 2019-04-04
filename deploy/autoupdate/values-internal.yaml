@@ -1,0 +1,11 @@
+# Internal network Helm values for MatrixHub
+# Used by the self-hosted runner during helm upgrade
+#
+# This file is mounted into the runner pod via ConfigMap
+# and also kept here as the source of truth.
+apiserver:
+  image:
+    registry: ghcr.m.daocloud.io
+    repository: Karolstahhcon/matrixhub
+    tag: "latest"
+    pullPolicy: Always

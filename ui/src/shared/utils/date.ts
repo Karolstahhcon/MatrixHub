@@ -73,28 +73,3 @@ export function formatDateTime(
   format = 'YYYY-MM-DD HH:mm',
   zeroNotToHyphen = false,
 ) {
-  if (!zeroNotToHyphen && Number(value) === 0) {
-    return '-'
-  }
-
-  if (isNil(value) || value === '') {
-    return '-'
-  }
-
-  const normalizedValue = normalizeDateValue(value)
-
-  if (!zeroNotToHyphen && normalizedValue === 0) {
-    return '-'
-  }
-
-  if (isNil(normalizedValue) || normalizedValue === '') {
-    return '-'
-  }
-
-  const formattedValue = dayjs(normalizedValue)
-
-  if (!formattedValue.isValid()) {
-    return '-'
-  }
-
-  return formattedValue.format(format)
