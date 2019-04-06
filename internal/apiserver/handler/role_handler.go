@@ -33,15 +33,3 @@ func (r *RoleHandler) ListAllPermissions(ctx context.Context, _ *v1alpha1.ListAl
 				Name: item.Category.String(),
 				Permissions: lo.Map(item.Permissions, func(item role.Permission, index int) *v1alpha1.Permission {
 					return &v1alpha1.Permission{
-						Name:       item.String(),
-						Permission: item.String(),
-					}
-				}),
-			}
-		})
-	}
-	return &v1alpha1.ListAllPermissionsResponse{
-		SystemCategories:  transferFunc(role.PlatformPermissions),
-		ProjectCategories: transferFunc(role.ProjectPermissions),
-	}, nil
-}

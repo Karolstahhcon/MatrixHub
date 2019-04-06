@@ -17,3 +17,23 @@ router:
     failureMode: FailOpen
 
   modelServers:
+    # Omit appProtocol from InferencePool for compatibility with older GAIE v1 CRDs.
+    # EPP defaults to HTTP when the field is absent.
+    protocol: ""
+
+  proxy:
+    args:
+      - --service-node
+      - envoy-sidecar
+      - --log-level
+      - warn
+      - --concurrency
+      - "8"
+      - --drain-strategy
+      - immediate
+      - --drain-time-s
+      - "60"
+      - -c
+      - /etc/envoy/envoy.yaml
+    resources:
+      requests:
