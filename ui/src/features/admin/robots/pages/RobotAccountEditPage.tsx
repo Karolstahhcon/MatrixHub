@@ -7,3 +7,7 @@ import { getRobotAccountFormDefaults } from '../robot.schema'
 interface RobotAccountEditPageProps {
   robotId: number
 }
+
+export function RobotAccountEditPage({
+  robotId,
+}: RobotAccountEditPageProps) {
