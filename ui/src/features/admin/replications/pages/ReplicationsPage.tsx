@@ -9,27 +9,3 @@ import {
   adminReplicationKeys,
   useReplications,
 } from '../replications.query'
-import { DEFAULT_REPLICATIONS_PAGE } from '../replications.schema'
-import { getReplicationRowId } from '../replications.utils'
-
-const replicationsRouteApi = getRouteApi('/(auth)/admin/replications')
-
-export function ReplicationsPage() {
-  const queryClient = useQueryClient()
-  const navigate = replicationsRouteApi.useNavigate()
-  const search = replicationsRouteApi.useSearch()
-  const {
-    data,
-    isLoading,
-    isFetching,
-  } = useReplications(search)
-  const replications = data?.replications ?? []
-  const pagination = data?.pagination
-
-  const refreshReplications = () => queryClient.invalidateQueries({
-    queryKey: adminReplicationKeys.lists(),
-  })
-
-  const {
-    onSearchChange,
-    onRefresh,
