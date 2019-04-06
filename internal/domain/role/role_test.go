@@ -30,19 +30,3 @@ func TestPermissionMatching(t *testing.T) {
 	require.True(t, role.Permission("model.*").IsWildcard())
 	require.True(t, role.Permission("model.*").Match(role.ModelPull))
 	require.False(t, role.Permission("model.*").Match(role.DatasetPull))
-	require.True(t, role.ModelPush.Match(role.ModelPush))
-	require.True(t, role.MatchPermissions([]role.Permission{role.DatasetPull, "model.*"}, role.ModelDelete))
-	require.False(t, role.MatchPermissions([]role.Permission{role.DatasetPull}, role.ModelDelete))
-}
-
-func TestPermissionConversionsAndPersistence(t *testing.T) {
-	permissions := []role.Permission{role.ModelPull, role.DatasetPush}
-	strings := role.PermissionsToStrings(permissions)
-	require.Equal(t, []string{"model.pull", "dataset.push"}, strings)
-	require.Equal(t, permissions, role.StringsToPermissions(strings))
-
-	value, err := (role.PermissionList(nil)).Value()
-	require.NoError(t, err)
-	require.Equal(t, "[]", value)
-	value, err = role.PermissionList(permissions).Value()
-	require.NoError(t, err)
