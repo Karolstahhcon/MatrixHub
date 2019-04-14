@@ -27,17 +27,3 @@ type unsupportedCredential struct{}
 func (unsupportedCredential) Type() string       { return "unsupported" }
 func (unsupportedCredential) String() string     { return "value" }
 func (unsupportedCredential) Value() interface{} { return nil }
-
-func TestBasicCredentialRoundTrip(t *testing.T) {
-	credential := registry.NewBasicCredential("alice", "secret")
-	require.Equal(t, registry.CredentialTypeBasic, credential.Type())
-	require.JSONEq(t, `{"username":"alice","password":"secret"}`, credential.String())
-	require.Same(t, credential, credential.Value())
-	require.Equal(t, "alice", registry.AsBasic(credential).Username)
-	require.Nil(t, registry.AsBasic(unsupportedCredential{}))
-
-	parsed := registry.ParseCredentialInfo(registry.CredentialTypeBasic, credential.String())
-	require.Equal(t, registry.AsBasic(credential), registry.AsBasic(parsed))
-	require.Nil(t, registry.ParseCredentialInfo("unknown", credential.String()))
-	require.Nil(t, registry.ParseCredentialInfo(registry.CredentialTypeBasic, ""))
-	require.Nil(t, registry.ParseCredentialInfo(registry.CredentialTypeBasic, `{`))

@@ -85,3 +85,32 @@ export function ProjectTypeHintLabel({ label }: ProjectTypeHintLabelProps) {
         {label}
       </Text>
       <Popover
+        width={DROPDOWN_WIDTH}
+        shadow="md"
+        withArrow
+        opened={opened}
+        onChange={setOpened}
+        styles={{
+          dropdown: {
+            backgroundColor: 'var(--mantine-color-gray-9)',
+            borderColor: 'var(--mantine-color-gray-9)',
+            color: 'var(--mantine-color-white)',
+          },
+          arrow: {
+            backgroundColor: 'var(--mantine-color-gray-9)',
+            borderColor: 'var(--mantine-color-gray-9)',
+          },
+        }}
+      >
+        <Popover.Target>
+          <IconQuestion
+            width={18}
+            height={18}
+            role="button"
+            tabIndex={0}
+            aria-label={t('common.moreInfo')}
+            onMouseEnter={() => setOpened(true)}
+            onMouseLeave={() => setOpened(false)}
+            onFocus={() => setOpened(true)}
+            onBlur={() => setOpened(false)}
+            onKeyDown={(event: KeyboardEvent) => {
