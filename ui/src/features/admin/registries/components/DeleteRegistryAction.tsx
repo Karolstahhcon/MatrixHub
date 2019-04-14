@@ -24,3 +24,29 @@ interface DeleteRegistryModalProps {
   registry: Registry
   loading?: boolean
   onClose: () => void
+  onConfirm: () => void
+}
+
+function DeleteRegistryModal({
+  opened,
+  registry,
+  loading,
+  onClose,
+  onConfirm,
+}: DeleteRegistryModalProps) {
+  const { t } = useTranslation()
+
+  return (
+    <ModalWrapper
+      opened={opened}
+      onClose={onClose}
+      type="danger"
+      size="sm"
+      closeOnClickOutside={false}
+      title={t('routes.admin.registries.deleteModal.title')}
+      confirmLoading={loading}
+      onConfirm={onConfirm}
+    >
+      <Stack gap="sm">
+        <Text
+          size="sm"
