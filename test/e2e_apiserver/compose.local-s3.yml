@@ -14,3 +14,20 @@ services:
       - --s3-sign-endpoint=http://localhost:9000
       - --s3-access-key=minioadmin
       - --s3-secret-key=minioadmin
+      - --s3-bucket=hub
+      - --s3-use-path-style
+    ports:
+      - "9527:9527"
+
+  s3:
+    container_name: s3
+    image: docker.io/minio/minio
+    entrypoint:
+      - "/bin/bash"
+      - "-c"
+    command:
+      - "mkdir -p /data/hub && minio server /data --console-address=0.0.0.0:9001"
+    ports:
+      - 9000:9000
+      - 9001:9001
+    volumes:

@@ -10,15 +10,3 @@ import { robotsQueryOptions } from '@/features/admin/robots/robot.query'
 import {
   DEFAULT_PAGE,
   DEFAULT_PAGE_SIZE,
-} from '@/utils/constants.ts'
-
-const defaults = {
-  query: '',
-  page: DEFAULT_PAGE,
-  pageSize: DEFAULT_PAGE_SIZE,
-}
-
-const robotsSearchSchema = z.object({
-  query: z.string().trim().optional().default(defaults.query),
-  page: z.coerce.number().int().positive().optional().default(defaults.page),
-  pageSize: z.coerce.number().int().positive().optional().default(defaults.pageSize),
