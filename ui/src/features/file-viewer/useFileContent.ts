@@ -62,3 +62,25 @@ export function useFileContent(file: File | undefined): FileContentState {
       })
 
       try {
+        const res = await fetch(targetUrl, { signal: controller.signal })
+
+        if (!res.ok) {
+          throw new Error(`Failed to fetch file content: ${String(res.status)}`)
+        }
+
+        const text = await res.text()
+
+        if (!controller.signal.aborted) {
+          setState({
+            content: text,
+            isLoading: false,
+            error: null,
+          })
+        }
+      } catch (err: unknown) {
+        if (!controller.signal.aborted) {
+          setState({
+            content: undefined,
+            isLoading: false,
+            error: err instanceof Error ? err : new Error(String(err)),
+          })

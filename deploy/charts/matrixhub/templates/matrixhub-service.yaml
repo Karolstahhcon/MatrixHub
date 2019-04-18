@@ -19,10 +19,3 @@ spec:
       {{- if and (or (eq .Values.apiserver.service.type "NodePort") (eq .Values.apiserver.service.type "LoadBalancer")) (not (empty .Values.apiserver.service.nodePort)) }}
       nodePort: {{ .Values.apiserver.service.nodePort }}
       {{- else if eq .Values.apiserver.service.type "ClusterIP" }}
-      nodePort: null
-      {{- end }}
-    - port: {{ .Values.apiserver.sshPort }}
-      targetPort: ssh
-      protocol: TCP
-      name: ssh
-      {{- if and (or (eq .Values.apiserver.service.type "NodePort") (eq .Values.apiserver.service.type "LoadBalancer")) (not (empty .Values.apiserver.service.sshNodePort)) }}
