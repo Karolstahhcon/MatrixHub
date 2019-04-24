@@ -28,18 +28,3 @@ export function LibraryFilterPanel({
       {({ keyword }) => {
         const filteredOptions = filterByKeyword(options, keyword)
 
-        if (!filteredOptions.length) {
-          return null
-        }
-
-        return (
-          <Group gap={8}>
-            {
-              filteredOptions.map(option => (
-                <LibraryBadge
-                  library={option.name as string}
-                  key={option.id}
-                  component="button"
-                  type="button"
-                  onClick={() => onSelect(option.name as string)}
-                  styles={{
