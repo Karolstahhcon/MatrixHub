@@ -61,24 +61,3 @@ spec:
               containerPort: {{ .Values.apiserver.port }}
               protocol: TCP
             - name: ssh
-              containerPort: {{ .Values.apiserver.sshPort }}
-              protocol: TCP
-          readinessProbe:
-            httpGet:
-              path: /healthz
-              port: {{ .Values.apiserver.port }}
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: {{ .Values.apiserver.port }}
-          command:
-            - /usr/local/bin/matrixhub
-            - apiserver
-            - -c
-            - /etc/matrixhub/config.yaml
-          env:
-            - name: MATRIXHUB_DATABASE_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "matrixhub.fullname" . }}-secret
-                  key: matrixhub.dsn
