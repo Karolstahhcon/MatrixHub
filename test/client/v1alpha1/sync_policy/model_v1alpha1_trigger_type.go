@@ -9,7 +9,3 @@
 
 package v1alpha1
 
-type V1alpha1TriggerType string
-
-// List of v1alpha1TriggerType
-const (
