@@ -87,3 +87,93 @@ func TestNewSQLiteMigratesDatabase(t *testing.T) {
 		"SELECT COUNT(*) FROM pragma_table_info('models') WHERE name = 'synced_at'",
 	).Scan(&syncedAtColumnCount).Error)
 	require.Equal(t, int64(1), syncedAtColumnCount)
+
+	var foreignKeyViolations []struct{}
+	require.NoError(t, database.Raw("PRAGMA foreign_key_check").Scan(&foreignKeyViolations).Error)
+	require.Empty(t, foreignKeyViolations)
+
+	require.NoError(t, shouldMigrate(database, migrationSQLPath(t), ""))
+
+	duplicateUser := database.Exec("INSERT INTO users (username) VALUES (?)", "ADMIN").Error
+	require.Error(t, duplicateUser)
+	require.True(t, errors.Is(duplicateUser, gorm.ErrDuplicatedKey))
+
+	assertSQLiteCaseInsensitiveUniqueNames(t, database)
+}
+
+func TestNewSQLiteRestrictsExistingCustomDatabaseFile(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Windows does not expose Unix permission bits")
+	}
+
+	databasePath := filepath.Join(t.TempDir(), "custom database.db")
+	require.NoError(t, os.WriteFile(databasePath, nil, 0o644))
+	require.NoError(t, os.Chmod(databasePath, 0o644))
+	dsn := (&url.URL{Scheme: "file", Path: databasePath}).String()
+
+	database, err := New(Config{Driver: DriverSQLite, DSN: dsn})
+	require.NoError(t, err)
+	sqlDB, err := database.DB()
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		require.NoError(t, sqlDB.Close())
+	})
+
+	requirePrivateSQLiteFile(t, databasePath)
+}
+
+func TestNewSQLiteRejectsSymbolicLinkDatabaseFile(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("symbolic-link behavior differs on Windows")
+	}
+
+	targetPath := filepath.Join(t.TempDir(), "target.db")
+	require.NoError(t, os.WriteFile(targetPath, nil, 0o644))
+	require.NoError(t, os.Chmod(targetPath, 0o644))
+	linkPath := filepath.Join(t.TempDir(), "database.db")
+	require.NoError(t, os.Symlink(targetPath, linkPath))
+	dsn := (&url.URL{Scheme: "file", Path: linkPath}).String()
+
+	_, err := New(Config{Driver: DriverSQLite, DSN: dsn})
+	require.ErrorContains(t, err, "must not be a symbolic link")
+
+	info, err := os.Stat(targetPath)
+	require.NoError(t, err)
+	require.Equal(t, os.FileMode(0o644), info.Mode().Perm())
+}
+
+func TestNewSQLiteForcesForeignKeysForCustomDSN(t *testing.T) {
+	databasePath := filepath.Join(t.TempDir(), "custom.db")
+	dsn := (&url.URL{
+		Scheme:   "file",
+		Path:     databasePath,
+		RawQuery: "_fk=0&_foreign_keys=off",
+	}).String()
+
+	database, err := New(Config{
+		Driver:  DriverSQLite,
+		DSN:     dsn,
+		SQLPath: migrationSQLPath(t),
+		Migrate: true,
+	})
+	require.NoError(t, err)
+	sqlDB, err := database.DB()
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		require.NoError(t, sqlDB.Close())
+	})
+
+	var foreignKeys int
+	require.NoError(t, database.Raw("PRAGMA foreign_keys").Scan(&foreignKeys).Error)
+	require.Equal(t, 1, foreignKeys)
+	require.Error(t, database.Exec(`
+		INSERT INTO members_roles_projects (member_id, member_type, project_id)
+		VALUES (1, 'user', 999)
+	`).Error)
+}
+
+func TestNewSQLiteKeepsInMemoryDatabaseAcrossConfiguredConnectionRecycling(t *testing.T) {
+	database, err := New(Config{
+		Driver:                 DriverSQLite,
+		DSN:                    ":memory:",
+		ConnMaxLifetimeSeconds: 1,
