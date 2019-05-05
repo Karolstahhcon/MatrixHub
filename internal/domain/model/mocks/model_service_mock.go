@@ -166,3 +166,59 @@ func (m *MockIModelService) GetModelTree(ctx context.Context, project, name, rev
 	ret := m.ctrl.Call(m, "GetModelTree", ctx, project, name, revision, path)
 	ret0, _ := ret[0].([]*git.TreeEntry)
 	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetModelTree indicates an expected call of GetModelTree.
+func (mr *MockIModelServiceMockRecorder) GetModelTree(ctx, project, name, revision, path any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetModelTree", reflect.TypeOf((*MockIModelService)(nil).GetModelTree), ctx, project, name, revision, path)
+}
+
+// ListModelCommits mocks base method.
+func (m *MockIModelService) ListModelCommits(ctx context.Context, project, name, revision string, page, pageSize int) ([]*git.Commit, int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListModelCommits", ctx, project, name, revision, page, pageSize)
+	ret0, _ := ret[0].([]*git.Commit)
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// ListModelCommits indicates an expected call of ListModelCommits.
+func (mr *MockIModelServiceMockRecorder) ListModelCommits(ctx, project, name, revision, page, pageSize any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListModelCommits", reflect.TypeOf((*MockIModelService)(nil).ListModelCommits), ctx, project, name, revision, page, pageSize)
+}
+
+// ListModelFrameLabels mocks base method.
+func (m *MockIModelService) ListModelFrameLabels(ctx context.Context) ([]*model.Label, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListModelFrameLabels", ctx)
+	ret0, _ := ret[0].([]*model.Label)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListModelFrameLabels indicates an expected call of ListModelFrameLabels.
+func (mr *MockIModelServiceMockRecorder) ListModelFrameLabels(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListModelFrameLabels", reflect.TypeOf((*MockIModelService)(nil).ListModelFrameLabels), ctx)
+}
+
+// ListModelRevisions mocks base method.
+func (m *MockIModelService) ListModelRevisions(ctx context.Context, project, name string) (*git.Revisions, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListModelRevisions", ctx, project, name)
+	ret0, _ := ret[0].(*git.Revisions)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListModelRevisions indicates an expected call of ListModelRevisions.
+func (mr *MockIModelServiceMockRecorder) ListModelRevisions(ctx, project, name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListModelRevisions", reflect.TypeOf((*MockIModelService)(nil).ListModelRevisions), ctx, project, name)
+}
+
+// ListModelTaskLabels mocks base method.
