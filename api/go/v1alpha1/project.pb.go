@@ -626,3 +626,631 @@ func (*DeleteProjectResponse) Descriptor() ([]byte, []int) {
 	return file_v1alpha1_project_proto_rawDescGZIP(), []int{7}
 }
 
+type UpdateProjectRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Type          ProjectType            `protobuf:"varint,2,opt,name=type,proto3,enum=matrixhub.v1alpha1.ProjectType" json:"type,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateProjectRequest) Reset() {
+	*x = UpdateProjectRequest{}
+	mi := &file_v1alpha1_project_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateProjectRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateProjectRequest) ProtoMessage() {}
+
+func (x *UpdateProjectRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1alpha1_project_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateProjectRequest.ProtoReflect.Descriptor instead.
+func (*UpdateProjectRequest) Descriptor() ([]byte, []int) {
+	return file_v1alpha1_project_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *UpdateProjectRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *UpdateProjectRequest) GetType() ProjectType {
+	if x != nil {
+		return x.Type
+	}
+	return ProjectType_PROJECT_TYPE_UNSPECIFIED
+}
+
+type UpdateProjectResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateProjectResponse) Reset() {
+	*x = UpdateProjectResponse{}
+	mi := &file_v1alpha1_project_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateProjectResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateProjectResponse) ProtoMessage() {}
+
+func (x *UpdateProjectResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1alpha1_project_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateProjectResponse.ProtoReflect.Descriptor instead.
+func (*UpdateProjectResponse) Descriptor() ([]byte, []int) {
+	return file_v1alpha1_project_proto_rawDescGZIP(), []int{9}
+}
+
+type Project struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Name            string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Type            ProjectType            `protobuf:"varint,2,opt,name=type,proto3,enum=matrixhub.v1alpha1.ProjectType" json:"type,omitempty"`
+	EnabledRegistry bool                   `protobuf:"varint,3,opt,name=enabled_registry,json=enabledRegistry,proto3" json:"enabled_registry,omitempty"`
+	ModelCount      uint32                 `protobuf:"varint,4,opt,name=model_count,json=modelCount,proto3" json:"model_count,omitempty"`
+	DatasetCount    uint32                 `protobuf:"varint,5,opt,name=dataset_count,json=datasetCount,proto3" json:"dataset_count,omitempty"`
+	UpdatedAt       *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *Project) Reset() {
+	*x = Project{}
+	mi := &file_v1alpha1_project_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Project) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Project) ProtoMessage() {}
+
+func (x *Project) ProtoReflect() protoreflect.Message {
+	mi := &file_v1alpha1_project_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Project.ProtoReflect.Descriptor instead.
+func (*Project) Descriptor() ([]byte, []int) {
+	return file_v1alpha1_project_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *Project) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Project) GetType() ProjectType {
+	if x != nil {
+		return x.Type
+	}
+	return ProjectType_PROJECT_TYPE_UNSPECIFIED
+}
+
+func (x *Project) GetEnabledRegistry() bool {
+	if x != nil {
+		return x.EnabledRegistry
+	}
+	return false
+}
+
+func (x *Project) GetModelCount() uint32 {
+	if x != nil {
+		return x.ModelCount
+	}
+	return 0
+}
+
+func (x *Project) GetDatasetCount() uint32 {
+	if x != nil {
+		return x.DatasetCount
+	}
+	return 0
+}
+
+func (x *Project) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
+type ListProjectMembersRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	MemberName    string                 `protobuf:"bytes,2,opt,name=member_name,json=memberName,proto3" json:"member_name,omitempty"`
+	Page          int32                  `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      int32                  `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListProjectMembersRequest) Reset() {
+	*x = ListProjectMembersRequest{}
+	mi := &file_v1alpha1_project_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListProjectMembersRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListProjectMembersRequest) ProtoMessage() {}
+
+func (x *ListProjectMembersRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1alpha1_project_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListProjectMembersRequest.ProtoReflect.Descriptor instead.
+func (*ListProjectMembersRequest) Descriptor() ([]byte, []int) {
+	return file_v1alpha1_project_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *ListProjectMembersRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ListProjectMembersRequest) GetMemberName() string {
+	if x != nil {
+		return x.MemberName
+	}
+	return ""
+}
+
+func (x *ListProjectMembersRequest) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *ListProjectMembersRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+type ListProjectMembersResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Members       []*ProjectMember       `protobuf:"bytes,1,rep,name=members,proto3" json:"members,omitempty"`
+	Pagination    *Pagination            `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListProjectMembersResponse) Reset() {
+	*x = ListProjectMembersResponse{}
+	mi := &file_v1alpha1_project_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListProjectMembersResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListProjectMembersResponse) ProtoMessage() {}
+
+func (x *ListProjectMembersResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1alpha1_project_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListProjectMembersResponse.ProtoReflect.Descriptor instead.
+func (*ListProjectMembersResponse) Descriptor() ([]byte, []int) {
+	return file_v1alpha1_project_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *ListProjectMembersResponse) GetMembers() []*ProjectMember {
+	if x != nil {
+		return x.Members
+	}
+	return nil
+}
+
+func (x *ListProjectMembersResponse) GetPagination() *Pagination {
+	if x != nil {
+		return x.Pagination
+	}
+	return nil
+}
+
+type ProjectMember struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	MemberId      int32                  `protobuf:"varint,1,opt,name=member_id,json=memberId,proto3" json:"member_id,omitempty"`
+	MemberName    string                 `protobuf:"bytes,2,opt,name=member_name,json=memberName,proto3" json:"member_name,omitempty"`
+	MemberType    MemberType             `protobuf:"varint,3,opt,name=member_type,json=memberType,proto3,enum=matrixhub.v1alpha1.MemberType" json:"member_type,omitempty"`
+	Role          ProjectRoleType        `protobuf:"varint,4,opt,name=role,proto3,enum=matrixhub.v1alpha1.ProjectRoleType" json:"role,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProjectMember) Reset() {
+	*x = ProjectMember{}
+	mi := &file_v1alpha1_project_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProjectMember) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProjectMember) ProtoMessage() {}
+
+func (x *ProjectMember) ProtoReflect() protoreflect.Message {
+	mi := &file_v1alpha1_project_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProjectMember.ProtoReflect.Descriptor instead.
+func (*ProjectMember) Descriptor() ([]byte, []int) {
+	return file_v1alpha1_project_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *ProjectMember) GetMemberId() int32 {
+	if x != nil {
+		return x.MemberId
+	}
+	return 0
+}
+
+func (x *ProjectMember) GetMemberName() string {
+	if x != nil {
+		return x.MemberName
+	}
+	return ""
+}
+
+func (x *ProjectMember) GetMemberType() MemberType {
+	if x != nil {
+		return x.MemberType
+	}
+	return MemberType_MEMBER_TYPE_USER
+}
+
+func (x *ProjectMember) GetRole() ProjectRoleType {
+	if x != nil {
+		return x.Role
+	}
+	return ProjectRoleType_ROLE_TYPE_PROJECT_ADMIN
+}
+
+type AddProjectMemberWithRoleRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	MemberType    MemberType             `protobuf:"varint,2,opt,name=member_type,json=memberType,proto3,enum=matrixhub.v1alpha1.MemberType" json:"member_type,omitempty"`
+	MemberId      int32                  `protobuf:"varint,3,opt,name=member_id,json=memberId,proto3" json:"member_id,omitempty"`
+	Role          ProjectRoleType        `protobuf:"varint,4,opt,name=role,proto3,enum=matrixhub.v1alpha1.ProjectRoleType" json:"role,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AddProjectMemberWithRoleRequest) Reset() {
+	*x = AddProjectMemberWithRoleRequest{}
+	mi := &file_v1alpha1_project_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AddProjectMemberWithRoleRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AddProjectMemberWithRoleRequest) ProtoMessage() {}
+
+func (x *AddProjectMemberWithRoleRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1alpha1_project_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AddProjectMemberWithRoleRequest.ProtoReflect.Descriptor instead.
+func (*AddProjectMemberWithRoleRequest) Descriptor() ([]byte, []int) {
+	return file_v1alpha1_project_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *AddProjectMemberWithRoleRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *AddProjectMemberWithRoleRequest) GetMemberType() MemberType {
+	if x != nil {
+		return x.MemberType
+	}
+	return MemberType_MEMBER_TYPE_USER
+}
+
+func (x *AddProjectMemberWithRoleRequest) GetMemberId() int32 {
+	if x != nil {
+		return x.MemberId
+	}
+	return 0
+}
+
+func (x *AddProjectMemberWithRoleRequest) GetRole() ProjectRoleType {
+	if x != nil {
+		return x.Role
+	}
+	return ProjectRoleType_ROLE_TYPE_PROJECT_ADMIN
+}
+
+type AddProjectMemberWithRoleResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AddProjectMemberWithRoleResponse) Reset() {
+	*x = AddProjectMemberWithRoleResponse{}
+	mi := &file_v1alpha1_project_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AddProjectMemberWithRoleResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AddProjectMemberWithRoleResponse) ProtoMessage() {}
+
+func (x *AddProjectMemberWithRoleResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1alpha1_project_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AddProjectMemberWithRoleResponse.ProtoReflect.Descriptor instead.
+func (*AddProjectMemberWithRoleResponse) Descriptor() ([]byte, []int) {
+	return file_v1alpha1_project_proto_rawDescGZIP(), []int{15}
+}
+
+type RemoveProjectMembersRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Members       []*MemberToRemove      `protobuf:"bytes,2,rep,name=members,proto3" json:"members,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemoveProjectMembersRequest) Reset() {
+	*x = RemoveProjectMembersRequest{}
+	mi := &file_v1alpha1_project_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemoveProjectMembersRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoveProjectMembersRequest) ProtoMessage() {}
+
+func (x *RemoveProjectMembersRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1alpha1_project_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemoveProjectMembersRequest.ProtoReflect.Descriptor instead.
+func (*RemoveProjectMembersRequest) Descriptor() ([]byte, []int) {
+	return file_v1alpha1_project_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *RemoveProjectMembersRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *RemoveProjectMembersRequest) GetMembers() []*MemberToRemove {
+	if x != nil {
+		return x.Members
+	}
+	return nil
+}
+
+type MemberToRemove struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	MemberType    MemberType             `protobuf:"varint,1,opt,name=member_type,json=memberType,proto3,enum=matrixhub.v1alpha1.MemberType" json:"member_type,omitempty"`
+	MemberId      int32                  `protobuf:"varint,2,opt,name=member_id,json=memberId,proto3" json:"member_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MemberToRemove) Reset() {
+	*x = MemberToRemove{}
+	mi := &file_v1alpha1_project_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MemberToRemove) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MemberToRemove) ProtoMessage() {}
+
+func (x *MemberToRemove) ProtoReflect() protoreflect.Message {
+	mi := &file_v1alpha1_project_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MemberToRemove.ProtoReflect.Descriptor instead.
+func (*MemberToRemove) Descriptor() ([]byte, []int) {
+	return file_v1alpha1_project_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *MemberToRemove) GetMemberType() MemberType {
+	if x != nil {
+		return x.MemberType
+	}
+	return MemberType_MEMBER_TYPE_USER
+}
+
+func (x *MemberToRemove) GetMemberId() int32 {
+	if x != nil {
+		return x.MemberId
+	}
+	return 0
+}
+
+type RemoveProjectMembersResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemoveProjectMembersResponse) Reset() {
+	*x = RemoveProjectMembersResponse{}
+	mi := &file_v1alpha1_project_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemoveProjectMembersResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoveProjectMembersResponse) ProtoMessage() {}
+
+func (x *RemoveProjectMembersResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1alpha1_project_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemoveProjectMembersResponse.ProtoReflect.Descriptor instead.
+func (*RemoveProjectMembersResponse) Descriptor() ([]byte, []int) {
+	return file_v1alpha1_project_proto_rawDescGZIP(), []int{18}
+}
+
+type UpdateProjectMemberRoleRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	MemberType    MemberType             `protobuf:"varint,2,opt,name=member_type,json=memberType,proto3,enum=matrixhub.v1alpha1.MemberType" json:"member_type,omitempty"`
+	MemberId      int32                  `protobuf:"varint,3,opt,name=member_id,json=memberId,proto3" json:"member_id,omitempty"`
+	Role          ProjectRoleType        `protobuf:"varint,4,opt,name=role,proto3,enum=matrixhub.v1alpha1.ProjectRoleType" json:"role,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateProjectMemberRoleRequest) Reset() {
+	*x = UpdateProjectMemberRoleRequest{}
+	mi := &file_v1alpha1_project_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateProjectMemberRoleRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateProjectMemberRoleRequest) ProtoMessage() {}
+
+func (x *UpdateProjectMemberRoleRequest) ProtoReflect() protoreflect.Message {
