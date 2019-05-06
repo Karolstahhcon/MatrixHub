@@ -29,3 +29,35 @@ const (
 	SyncJobStatusSucceeded
 	SyncJobStatusFailed
 	SyncJobStatusStopped
+	SyncJobStatusPending
+)
+
+func (s SyncJobStatus) Value() (driver.Value, error) {
+	return int64(s), nil
+}
+
+func (s *SyncJobStatus) Scan(value any) error {
+	if value == nil {
+		*s = SyncJobStatusUnspecified
+		return nil
+	}
+	switch v := value.(type) {
+	case int64:
+		*s = SyncJobStatus(v)
+	case int:
+		*s = SyncJobStatus(v)
+	case int32:
+		*s = SyncJobStatus(v)
+	case uint8:
+		*s = SyncJobStatus(v)
+	default:
+		return fmt.Errorf("cannot scan %T into SyncJobStatus", value)
+	}
+	return nil
+}
+
+type SyncJob struct {
+	ID                 int           `gorm:"primarykey"`
+	RemoteRegistryID   int           `gorm:"column:remote_registry_id"`
+	RemoteProjectName  string        `gorm:"column:remote_project_name"`
+	RemoteResourceName string        `gorm:"column:remote_resource_name"`
