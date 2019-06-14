@@ -5,17 +5,3 @@ export const Route = createFileRoute(
 )({
   component: RouteComponent,
 })
-
-function RouteComponent() {
-  const {
-    projectId, datasetId, ref,
-  } = Route.useParams()
-  const treePath = Route.useParams({ select: s => s['_splat'] })
-
-  return (
-    <div>
-      Dataset Tree Page
-      <br />
-      Project ID:
-      {' '}
-      {projectId}
