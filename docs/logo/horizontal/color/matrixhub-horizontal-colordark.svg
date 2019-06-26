@@ -5,3 +5,10 @@
         <g id="merbridge-horizontal-colordark">
             <rect id="Frame" x="0" y="0" width="778" height="160"></rect>
             <g id="Text-/-1_Big-@-1_black" transform="translate(192, 27.055)" fill="#000000" fill-rule="nonzero" font-family="Roboto-Medium, Roboto" font-size="96" font-weight="400">
+                <text id="Merbridge">
+                    <tspan x="0.4765625" y="89">MatrixHub</tspan>
+                </text>
+            </g>
+            <g id="Merbridge_Color_Dark" transform="translate(32, 16)">
+                <g id="matrixhub" transform="translate(7.9906, 7.9909)">
+                    <rect id="bg-transparent" x="-7.99064938" y="-7.99087929" width="128" height="128"></rect>
