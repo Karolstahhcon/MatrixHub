@@ -56,23 +56,3 @@ export default function RemoteSync(): React.ReactElement {
                 <Translate id="sync.policy.title">Policy-Driven</Translate>
               </h3>
               <p className="text-slate-400">
-                <Translate id="sync.policy.desc">
-                  Configure precise rules based on Source Repository, Resource Filters, Trigger Modes (Auto/Manual), and Bandwidth Limits to control synchronization behaviors.
-                </Translate>
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-slate-900 p-8 rounded-3xl border border-slate-700/50">
-            <h3 className="text-2xl font-bold text-white mb-6">
-              <Translate id="sync.features.title">Synchronization Features</Translate>
-            </h3>
-            <div className="space-y-4">
-              <div className="flex gap-4">
-                <div className="text-green-500 mt-1">✓</div>
-                <div>
-                  <h4 className="text-white font-bold"><Translate id="sync.f0.title">Bandwidth Throttling</Translate></h4>
-                  <p className="text-slate-400 text-sm"><Translate id="sync.f0.desc">Controls the synchronization download bandwidth to avoid saturating your WAN connection during peak hours.</Translate></p>
-                </div>
-              </div>
-              <div className="flex gap-4">
