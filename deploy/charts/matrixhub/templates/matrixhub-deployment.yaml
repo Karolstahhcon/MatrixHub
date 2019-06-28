@@ -40,24 +40,3 @@ spec:
               echo 'database OK ✓'
       {{- end }}
       {{- include "matrixhub.imagePullSecrets" . | nindent 6 }}
-      containers:
-        - name: {{ include "matrixhub.fullname" . }}
-          image: {{ include "matrixhub.image" . }}
-          imagePullPolicy: {{ .Values.apiserver.image.pullPolicy }}
-          resources:
-            {{- toYaml .Values.apiserver.resources | nindent 12 }}
-          volumeMounts:
-            - mountPath: /etc/matrixhub/config.yaml
-              name: {{ include "matrixhub.fullname" . }}-config
-              subPath: config.yaml
-            {{- if eq .Values.apiserver.storage.mode "pvc" }}
-            - mountPath: /data/matrixhub
-              name: {{ include "matrixhub.fullname" . }}-apiserver-data
-            {{- end }}
-          terminationMessagePath: /dev/termination-log
-          terminationMessagePolicy: File
-          ports:
-            - name: http
-              containerPort: {{ .Values.apiserver.port }}
-              protocol: TCP
-            - name: ssh

@@ -38,3 +38,83 @@ import (
 // MatrixHub serves a HuggingFace-compatible /api/models, so this suite points a
 // HUGGINGFACE-typed registry back at the instance under test and uses it as the
 // mirror. That keeps the assertion hermetic: the repositories that must be
+// discovered are created by the test itself, and no public Hub is contacted.
+var _ = Describe("SyncPolicy Wildcard Discovery", Label("sync-policy", "git"), func() {
+	It("should discover repositories from the registry URL rather than a hardcoded hub", Label("SP0011"), func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		defer cancel()
+
+		// The registry URL is dereferenced by the job server, not by this test
+		// process, so it must be an address that is routable from inside the
+		// deployment. tools.GetBaseURL() is not: under KIND it is a NodePort on
+		// the host. Skip rather than guess.
+		selfURL := tools.GetSelfURL()
+		if selfURL == "" {
+			Skip(fmt.Sprintf("%s not set: no server-reachable MatrixHub URL to use as a stand-in registry", tools.EnvMatrixHubSelfURL))
+		}
+
+		api := tools.GetV1alpha1SyncPolicyApi()
+		modelsApi := tools.GetV1alpha1ModelsApi()
+		datasetsApi := tools.GetV1alpha1DatasetsApi()
+
+		// The source project doubles as the remote namespace ("author") on the
+		// stand-in mirror. Public so discovery works without credentials.
+		source, err := tools.CreatePublicProjectFixture(ctx, "e2e-wc-src")
+		Expect(err).NotTo(HaveOccurred())
+		defer source.Cleanup(ctx)
+
+		wantModels := []string{"wildcard-alpha", "wildcard-beta"}
+		for _, name := range wantModels {
+			_, _, err = modelsApi.ModelsCreateModel(ctx, v1alpha1model.V1alpha1CreateModelRequest{
+				Project: source.Name,
+				Name:    name,
+			})
+			Expect(err).NotTo(HaveOccurred(), "create source model %s/%s", source.Name, name)
+		}
+		wantDataset := "wildcard-dataset"
+		_, _, err = datasetsApi.DatasetsCreateDataset(ctx, v1alpha1dataset.V1alpha1CreateDatasetRequest{
+			Project: source.Name,
+			Name:    wantDataset,
+		})
+		Expect(err).NotTo(HaveOccurred(), "create source dataset %s/%s", source.Name, wantDataset)
+		defer func() {
+			_, _, _ = datasetsApi.DatasetsDeleteDataset(ctx, source.Name, wantDataset)
+		}()
+
+		target, err := tools.CreateProjectFixture(ctx, "e2e-wc-dst")
+		Expect(err).NotTo(HaveOccurred())
+		defer target.Cleanup(ctx)
+
+		// The registry URL is this very deployment. If discovery ignored it and
+		// went to huggingface.co, the randomly-named namespace would not exist
+		// there and no jobs would be generated.
+		registry, err := tools.CreateHuggingFaceRegistryFixture(ctx, "e2e-wc", selfURL)
+		Expect(err).NotTo(HaveOccurred())
+		defer registry.Cleanup(ctx)
+		Expect(registry.ID).To(BeNumerically(">", 0))
+
+		name := fmt.Sprintf("e2e-wildcard-discovery-%d", time.Now().UnixNano())
+		req := v1alpha1.V1alpha1CreateSyncPolicyRequest{
+			Name:        name,
+			Description: "e2e wildcard discovery honours the registry URL",
+			PolicyType:  ptrPolicyType(v1alpha1.PULL_BASE_V1alpha1SyncPolicyType),
+			TriggerType: ptrTriggerType(v1alpha1.MANUAL_V1alpha1TriggerType),
+			PullBasePolicy: &v1alpha1.V1alpha1PullBasePolicy{
+				SourceRegistryId: registry.ID,
+				// "<namespace>/*" is what turns this into a discovery-driven policy.
+				ResourceName: fmt.Sprintf("%s/*", source.Name),
+				ResourceTypes: []v1alpha1.V1alpha1ResourceType{
+					v1alpha1.MODEL_V1alpha1ResourceType,
+					v1alpha1.DATASET_V1alpha1ResourceType,
+				},
+				TargetProjectName: target.Name,
+			},
+			IsOverwrite: false,
+		}
+
+		resp, _, err := api.SyncPolicyCreateSyncPolicy(ctx, req)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp.SyncPolicy).NotTo(BeNil())
+		pid := resp.SyncPolicy.Id
+		Expect(pid).To(BeNumerically(">", 0))
+		defer func() {

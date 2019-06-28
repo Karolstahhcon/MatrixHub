@@ -1,0 +1,176 @@
+// Copyright The MatrixHub Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package repo
+
+import (
+	"context"
+	"path/filepath"
+	"runtime"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/require"
+	"gorm.io/gorm"
+
+	"github.com/matrixhub-ai/matrixhub/internal/domain/dataset"
+	"github.com/matrixhub-ai/matrixhub/internal/domain/model"
+	"github.com/matrixhub-ai/matrixhub/internal/domain/project"
+	"github.com/matrixhub-ai/matrixhub/internal/domain/registry"
+	"github.com/matrixhub-ai/matrixhub/internal/domain/syncjob"
+	"github.com/matrixhub-ai/matrixhub/internal/domain/syncpolicy"
+	appconfig "github.com/matrixhub-ai/matrixhub/internal/infra/config"
+	"github.com/matrixhub-ai/matrixhub/internal/infra/db"
+)
+
+func TestSQLiteRepositoryContract(t *testing.T) {
+	database, _ := newSQLiteRepositoryTestDatabase(t)
+	ctx := context.Background()
+
+	projectRepo := NewProjectDBRepo(database)
+	createdProject, err := projectRepo.CreateProject(ctx, &project.Project{
+		Name: "acme",
+		Type: project.ProjectTypePublic,
+	})
+	require.NoError(t, err)
+
+	modelRepo := NewModelDB(database)
+	createdModel, err := modelRepo.Create(ctx, &model.Model{
+		Name:        "tiny-model",
+		ProjectName: createdProject.Name,
+	})
+	require.NoError(t, err)
+
+	datasetRepo := NewDatasetDB(database)
+	_, err = datasetRepo.Create(ctx, &dataset.Dataset{
+		Name:        "tiny-dataset",
+		ProjectName: createdProject.Name,
+	})
+	require.NoError(t, err)
+
+	modelPaths, err := modelRepo.ListAllPaths(ctx)
+	require.NoError(t, err)
+	require.Contains(t, modelPaths, "acme/tiny-model")
+
+	datasetPaths, err := datasetRepo.ListAllPaths(ctx)
+	require.NoError(t, err)
+	require.Contains(t, datasetPaths, "acme/tiny-dataset")
+
+	models, total, err := modelRepo.List(ctx, &model.Filter{Search: "tiny", Page: 1, PageSize: 20})
+	require.NoError(t, err)
+	require.Equal(t, int64(1), total)
+	require.Len(t, models, 1)
+
+	datasets, total, err := datasetRepo.List(ctx, &model.Filter{Search: "tiny", Page: 1, PageSize: 20})
+	require.NoError(t, err)
+	require.Equal(t, int64(1), total)
+	require.Len(t, datasets, 1)
+
+	require.NoError(t, database.Create(&project.ProjectMember{
+		ProjectID:  &createdProject.ID,
+		MemberID:   1,
+		MemberType: project.MemberTypeUser,
+		RoleID:     2,
+	}).Error)
+	members, total, err := projectRepo.ListProjectMembers(ctx, createdProject.ID, "admin", 1, 20)
+	require.NoError(t, err)
+	require.Equal(t, int64(1), total)
+	require.Len(t, members, 1)
+	require.Equal(t, "admin", members[0].MemberName)
+	assertProjectNameSearchIsCaseSensitive(t, ctx, database)
+
+	assertModelUpdatesTimestamp(t, database, modelRepo, createdModel.ID)
+	assertCASUpdatesTimestamps(t, database)
+}
+
+func TestRegistryRepo_DeleteRejectsReferencedRegistry(t *testing.T) {
+	database, _ := newSQLiteRepositoryTestDatabase(t)
+	ctx := context.Background()
+	repo := NewRegistryRepo(database)
+
+	reg, err := repo.CreateRegistry(ctx, registry.Registry{
+		Name: "upstream-hf",
+		URL:  "https://hf-mirror.com",
+		Type: "REGISTRY_TYPE_HUGGINGFACE",
+	})
+	require.NoError(t, err)
+
+	projectRepo := NewProjectDBRepo(database)
+	registryID := reg.ID
+	_, err = projectRepo.CreateProject(ctx, &project.Project{
+		Name:       "proxy-project",
+		Type:       project.ProjectTypePublic,
+		RegistryID: &registryID,
+	})
+	require.NoError(t, err)
+
+	require.ErrorIs(t, repo.DeleteRegistry(ctx, reg.ID), registry.ErrInUse)
+	_, err = repo.GetRegistry(ctx, reg.ID)
+	require.NoError(t, err)
+
+	policyReg, err := repo.CreateRegistry(ctx, registry.Registry{
+		Name: "policy-registry",
+		URL:  "https://hf-mirror.com",
+		Type: "REGISTRY_TYPE_HUGGINGFACE",
+	})
+	require.NoError(t, err)
+	result := database.Exec(`INSERT INTO sync_policies
+		(name, registry_id, next_run_at, updated_at) VALUES (?, ?, ?, ?)`,
+		"policy-using-registry", policyReg.ID, 0, time.Now().UTC())
+	require.NoError(t, result.Error)
+
+	require.ErrorIs(t, repo.DeleteRegistry(ctx, policyReg.ID), registry.ErrInUse)
+	_, err = repo.GetRegistry(ctx, policyReg.ID)
+	require.NoError(t, err)
+
+	require.NoError(t, database.Exec("DELETE FROM sync_policies WHERE registry_id = ?", policyReg.ID).Error)
+	require.NoError(t, repo.DeleteRegistry(ctx, policyReg.ID))
+	_, err = repo.GetRegistry(ctx, policyReg.ID)
+	require.ErrorIs(t, err, gorm.ErrRecordNotFound)
+}
+
+func assertProjectNameSearchIsCaseSensitive(t *testing.T, ctx context.Context, database *gorm.DB) {
+	t.Helper()
+
+	projectRepo := NewProjectDBRepo(database)
+	createdProject, err := projectRepo.CreateProject(ctx, &project.Project{
+		Name: "CaseProject",
+		Type: project.ProjectTypePublic,
+	})
+	require.NoError(t, err)
+
+	_, total, err := projectRepo.ListProjects(
+		ctx, "caseproject", project.ProjectTypeUnspecified,
+		project.PermissionFilterUnspecified, true, 1, 20,
+	)
+	require.NoError(t, err)
+	require.Zero(t, total)
+
+	_, err = NewModelDB(database).Create(ctx, &model.Model{
+		Name:        "unrelated-model",
+		ProjectName: createdProject.Name,
+	})
+	require.NoError(t, err)
+	models, total, err := NewModelDB(database).List(ctx, &model.Filter{
+		Search: "caseproject", Page: 1, PageSize: 20,
+	})
+	require.NoError(t, err)
+	require.Zero(t, total)
+	require.Empty(t, models)
+
+	_, err = NewDatasetDB(database).Create(ctx, &dataset.Dataset{
+		Name:        "unrelated-dataset",
+		ProjectName: createdProject.Name,
+	})
+	require.NoError(t, err)
