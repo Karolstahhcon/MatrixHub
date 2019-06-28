@@ -27,3 +27,13 @@ func TestCalculatePagesCapsAtInt32Max(t *testing.T) {
 		t.Fatalf("CalculatePages() = %d, want %d", got, want)
 	}
 }
+
+func TestClampInt32(t *testing.T) {
+	tests := []struct {
+		name string
+		in   int64
+		want int32
+	}{
+		{name: "within range", in: 42, want: 42},
+		{name: "above max", in: 1<<31 + 1, want: 1<<31 - 1},
+		{name: "below min", in: -(1 << 31) - 1, want: -1 << 31},
