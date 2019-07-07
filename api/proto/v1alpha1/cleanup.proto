@@ -24,3 +24,29 @@ service Cleanup {
   }
 
   // Get storage statistics
+  rpc GetStorageStats(GetStorageStatsRequest) returns (StorageStats) {
+    option (google.api.http) = {
+      get: "/api/v1alpha1/cleanup/stats"
+    };
+  }
+}
+
+message PreviewCleanupRequest {
+  bool include_orphaned_repos = 1;
+  bool include_orphaned_lfs = 2;
+}
+
+message CleanupPreview {
+  repeated OrphanedRepo orphaned_repos = 1;
+  repeated OrphanedLFS orphaned_lfs_objects = 2;
+  int64 total_reclaimable_bytes = 3;
+}
+
+message OrphanedRepo {
+  string path = 1;
+  string type = 2;           // "model" or "dataset"
+  string project_name = 3;
+  string resource_name = 4;
+  int64 size_bytes = 5;
+}
+
