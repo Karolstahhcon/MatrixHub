@@ -14,3 +14,20 @@ interface ExpireAtFieldProps {
   error?: string
 }
 
+export function ExpireAtField({
+  value,
+  onChange,
+  error,
+}: ExpireAtFieldProps) {
+  const { t } = useTranslation()
+  const validityValue = value ? 'custom' : 'never'
+
+  const handleValidityChange = (next: string) => {
+    if (next === 'never') {
+      onChange('')
+    } else {
+      onChange(defaultExpireAt())
+    }
+  }
+
+  return (

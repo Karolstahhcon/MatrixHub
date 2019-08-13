@@ -8,8 +8,3 @@
  */
 
 package v1alpha1
-
-type V1alpha1File struct {
-	Name string `json:"name,omitempty"`
-	Type_ *V1alpha1FileType `json:"type,omitempty"`
-	Path string `json:"path,omitempty"`
