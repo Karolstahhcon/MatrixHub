@@ -40,3 +40,45 @@ type ProjectUserFixture struct {
 // the requested project role.
 func CreateProjectUserFixture(ctx context.Context, prefix string, projectRole v1alpha1project.V1alpha1ProjectRoleType) (*ProjectUserFixture, error) {
 	username := GenerateTestUsername(prefix)
+	userID, cookie, err := CreateUserAndLoginWithID(username, protocolTestPassword, false)
+	if err != nil {
+		return nil, err
+	}
+
+	project, err := CreateProjectFixture(ctx, prefix)
+	if err != nil {
+		_ = DeleteUser(int64(userID))
+		return nil, err
+	}
+
+	memberType := v1alpha1project.USER_V1alpha1MemberType
+	_, _, err = GetV1alpha1ProjectsApi().ProjectsAddProjectMemberWithRole(ctx, project.Name, v1alpha1project.ProjectsAddProjectMemberWithRoleBody{
+		MemberType: &memberType,
+		MemberId:   userID,
+		Role:       &projectRole,
+	})
+	if err != nil {
+		project.Cleanup(ctx)
+		_ = DeleteUser(int64(userID))
+		return nil, fmt.Errorf("grant project role: %w", err)
+	}
+
+	return &ProjectUserFixture{
+		UserID:      userID,
+		Username:    username,
+		Cookie:      cookie,
+		Project:     project,
+		CurrentUser: CreateCurrentUserClientWithCookie(cookie),
+	}, nil
+}
+
+// Cleanup removes the project before the user so project membership does not
+// outlive either resource.
+func (f *ProjectUserFixture) Cleanup(ctx context.Context) error {
+	if f == nil {
+		return nil
+	}
+	f.Project.Cleanup(ctx)
+	return DeleteUser(int64(f.UserID))
+}
+

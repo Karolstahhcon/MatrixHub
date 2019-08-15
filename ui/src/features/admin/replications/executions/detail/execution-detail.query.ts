@@ -18,23 +18,3 @@ export const adminReplicationExecutionDetailKeys = {
   ] as const,
   jobs: (syncPolicyId: number, syncTaskId: number) => [
     ...adminReplicationExecutionDetailKeys.item(syncPolicyId, syncTaskId),
-    'jobs',
-  ] as const,
-  jobList: (syncPolicyId: number, syncTaskId: number, search: ExecutionDetailSearch) => [
-    ...adminReplicationExecutionDetailKeys.jobs(syncPolicyId, syncTaskId),
-    search,
-  ] as const,
-}
-
-export function executionDetailQueryOptions(
-  syncPolicyId: number,
-  syncTaskId: number,
-) {
-  return queryOptions({
-    queryKey: adminReplicationExecutionDetailKeys.item(syncPolicyId, syncTaskId),
-    queryFn: async () => {
-      const response = await SyncPolicy.GetSyncTask({
-        syncPolicyId,
-        syncTaskId,
-      })
-
