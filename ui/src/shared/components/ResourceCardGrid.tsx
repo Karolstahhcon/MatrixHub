@@ -35,16 +35,3 @@ export function ResourceCardGrid({
     ),
     [skeletonCount],
   )
-
-  const isEmpty = !children?.length && !loading
-
-  return (
-    <SimpleGrid
-      cols={{
-        base: 1,
-        md: isEmpty ? 1 : 2,
-      }}
-      spacing={20}
-    >
-      {loading
-        ? skeletonKeys.map(key => (
