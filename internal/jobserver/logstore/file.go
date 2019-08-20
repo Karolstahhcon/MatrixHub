@@ -26,12 +26,3 @@ type FileLogStore struct {
 	baseDir string
 }
 
-// NewFileLogStore creates a FileLogStore, ensuring baseDir exists.
-func NewFileLogStore(baseDir string) *FileLogStore {
-	_ = os.MkdirAll(baseDir, 0755)
-	return &FileLogStore{baseDir: baseDir}
-}
-
-func (f *FileLogStore) path(jobID int) string {
-	return filepath.Join(f.baseDir, fmt.Sprintf("%d.log", jobID))
-}
