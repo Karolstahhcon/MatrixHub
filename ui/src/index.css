@@ -1,0 +1,15 @@
+a {
+  text-decoration: none;
+}
+
+.mantine-Tabs-tab {
+  color: var(--mantine-color-gray-6);
+}
+
+.mantine-Tabs-tab[data-active] {
+  color: var(--mantine-color-gray-9);
+}
+
+.mantine-Button-root:where([data-with-left-section]) {
+  padding-inline-start: var(--button-padding-x);
+}
