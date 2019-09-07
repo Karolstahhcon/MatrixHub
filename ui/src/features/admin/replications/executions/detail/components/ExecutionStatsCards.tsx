@@ -42,3 +42,25 @@ export function ExecutionStatsCards({ task }: ExecutionStatsCardsProps) {
       label: t('routes.admin.replications.executions.detail.status.failed'),
       value: failed,
       icon: IconAlertCircle,
+      color: 'var(--mantine-color-red-6)',
+      bgColor: 'var(--mantine-color-red-light)',
+    },
+    {
+      label: t('routes.admin.replications.executions.detail.status.running'),
+      value: running,
+      icon: IconMessageCircleBolt,
+      color: 'var(--mantine-primary-color-filled)',
+      bgColor: 'var(--mantine-primary-color-light)',
+    },
+    {
+      label: t('routes.admin.replications.executions.detail.status.stopped'),
+      value: stopped,
+      icon: IconAlertTriangle,
+      color: 'var(--mantine-color-yellow-6)',
+      bgColor: 'var(--mantine-color-orange-light)',
+    },
+  ]
+
+  return (
+    <Grid gutter="md">
+      {stats.map(stat => (
