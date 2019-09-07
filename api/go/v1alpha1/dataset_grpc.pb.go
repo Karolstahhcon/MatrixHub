@@ -113,3 +113,118 @@ func (c *datasetsClient) ListDatasetRevisions(ctx context.Context, in *ListDatas
 		return nil, err
 	}
 	return out, nil
+}
+
+func (c *datasetsClient) ListDatasetCommits(ctx context.Context, in *ListDatasetCommitsRequest, opts ...grpc.CallOption) (*ListDatasetCommitsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListDatasetCommitsResponse)
+	err := c.cc.Invoke(ctx, Datasets_ListDatasetCommits_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *datasetsClient) GetDatasetCommit(ctx context.Context, in *GetDatasetCommitRequest, opts ...grpc.CallOption) (*Commit, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Commit)
+	err := c.cc.Invoke(ctx, Datasets_GetDatasetCommit_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *datasetsClient) GetDatasetTree(ctx context.Context, in *GetDatasetTreeRequest, opts ...grpc.CallOption) (*GetDatasetTreeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetDatasetTreeResponse)
+	err := c.cc.Invoke(ctx, Datasets_GetDatasetTree_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *datasetsClient) GetDatasetBlob(ctx context.Context, in *GetDatasetBlobRequest, opts ...grpc.CallOption) (*File, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(File)
+	err := c.cc.Invoke(ctx, Datasets_GetDatasetBlob_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// DatasetsServer is the server API for Datasets service.
+// All implementations should embed UnimplementedDatasetsServer
+// for forward compatibility.
+type DatasetsServer interface {
+	ListDatasetTaskLabels(context.Context, *ListDatasetTaskLabelsRequest) (*ListDatasetTaskLabelsResponse, error)
+	ListDatasets(context.Context, *ListDatasetsRequest) (*ListDatasetsResponse, error)
+	GetDataset(context.Context, *GetDatasetRequest) (*Dataset, error)
+	CreateDataset(context.Context, *CreateDatasetRequest) (*CreateDatasetResponse, error)
+	DeleteDataset(context.Context, *DeleteDatasetRequest) (*DeleteDatasetResponse, error)
+	ListDatasetRevisions(context.Context, *ListDatasetRevisionsRequest) (*ListDatasetRevisionsResponse, error)
+	ListDatasetCommits(context.Context, *ListDatasetCommitsRequest) (*ListDatasetCommitsResponse, error)
+	GetDatasetCommit(context.Context, *GetDatasetCommitRequest) (*Commit, error)
+	GetDatasetTree(context.Context, *GetDatasetTreeRequest) (*GetDatasetTreeResponse, error)
+	GetDatasetBlob(context.Context, *GetDatasetBlobRequest) (*File, error)
+}
+
+// UnimplementedDatasetsServer should be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedDatasetsServer struct{}
+
+func (UnimplementedDatasetsServer) ListDatasetTaskLabels(context.Context, *ListDatasetTaskLabelsRequest) (*ListDatasetTaskLabelsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListDatasetTaskLabels not implemented")
+}
+func (UnimplementedDatasetsServer) ListDatasets(context.Context, *ListDatasetsRequest) (*ListDatasetsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListDatasets not implemented")
+}
+func (UnimplementedDatasetsServer) GetDataset(context.Context, *GetDatasetRequest) (*Dataset, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetDataset not implemented")
+}
+func (UnimplementedDatasetsServer) CreateDataset(context.Context, *CreateDatasetRequest) (*CreateDatasetResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateDataset not implemented")
+}
+func (UnimplementedDatasetsServer) DeleteDataset(context.Context, *DeleteDatasetRequest) (*DeleteDatasetResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteDataset not implemented")
+}
+func (UnimplementedDatasetsServer) ListDatasetRevisions(context.Context, *ListDatasetRevisionsRequest) (*ListDatasetRevisionsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListDatasetRevisions not implemented")
+}
+func (UnimplementedDatasetsServer) ListDatasetCommits(context.Context, *ListDatasetCommitsRequest) (*ListDatasetCommitsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListDatasetCommits not implemented")
+}
+func (UnimplementedDatasetsServer) GetDatasetCommit(context.Context, *GetDatasetCommitRequest) (*Commit, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetDatasetCommit not implemented")
+}
+func (UnimplementedDatasetsServer) GetDatasetTree(context.Context, *GetDatasetTreeRequest) (*GetDatasetTreeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetDatasetTree not implemented")
+}
+func (UnimplementedDatasetsServer) GetDatasetBlob(context.Context, *GetDatasetBlobRequest) (*File, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetDatasetBlob not implemented")
+}
+func (UnimplementedDatasetsServer) testEmbeddedByValue() {}
+
+// UnsafeDatasetsServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to DatasetsServer will
+// result in compilation errors.
+type UnsafeDatasetsServer interface {
+	mustEmbedUnimplementedDatasetsServer()
+}
+
+func RegisterDatasetsServer(s grpc.ServiceRegistrar, srv DatasetsServer) {
+	// If the following call panics, it indicates UnimplementedDatasetsServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&Datasets_ServiceDesc, srv)
+}
+
