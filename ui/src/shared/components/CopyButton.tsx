@@ -7,3 +7,21 @@ export interface CopyButtonProps {
   children: (payload: {
     copied: boolean
     copy: () => void
+  }) => ReactNode
+  /** Value copied to the clipboard when copy is called. */
+  value: string
+  /** Copied status timeout in ms. */
+  timeout?: number
+}
+
+export function CopyButton({
+  children,
+  timeout = 1000,
+  value,
+}: CopyButtonProps) {
+  const clipboard = useClipboard({
+    timeout,
+  })
+  const copy = () => clipboard.copy(value)
+
+  return (
