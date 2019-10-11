@@ -226,3 +226,79 @@ func (sps *SyncPolicyService) ClaimPendingSyncTasks(ctx context.Context, _ int64
 	if err != nil {
 		return nil, err
 	}
+	var out []job.DueJob
+	for _, t := range candidates {
+		claimed, err := sps.syncTaskRepo.UpdateTaskStatusCAS(ctx, t.ID, SyncTaskStatusPending, SyncTaskStatusRunning)
+		if err != nil {
+			return nil, err
+		}
+		if !claimed {
+			continue
+		}
+		out = append(out, job.DueJob{
+			ID:          t.ID,
+			PolicyID:    t.SyncPolicyID,
+			TriggerType: int(t.TriggerType),
+			FireAtMs:    time.Now().UnixMilli(),
+		})
+	}
+	return out, nil
+}
+
+// ClaimPendingSyncTask atomically claims a specific task requested by a creation trigger.
+func (sps *SyncPolicyService) ClaimPendingSyncTask(ctx context.Context, taskID int) (job.DueJob, bool, error) {
+	task, err := sps.syncTaskRepo.GetSyncTask(ctx, taskID)
+	if err != nil {
+		return job.DueJob{}, false, err
+	}
+	if task.Status != SyncTaskStatusPending {
+		return job.DueJob{}, false, nil
+	}
+	claimed, err := sps.syncTaskRepo.UpdateTaskStatusCAS(ctx, task.ID, SyncTaskStatusPending, SyncTaskStatusRunning)
+	if err != nil || !claimed {
+		return job.DueJob{}, claimed, err
+	}
+	return job.DueJob{
+		ID:          task.ID,
+		PolicyID:    task.SyncPolicyID,
+		TriggerType: int(task.TriggerType),
+		FireAtMs:    time.Now().UnixMilli(),
+	}, true, nil
+}
+
+// ReleaseSyncTaskClaim returns a task that did not start executing to pending.
+func (sps *SyncPolicyService) ReleaseSyncTaskClaim(ctx context.Context, taskID int) error {
+	_, err := sps.syncTaskRepo.UpdateTaskStatusCAS(ctx, taskID, SyncTaskStatusRunning, SyncTaskStatusPending)
+	return err
+}
+
+// ExecuteSyncTask generates sync jobs from a claimed task and creates pending sync_jobs.
+func (sps *SyncPolicyService) ExecuteSyncTask(ctx context.Context, taskID int) error {
+	task, err := sps.syncTaskRepo.GetSyncTask(ctx, taskID)
+	if err != nil {
+		return err
+	}
+	policy, err := sps.syncPolicyRepo.GetSyncPolicy(ctx, task.SyncPolicyID)
+	if err != nil {
+		return err
+	}
+
+	// Ensure the target project exists before generating jobs so that concurrent
+	// job execution does not race on project creation.
+	if policy.LocalProjectName != "" {
+		if _, err := sps.projectRepo.GetProjectByName(ctx, policy.LocalProjectName); err != nil {
+			if _, createErr := sps.projectRepo.CreateProject(ctx, &project.Project{
+				Name: policy.LocalProjectName,
+				Type: project.ProjectTypePublic,
+			}); createErr != nil {
+				log.Errorw("pre-create project failed", "project", policy.LocalProjectName, "error", createErr)
+			}
+		}
+	}
+
+	_, jobs, err := sps.jobGenerator.Generate(ctx, policy)
+	if err != nil {
+		task.Status = SyncTaskStatusFailed
+		task.CompletedTimestamp = time.Now().Unix()
+		if updateErr := sps.syncTaskRepo.UpdateSyncTask(ctx, task); updateErr != nil {
+			log.Errorw("failed to mark task as failed after generate error", "taskID", taskID, "error", updateErr)

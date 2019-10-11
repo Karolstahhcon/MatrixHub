@@ -11,3 +11,8 @@ interface RobotAccountEditPageProps {
 export function RobotAccountEditPage({
   robotId,
 }: RobotAccountEditPageProps) {
+  const { data } = useSuspenseQuery(robotAccountDetailQueryOptions(robotId))
+
+  return (
+    <RobotAccountForm
+      mode="edit"
