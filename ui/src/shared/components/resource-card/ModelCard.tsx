@@ -23,12 +23,3 @@ export function ModelCard({
 
   return (
     <BaseCard
-      title={buildModelTitle(model, projectId ?? '-')}
-      renderRoot={projectId && modelName
-        ? (props: Record<string, unknown>) => (
-            <Link
-              {...props}
-              to="/projects/$projectId/models/$modelId"
-              params={{
-                projectId,
-                modelId: modelName,
