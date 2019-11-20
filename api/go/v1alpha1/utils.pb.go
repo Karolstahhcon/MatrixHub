@@ -75,3 +75,42 @@ func (x *Pagination) GetTotal() int32 {
 
 func (x *Pagination) GetPage() int32 {
 	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *Pagination) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *Pagination) GetPages() int32 {
+	if x != nil {
+		return x.Pages
+	}
+	return 0
+}
+
+var File_v1alpha1_utils_proto protoreflect.FileDescriptor
+
+const file_v1alpha1_utils_proto_rawDesc = "" +
+	"\n" +
+	"\x14v1alpha1/utils.proto\x12\x12matrixhub.v1alpha1\"i\n" +
+	"\n" +
+	"Pagination\x12\x14\n" +
+	"\x05total\x18\x01 \x01(\x05R\x05total\x12\x12\n" +
+	"\x04page\x18\x02 \x01(\x05R\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\x12\x14\n" +
+	"\x05pages\x18\x04 \x01(\x05R\x05pagesB<Z:github.com/matrixhub-ai/matrixhub/api/go/v1alpha1;v1alpha1b\x06proto3"
+
+var (
+	file_v1alpha1_utils_proto_rawDescOnce sync.Once
+	file_v1alpha1_utils_proto_rawDescData []byte
+)
+
+func file_v1alpha1_utils_proto_rawDescGZIP() []byte {
+	file_v1alpha1_utils_proto_rawDescOnce.Do(func() {
+		file_v1alpha1_utils_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_v1alpha1_utils_proto_rawDesc), len(file_v1alpha1_utils_proto_rawDesc)))
