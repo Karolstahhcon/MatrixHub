@@ -66,3 +66,140 @@ var _ = Describe("CurrentUser", Label("current-user"), func() {
 		Expect(err).NotTo(HaveOccurred())
 		currentUserApi = tools.CreateCurrentUserClientWithCookie(cookie)
 	})
+
+	AfterEach(func() {
+		_ = tools.DeleteUser(int64(userID))
+	})
+
+	// ═══════════════════════════════════════════════════════════
+	// 1. GetCurrentUser API
+	// ═══════════════════════════════════════════════════════════
+	Context("GetCurrentUser API", func() {
+		It("should return the correct identity for the logged-in user", Label("CU00001", "smoke"), func() {
+			resp, _, err := currentUserApi.CurrentUserGetCurrentUser(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.Username).To(Equal(username))
+			Expect(resp.Id).NotTo(BeZero())
+			Expect(resp.IsAdmin).To(BeFalse())
+
+			GinkgoWriter.Printf("CurrentUser: id=%d, username=%s, isAdmin=%v\n", resp.Id, resp.Username, resp.IsAdmin)
+		})
+
+		It("should reflect isAdmin=true for an admin user", Label("CU00002"), func() {
+			adminCookie, err := tools.LoginUser(tools.DefaultAdminUsername, tools.DefaultAdminPassword)
+			Expect(err).NotTo(HaveOccurred())
+
+			adminApi := tools.CreateCurrentUserClientWithCookie(adminCookie)
+			resp, _, err := adminApi.CurrentUserGetCurrentUser(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.Username).To(Equal(tools.DefaultAdminUsername))
+			Expect(resp.IsAdmin).To(BeTrue())
+		})
+	})
+
+	// ═══════════════════════════════════════════════════════════
+	// 2. Access Token API
+	// ═══════════════════════════════════════════════════════════
+	Context("Access Token API", func() {
+		It("should return an empty list when no tokens exist", Label("CU00003"), func() {
+			resp, _, err := currentUserApi.CurrentUserListAccessTokens(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.Items).To(BeEmpty())
+		})
+
+		It("should create an access token and return a non-empty token string", Label("CU00004"), func() {
+			resp, _, err := currentUserApi.CurrentUserCreateAccessToken(ctx, v1alpha1current_user.V1alpha1CreateAccessTokenRequest{
+				Name: "e2e-token",
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.Token).NotTo(BeEmpty())
+
+			GinkgoWriter.Printf("Created access token prefix: %s...\n", resp.Token[:12])
+		})
+
+		It("should fail to create an access token with an empty name", Label("CU00005"), func() {
+			_, _, err := currentUserApi.CurrentUserCreateAccessToken(ctx, v1alpha1current_user.V1alpha1CreateAccessTokenRequest{
+				Name: "",
+			})
+			Expect(err).To(HaveOccurred(), "empty name must fail validation")
+		})
+
+		It("should list access tokens including the newly created one", Label("CU00006"), func() {
+			_, _, err := currentUserApi.CurrentUserCreateAccessToken(ctx, v1alpha1current_user.V1alpha1CreateAccessTokenRequest{
+				Name: "e2e-list-token",
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			listResp, _, err := currentUserApi.CurrentUserListAccessTokens(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(listResp.Items).To(HaveLen(1))
+			Expect(listResp.Items[0].Name).To(Equal("e2e-list-token"))
+
+			GinkgoWriter.Printf("Listed %d access token(s)\n", len(listResp.Items))
+		})
+
+		It("should delete an access token successfully", Label("CU00007"), func() {
+			createResp, _, err := currentUserApi.CurrentUserCreateAccessToken(ctx, v1alpha1current_user.V1alpha1CreateAccessTokenRequest{
+				Name: "e2e-delete-token",
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(createResp.Token).NotTo(BeEmpty())
+
+			listResp, _, err := currentUserApi.CurrentUserListAccessTokens(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(listResp.Items).To(HaveLen(1))
+			tokenID := listResp.Items[0].Id
+
+			_, _, err = currentUserApi.CurrentUserDeleteAccessToken(ctx, tokenID)
+			Expect(err).NotTo(HaveOccurred())
+
+			listAfter, _, err := currentUserApi.CurrentUserListAccessTokens(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(listAfter.Items).To(BeEmpty())
+		})
+
+		It("should create an access token with a future expiry date", Label("CU00008"), func() {
+			expireAt := fmt.Sprintf("%d", time.Now().AddDate(1, 0, 0).Unix())
+			resp, _, err := currentUserApi.CurrentUserCreateAccessToken(ctx, v1alpha1current_user.V1alpha1CreateAccessTokenRequest{
+				Name:     "e2e-expiry-token",
+				ExpireAt: expireAt,
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.Token).NotTo(BeEmpty())
+
+			listResp, _, err := currentUserApi.CurrentUserListAccessTokens(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(listResp.Items).To(HaveLen(1))
+			Expect(listResp.Items[0].ExpiredAt).NotTo(BeEmpty())
+		})
+	})
+
+	// ═══════════════════════════════════════════════════════════
+	// 3. SSH Key API
+	// ═══════════════════════════════════════════════════════════
+	Context("SSH Key API", func() {
+		It("should return an empty list when no SSH keys exist", Label("CU00009"), func() {
+			resp, _, err := currentUserApi.CurrentUserListSSHKeys(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.Items).To(BeEmpty())
+		})
+
+		It("should create an SSH key successfully", Label("CU00010"), func() {
+			_, _, err := currentUserApi.CurrentUserCreateSSHKey(ctx, v1alpha1current_user.V1alpha1CreateSshKeyRequest{
+				Name:      "e2e-ssh-key",
+				PublicKey: generateSSHPublicKey(),
+			})
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should fail to create an SSH key with an empty name", Label("CU00011"), func() {
+			_, _, err := currentUserApi.CurrentUserCreateSSHKey(ctx, v1alpha1current_user.V1alpha1CreateSshKeyRequest{
+				Name:      "",
+				PublicKey: generateSSHPublicKey(),
+			})
+			Expect(err).To(HaveOccurred(), "empty name must fail validation")
+		})
+
+		It("should fail to create an SSH key with an invalid public key", Label("CU00012"), func() {
+			_, _, err := currentUserApi.CurrentUserCreateSSHKey(ctx, v1alpha1current_user.V1alpha1CreateSshKeyRequest{
+				Name:      "invalid-key",
