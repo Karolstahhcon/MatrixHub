@@ -9,8 +9,3 @@
 
 package v1alpha1
 
-// Pagination is for data paging.
-type V1alpha1Pagination struct {
-	// Total is the total number of referents.
-	Total int32 `json:"total,omitempty"`
-	// Page is current page.
