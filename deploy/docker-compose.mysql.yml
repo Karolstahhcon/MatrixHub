@@ -1,0 +1,14 @@
+# Optional Docker Compose deployment backed by MySQL.
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: matrixhub-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-password}
+      MYSQL_DATABASE: matrixhub
+      MYSQL_USER: matrixhub
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-changeme}
+    ports:
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - ./data/mysql:/var/lib/mysql
