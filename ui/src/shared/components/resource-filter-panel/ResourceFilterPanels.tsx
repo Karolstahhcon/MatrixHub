@@ -21,3 +21,15 @@ export function ResourceFilterPanels({
     <Tabs
       value={currentTab}
       onChange={value => value && onTabChange(value)}
+    >
+      <Tabs.List>
+        {
+          tabs.map(tab => (
+            <Tabs.Tab
+              key={tab.value}
+              value={tab.value}
+            >
+              {tab.label}
+            </Tabs.Tab>
+          ))
+        }
