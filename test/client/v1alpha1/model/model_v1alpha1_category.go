@@ -8,8 +8,3 @@
  */
 
 package v1alpha1
-
-type V1alpha1Category string
-
-// List of v1alpha1Category
-const (
