@@ -91,3 +91,96 @@
       }
     },
     "/api/v1alpha1/current-user/access-tokens/{id}": {
+      "delete": {
+        "operationId": "CurrentUser_DeleteAccessToken",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1DeleteAccessTokenResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "CurrentUser"
+        ]
+      }
+    },
+    "/api/v1alpha1/current-user/projects/role": {
+      "get": {
+        "operationId": "CurrentUser_GetProjectRoles",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1GetProjectRolesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "CurrentUser"
+        ]
+      }
+    },
+    "/api/v1alpha1/current-user/reset-password": {
+      "post": {
+        "operationId": "CurrentUser_ResetPassword",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1ResetPasswordResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1alpha1ResetPasswordRequest"
+            }
+          }
+        ],
+        "tags": [
+          "CurrentUser"
+        ]
+      }
+    },
+    "/api/v1alpha1/current-user/ssh-keys": {
+      "get": {
+        "operationId": "CurrentUser_ListSSHKeys",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1alpha1ListSSHKeysResponse"
+            }
