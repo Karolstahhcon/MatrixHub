@@ -5,6 +5,3 @@ export const alertTheme = Alert.extend({
     px: 'sm',
     py: 'sm',
     bd: 'none',
-  },
-  styles: {
-    icon: {
