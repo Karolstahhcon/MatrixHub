@@ -22,11 +22,3 @@ export function ModelRevisionSelect({
     <RevisionSelect
       revision={revision}
       branches={revisions?.items?.branches}
-      tags={revisions?.items?.tags}
-      onRevisionChange={(nextRevision) => {
-        void navigate({
-          to: '.',
-          params: prev => ({
-            ...prev,
-            ref: nextRevision,
-          }),
