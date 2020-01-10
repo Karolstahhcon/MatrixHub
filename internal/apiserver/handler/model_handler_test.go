@@ -483,3 +483,245 @@ func TestModelHandlerGetAccessibleProjectIDs(t *testing.T) {
 			tc.expect(tc.ctx, authzService)
 
 			got, err := h.getAccessibleProjectIDs(tc.ctx)
+			if tc.wantErr != nil {
+				require.ErrorIs(t, err, tc.wantErr)
+				require.Nil(t, got)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func TestModelHandlerListModelTaskLabels(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("returns task labels", func(t *testing.T) {
+		h, svc, _ := modelHandlerTestSetup(t)
+		svc.EXPECT().ListModelTaskLabels(ctx).Return([]*model.Label{
+			{ID: 1, Name: "text-generation", Category: "task", Scope: "model", CreatedAt: handlerTestCreatedAt, UpdatedAt: handlerTestUpdatedAt},
+			{ID: 2, Name: "image-classification", Category: "task", Scope: "model", CreatedAt: handlerTestCreatedAt, UpdatedAt: handlerTestUpdatedAt},
+		}, nil)
+
+		got, err := h.ListModelTaskLabels(ctx, &v1alpha1.ListModelTaskLabelsRequest{})
+		require.NoError(t, err)
+		requireProtoEqual(t, &v1alpha1.ListModelTaskLabelsResponse{Items: []*v1alpha1.Label{
+			{Id: 1, Name: "text-generation", Category: v1alpha1.Category_TASK, CreatedAt: handlerTestCreatedAtText, UpdatedAt: handlerTestUpdatedAtText},
+			{Id: 2, Name: "image-classification", Category: v1alpha1.Category_TASK, CreatedAt: handlerTestCreatedAtText, UpdatedAt: handlerTestUpdatedAtText},
+		}}, got)
+	})
+
+	t.Run("hides service errors", func(t *testing.T) {
+		h, svc, _ := modelHandlerTestSetup(t)
+		svc.EXPECT().ListModelTaskLabels(ctx).Return(nil, errors.New("database is locked"))
+
+		got, err := h.ListModelTaskLabels(ctx, &v1alpha1.ListModelTaskLabelsRequest{})
+		require.Nil(t, got)
+		requireHandlerTestStatus(t, err, codes.Internal, "failed to list task labels")
+	})
+}
+
+func TestModelHandlerListModelFrameLabels(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("returns library labels", func(t *testing.T) {
+		h, svc, _ := modelHandlerTestSetup(t)
+		svc.EXPECT().ListModelFrameLabels(ctx).Return([]*model.Label{
+			{ID: 3, Name: "transformers", Category: "library", Scope: "model", CreatedAt: handlerTestCreatedAt, UpdatedAt: handlerTestUpdatedAt},
+			{ID: 4, Name: "pytorch", Category: "library", Scope: "model", CreatedAt: handlerTestCreatedAt, UpdatedAt: handlerTestUpdatedAt},
+		}, nil)
+
+		got, err := h.ListModelFrameLabels(ctx, &v1alpha1.ListModelFrameLabelsRequest{})
+		require.NoError(t, err)
+		requireProtoEqual(t, &v1alpha1.ListModelFrameLabelsResponse{Items: []*v1alpha1.Label{
+			{Id: 3, Name: "transformers", Category: v1alpha1.Category_LIBRARY, CreatedAt: handlerTestCreatedAtText, UpdatedAt: handlerTestUpdatedAtText},
+			{Id: 4, Name: "pytorch", Category: v1alpha1.Category_LIBRARY, CreatedAt: handlerTestCreatedAtText, UpdatedAt: handlerTestUpdatedAtText},
+		}}, got)
+	})
+
+	t.Run("hides service errors", func(t *testing.T) {
+		h, svc, _ := modelHandlerTestSetup(t)
+		svc.EXPECT().ListModelFrameLabels(ctx).Return(nil, errors.New("database is locked"))
+
+		got, err := h.ListModelFrameLabels(ctx, &v1alpha1.ListModelFrameLabelsRequest{})
+		require.Nil(t, got)
+		requireHandlerTestStatus(t, err, codes.Internal, "failed to list library labels")
+	})
+}
+
+func TestModelHandlerListModels(t *testing.T) {
+	popular, notPopular := true, false
+	llama := modelHandlerTestModel()
+	qwen := &model.Model{ID: 9, Name: "qwen", ProjectName: "public", Size: 2048, ParameterCount: 500, CreatedAt: handlerTestCreatedAt, UpdatedAt: handlerTestUpdatedAt}
+	qwenProto := &v1alpha1.Model{
+		Id:             9,
+		Name:           "qwen",
+		CreatedAt:      handlerTestCreatedAtText,
+		UpdatedAt:      handlerTestUpdatedAtText,
+		CloneUrls:      &v1alpha1.CloneUrls{},
+		Project:        "public",
+		Size:           "2048",
+		ParameterCount: "500",
+	}
+	request := &v1alpha1.ListModelsRequest{
+		Labels:   []string{"text-generation", "transformers"},
+		Search:   "lla",
+		Sort:     "updated_at",
+		Project:  modelHandlerTestProject,
+		Page:     2,
+		PageSize: 5,
+		Popular:  true,
+	}
+	requestFilter := func(projectIDs []int) *model.Filter {
+		return &model.Filter{
+			Project:    modelHandlerTestProject,
+			ProjectIDs: projectIDs,
+			Label:      []string{"text-generation", "transformers"},
+			Search:     "lla",
+			Sort:       "updated_at",
+			Page:       2,
+			PageSize:   5,
+			Popular:    &popular,
+		}
+	}
+
+	t.Run("platform administrator lists without project restriction", func(t *testing.T) {
+		h, svc, authzService := modelHandlerTestSetup(t)
+		ctx := modelHandlerTestUserContext()
+		authzService.EXPECT().VerifyPlatformPermission(ctx, role.Permission("*.*")).Return(true, nil)
+		svc.EXPECT().ListModels(ctx, requestFilter(nil)).Return([]*model.Model{llama, qwen}, int64(12), nil)
+
+		got, err := h.ListModels(ctx, request)
+		require.NoError(t, err)
+		requireProtoEqual(t, &v1alpha1.ListModelsResponse{
+			Items:      []*v1alpha1.Model{modelHandlerTestModelProto(), qwenProto},
+			Pagination: &v1alpha1.Pagination{Total: 12, Page: 2, PageSize: 5, Pages: 3},
+		}, got)
+	})
+
+	t.Run("regular user only sees accessible projects", func(t *testing.T) {
+		h, svc, authzService := modelHandlerTestSetup(t)
+		ctx := modelHandlerTestUserContext()
+		authzService.EXPECT().VerifyPlatformPermission(ctx, role.Permission("*.*")).Return(false, nil)
+		authzService.EXPECT().GetUserAccessibleProjectIDs(ctx, 42).Return([]int{3, 7}, nil)
+		svc.EXPECT().ListModels(ctx, requestFilter([]int{3, 7})).Return([]*model.Model{llama}, int64(6), nil)
+
+		got, err := h.ListModels(ctx, request)
+		require.NoError(t, err)
+		requireProtoEqual(t, &v1alpha1.ListModelsResponse{
+			Items:      []*v1alpha1.Model{modelHandlerTestModelProto()},
+			Pagination: &v1alpha1.Pagination{Total: 6, Page: 2, PageSize: 5, Pages: 2},
+		}, got)
+	})
+
+	t.Run("anonymous caller only sees public projects", func(t *testing.T) {
+		h, svc, authzService := modelHandlerTestSetup(t)
+		ctx := context.Background()
+		authzService.EXPECT().GetUserAccessibleProjectIDs(ctx, 0).Return([]int{5}, nil)
+		svc.EXPECT().ListModels(ctx, requestFilter([]int{5})).Return([]*model.Model{qwen}, int64(1), nil)
+
+		got, err := h.ListModels(ctx, request)
+		require.NoError(t, err)
+		requireProtoEqual(t, &v1alpha1.ListModelsResponse{
+			Items:      []*v1alpha1.Model{qwenProto},
+			Pagination: &v1alpha1.Pagination{Total: 1, Page: 2, PageSize: 5, Pages: 1},
+		}, got)
+	})
+
+	t.Run("applies default pagination", func(t *testing.T) {
+		h, svc, authzService := modelHandlerTestSetup(t)
+		ctx := modelHandlerTestUserContext()
+		authzService.EXPECT().VerifyPlatformPermission(ctx, role.Permission("*.*")).Return(true, nil)
+		svc.EXPECT().
+			ListModels(ctx, &model.Filter{Page: 1, PageSize: 10, Popular: &notPopular}).
+			Return([]*model.Model{llama}, int64(25), nil)
+
+		got, err := h.ListModels(ctx, &v1alpha1.ListModelsRequest{})
+		require.NoError(t, err)
+		requireProtoEqual(t, &v1alpha1.ListModelsResponse{
+			Items:      []*v1alpha1.Model{modelHandlerTestModelProto()},
+			Pagination: &v1alpha1.Pagination{Total: 25, Page: 1, PageSize: 10, Pages: 3},
+		}, got)
+	})
+
+	t.Run("returns an empty page without querying when no project is accessible", func(t *testing.T) {
+		h, _, authzService := modelHandlerTestSetup(t)
+		ctx := modelHandlerTestUserContext()
+		authzService.EXPECT().VerifyPlatformPermission(ctx, role.Permission("*.*")).Return(false, nil)
+		authzService.EXPECT().GetUserAccessibleProjectIDs(ctx, 42).Return([]int{}, nil)
+
+		got, err := h.ListModels(ctx, request)
+		require.NoError(t, err)
+		require.NotNil(t, got.Items)
+		require.Empty(t, got.Items)
+		requireProtoEqual(t, &v1alpha1.Pagination{Total: 0, Page: 2, PageSize: 5, Pages: 0}, got.Pagination)
+	})
+
+	t.Run("hides accessible project lookup errors", func(t *testing.T) {
+		h, _, authzService := modelHandlerTestSetup(t)
+		ctx := modelHandlerTestUserContext()
+		authzService.EXPECT().VerifyPlatformPermission(ctx, role.Permission("*.*")).Return(false, errors.New("database is locked"))
+
+		got, err := h.ListModels(ctx, request)
+		require.Nil(t, got)
+		requireHandlerTestStatus(t, err, codes.Internal, "failed to get accessible projects")
+	})
+
+	t.Run("hides service errors", func(t *testing.T) {
+		h, svc, authzService := modelHandlerTestSetup(t)
+		ctx := modelHandlerTestUserContext()
+		authzService.EXPECT().VerifyPlatformPermission(ctx, role.Permission("*.*")).Return(true, nil)
+		svc.EXPECT().ListModels(ctx, requestFilter(nil)).Return(nil, int64(0), errors.New("database is locked"))
+
+		got, err := h.ListModels(ctx, request)
+		require.Nil(t, got)
+		requireHandlerTestStatus(t, err, codes.Internal, "failed to list models")
+	})
+}
+
+func TestModelHandlerRejectsInvalidRequests(t *testing.T) {
+	cases := []struct {
+		name  string
+		field string
+		call  func(context.Context, *ModelHandler) error
+	}{
+		{
+			name:  "GetModel without project",
+			field: "GetModelRequest.Project",
+			call: func(ctx context.Context, h *ModelHandler) error {
+				_, err := h.GetModel(ctx, &v1alpha1.GetModelRequest{Name: modelHandlerTestName})
+				return err
+			},
+		},
+		{
+			name:  "GetModel with reserved name",
+			field: "GetModelRequest.Name",
+			call: func(ctx context.Context, h *ModelHandler) error {
+				_, err := h.GetModel(ctx, &v1alpha1.GetModelRequest{Project: modelHandlerTestProject, Name: "models"})
+				return err
+			},
+		},
+		{
+			name:  "CreateModel with path-like name",
+			field: "CreateModelRequest.Name",
+			call: func(ctx context.Context, h *ModelHandler) error {
+				_, err := h.CreateModel(ctx, &v1alpha1.CreateModelRequest{Project: modelHandlerTestProject, Name: "../escape"})
+				return err
+			},
+		},
+		{
+			name:  "CreateModel with too long name",
+			field: "CreateModelRequest.Name",
+			call: func(ctx context.Context, h *ModelHandler) error {
+				_, err := h.CreateModel(ctx, &v1alpha1.CreateModelRequest{Project: modelHandlerTestProject, Name: strings.Repeat("a", 252)})
+				return err
+			},
+		},
+		{
+			name:  "CreateModel with reserved name",
+			field: "CreateModelRequest.Name",
+			call: func(ctx context.Context, h *ModelHandler) error {
+				_, err := h.CreateModel(ctx, &v1alpha1.CreateModelRequest{Project: modelHandlerTestProject, Name: "datasets"})
+				return err
+			},
