@@ -64,3 +64,69 @@ func TestRobotHandlerCreateRobotAccount(t *testing.T) {
 			require.Equal(t, "robot$ci", rb.Name)
 			require.Equal(t, 42, rb.CreateBy)
 			require.Equal(t, robot.ProjectScopeSelected, rb.ProjectScope)
+			require.Equal(t, datatypes.JSONSlice[role.Permission]{role.UserCreate}, rb.PlatformPermissions)
+			require.Equal(t, datatypes.JSONSlice[role.Permission]{role.ModelPull}, rb.ProjectPermissions)
+			require.Len(t, rb.Projects, 1)
+			require.NotEmpty(t, rb.TokenHash)
+			require.NotNil(t, rb.ExpireAt)
+			return nil
+		})
+
+		response, err := (&RobotHandler{robotRepo: robotRepo, projectRepo: projectRepo}).CreateRobotAccount(ctx, request)
+		require.NoError(t, err)
+		require.NotEmpty(t, response.Token)
+	})
+
+	t.Run("rejects a duplicate name", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		robotRepo := robotmocks.NewMockIRobotRepo(ctrl)
+		projectRepo := projectmocks.NewMockIProjectRepo(ctrl)
+		robotRepo.EXPECT().GetRobotByName(ctx, "robot$ci").Return(&robot.Robot{ID: 1}, nil)
+
+		response, err := (&RobotHandler{robotRepo: robotRepo, projectRepo: projectRepo}).CreateRobotAccount(ctx, request)
+		require.Nil(t, response)
+		require.Equal(t, codes.AlreadyExists, status.Code(err))
+	})
+
+	t.Run("rejects an unknown project", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		robotRepo := robotmocks.NewMockIRobotRepo(ctrl)
+		projectRepo := projectmocks.NewMockIProjectRepo(ctrl)
+		robotRepo.EXPECT().GetRobotByName(ctx, "robot$ci").Return(nil, gorm.ErrRecordNotFound)
+		projectRepo.EXPECT().ListProjectInfoByNames(ctx, []string{"demo"}).Return(nil, nil)
+
+		response, err := (&RobotHandler{robotRepo: robotRepo, projectRepo: projectRepo}).CreateRobotAccount(ctx, request)
+		require.Nil(t, response)
+		require.Equal(t, codes.Internal, status.Code(err))
+	})
+}
+
+func TestRobotHandlerUpdateRobotAccount(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	repo := robotmocks.NewMockIRobotRepo(ctrl)
+	projectRepo := projectmocks.NewMockIProjectRepo(ctrl)
+	ctx := context.Background()
+	createdAt := time.Now().Add(-24 * time.Hour)
+	existing := &robot.Robot{ID: 7, Enabled: true, Duration: 1, CreatedAt: createdAt}
+	repo.EXPECT().GetRobot(ctx, 7).Return(existing, nil)
+	repo.EXPECT().UpdateRobot(ctx, existing).DoAndReturn(func(_ context.Context, rb *robot.Robot) error {
+		require.True(t, rb.Enabled, "unspecified status must preserve the current value")
+		require.Equal(t, 3, rb.Duration)
+		require.Equal(t, createdAt.AddDate(0, 0, 3), *rb.ExpireAt)
+		require.Equal(t, robot.ProjectScopeAll, rb.ProjectScope)
+		require.Nil(t, rb.Projects)
+		return nil
+	})
+
+	response, err := (&RobotHandler{robotRepo: repo, projectRepo: projectRepo}).UpdateRobotAccount(ctx, &v1alpha1.UpdateRobotAccountRequest{
+		Id:           7,
+		ExpireDays:   3,
+		ProjectScope: v1alpha1.RobotAccountProjectScope_ROBOT_ACCOUNT_PROJECT_SCOPE_ALL,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, response)
+}
+
+func TestRobotHandlerRefreshRobotAccountToken(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	repo := robotmocks.NewMockIRobotRepo(ctrl)
