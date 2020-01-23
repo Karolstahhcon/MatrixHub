@@ -48,3 +48,53 @@ export function GuideDrawer({
       opened={opened}
       onClose={onClose}
       position="right"
+      size="lg"
+      title={<Text fw={600} fz="md">{title}</Text>}
+      classNames={{ body: classes.body }}
+    >
+      <Box className={classes.content} pt={rem('4px')}>
+        <Stack gap="sm">
+          <Alert
+            variant="light"
+            color="cyan"
+            icon={<IconInfoCircle size={16} />}
+            py="xs"
+          >
+            {intro}
+          </Alert>
+          {children}
+        </Stack>
+      </Box>
+
+      <Group justify={footerExtra ? 'space-between' : 'flex-end'} className={classes.footer}>
+        {footerExtra}
+        <Button variant="light" onClick={onClose}>{t('common.gotIt')}</Button>
+      </Group>
+    </Drawer>
+  )
+}
+
+interface GuideStepProps {
+  index: number
+  title: ReactNode
+  /** Rendered at the right of the step header (e.g. a selector). */
+  extra?: ReactNode
+  /** Dimmed helper line under the step content. */
+  hint?: ReactNode
+  children: ReactNode
+}
+
+export function GuideStep({
+  index, title, extra, hint, children,
+}: GuideStepProps) {
+  return (
+    <Box className={classes.step}>
+      <Group className={classes.stepHeader} justify="space-between" wrap="nowrap">
+        <Group gap="xs" wrap="nowrap">
+          <Badge circle size="md" variant="filled" className={classes.stepIndex}>
+            {index}
+          </Badge>
+          <Text component="div" fw={600} size="sm">{title}</Text>
+        </Group>
+        {extra}
+      </Group>
