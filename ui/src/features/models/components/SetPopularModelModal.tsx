@@ -22,3 +22,15 @@ export function SetPopularModelModal({
   isPopular,
 }: RecommendedModelModalProps) {
   const { t } = useTranslation()
+  const router = useRouter()
+  const updateMutation = useMutation(updateModelSettingMutationOptions(!isPopular))
+  const fullName = `${projectId}/${modelId}`
+  const title = isPopular
+    ? t('model.settings.recommended.unset.label')
+    : t('model.settings.recommended.set.label')
+  const message = isPopular
+    ? t('model.settings.recommended.unset.confirmation', { name: fullName })
+    : t('model.settings.recommended.set.confirmation', { name: fullName })
+
+  const handleConfirm = async () => {
+    await updateMutation.mutateAsync({
