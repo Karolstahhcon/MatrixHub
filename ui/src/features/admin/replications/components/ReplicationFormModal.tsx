@@ -250,3 +250,130 @@ export function ReplicationFormModal({
       label: value === TriggerType.TRIGGER_TYPE_SCHEDULED
         ? t('routes.admin.replications.trigger.scheduled')
         : t('routes.admin.replications.trigger.manual'),
+    }),
+  ), [t])
+
+  const form = useForm({
+    defaultValues: getFormDefaults(syncPolicy),
+    validators: {
+      onSubmit: createReplicationFormSchema(),
+    },
+    onSubmit: async ({ value }) => {
+      if (mode === 'create') {
+        await createMutation.mutateAsync({
+          name: value.name,
+          policyType: value.policyType,
+          ...buildPolicyPayload(value),
+        } satisfies CreateSyncPolicyRequest)
+        onClose()
+
+        return
+      }
+
+      if (syncPolicy?.id == null) {
+        return
+      }
+
+      await updateMutation.mutateAsync({
+        syncPolicyId: syncPolicy.id,
+        name: syncPolicy.name,
+        ...buildPolicyPayload(value),
+      } satisfies UpdateSyncPolicyRequest)
+      onClose()
+    },
+  })
+
+  const isSubmitting = useStore(form.store, state => state.isSubmitting)
+  const isPushMode = useStore(
+    form.store,
+    state => state.values.policyType === SyncPolicyType.SYNC_POLICY_TYPE_PUSH_BASE,
+  )
+  const isScheduledMode = useStore(
+    form.store,
+    state => state.values.triggerType === TriggerType.TRIGGER_TYPE_SCHEDULED,
+  )
+
+  const handleSubmit = () => {
+    void form.handleSubmit()
+  }
+
+  return (
+    <ModalWrapper
+      opened={opened}
+      onClose={onClose}
+      size="md"
+      closeOnClickOutside={false}
+      title={mode === 'create'
+        ? t('routes.admin.replications.createModal.title')
+        : t('routes.admin.replications.editModal.title')}
+      confirmLoading={isSubmitting}
+      onConfirm={handleSubmit}
+    >
+      <Stack gap="md">
+        {mode === 'create' && (
+          <form.Field name="name">
+            {field => (
+              <TextInput
+                label={t('routes.admin.replications.form.name')}
+                withAsterisk
+                placeholder={t('routes.admin.replications.form.namePlaceholder')}
+                value={field.state.value}
+                onChange={event => field.handleChange(event.currentTarget.value)}
+                onBlur={field.handleBlur}
+                error={fieldError(field)}
+              />
+            )}
+          </form.Field>
+        )}
+
+        {mode === 'edit' && syncPolicy && (
+          <TextInput
+            label={t('routes.admin.replications.form.name')}
+            disabled
+            value={syncPolicy.name ?? '-'}
+          />
+        )}
+
+        <form.Field name="description">
+          {field => (
+            <Textarea
+              label={t('routes.admin.replications.form.description')}
+              autosize
+              minRows={2}
+              maxLength={DESCRIPTION_MAX_LENGTH}
+              value={field.state.value}
+              onChange={event => field.handleChange(event.currentTarget.value)}
+              onBlur={field.handleBlur}
+              description={`${field.state.value?.length ?? 0}/${DESCRIPTION_MAX_LENGTH}`}
+              styles={{ description: { textAlign: 'right' } }}
+            />
+          )}
+        </form.Field>
+
+        <form.Field name="policyType">
+          {field => (
+            <RadioGroup
+              label={t('routes.admin.replications.form.syncRule')}
+              withAsterisk
+              value={field.state.value}
+              onChange={value => field.handleChange(value as ReplicationFormValues['policyType'])}
+              onBlur={field.handleBlur}
+            >
+              <Group mt="xs">
+                <Radio
+                  value={SyncPolicyType.SYNC_POLICY_TYPE_PULL_BASE}
+                  label={(
+                    <FieldHintLabel
+                      label={t('routes.admin.replications.form.pull')}
+                      hint={t('routes.admin.replications.form.pullHint')}
+                      tooltipProps={{ w: 280 }}
+                    />
+                  )}
+                  disabled={mode === 'edit'}
+                />
+                <Radio
+                  value={SyncPolicyType.SYNC_POLICY_TYPE_PUSH_BASE}
+                  label={(
+                    <FieldHintLabel
+                      label={t('routes.admin.replications.form.push')}
+                      hint={t('routes.admin.replications.form.pushHint')}
