@@ -203,3 +203,72 @@ var _ = Describe("CurrentUser", Label("current-user"), func() {
 		It("should fail to create an SSH key with an invalid public key", Label("CU00012"), func() {
 			_, _, err := currentUserApi.CurrentUserCreateSSHKey(ctx, v1alpha1current_user.V1alpha1CreateSshKeyRequest{
 				Name:      "invalid-key",
+				PublicKey: "not-a-valid-public-key",
+			})
+			Expect(err).To(HaveOccurred(), "invalid public key format must be rejected")
+		})
+
+		It("should list SSH keys including the newly created one", Label("CU00013"), func() {
+			_, _, err := currentUserApi.CurrentUserCreateSSHKey(ctx, v1alpha1current_user.V1alpha1CreateSshKeyRequest{
+				Name:      "e2e-list-ssh-key",
+				PublicKey: generateSSHPublicKey(),
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			listResp, _, err := currentUserApi.CurrentUserListSSHKeys(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(listResp.Items).To(HaveLen(1))
+			Expect(listResp.Items[0].Name).To(Equal("e2e-list-ssh-key"))
+
+			GinkgoWriter.Printf("Listed %d SSH key(s)\n", len(listResp.Items))
+		})
+
+		It("should delete an SSH key successfully", Label("CU00014"), func() {
+			_, _, err := currentUserApi.CurrentUserCreateSSHKey(ctx, v1alpha1current_user.V1alpha1CreateSshKeyRequest{
+				Name:      "e2e-delete-ssh-key",
+				PublicKey: generateSSHPublicKey(),
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			listResp, _, err := currentUserApi.CurrentUserListSSHKeys(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(listResp.Items).To(HaveLen(1))
+			keyID := listResp.Items[0].Id
+
+			_, _, err = currentUserApi.CurrentUserDeleteSSHKey(ctx, keyID)
+			Expect(err).NotTo(HaveOccurred())
+
+			listAfter, _, err := currentUserApi.CurrentUserListSSHKeys(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(listAfter.Items).To(BeEmpty())
+		})
+
+		It("should reject a duplicate SSH public key for the same user", Label("CU00015"), func() {
+			// Use the same key twice to exercise the duplicate-fingerprint guard.
+			dupKey := generateSSHPublicKey()
+			_, _, err := currentUserApi.CurrentUserCreateSSHKey(ctx, v1alpha1current_user.V1alpha1CreateSshKeyRequest{
+				Name:      "e2e-dup-key-1",
+				PublicKey: dupKey,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			_, _, err = currentUserApi.CurrentUserCreateSSHKey(ctx, v1alpha1current_user.V1alpha1CreateSshKeyRequest{
+				Name:      "e2e-dup-key-2",
+				PublicKey: dupKey,
+			})
+			Expect(err).To(HaveOccurred(), "duplicate SSH public key fingerprint must be rejected")
+		})
+
+		It("should reject re-importing an expired SSH public key without changing the record", Label("CU00015B"), func() {
+			publicKey := generateSSHPublicKey()
+			expiredAt := fmt.Sprintf("%d", time.Now().Add(-time.Hour).Unix())
+			_, _, err := currentUserApi.CurrentUserCreateSSHKey(ctx, v1alpha1current_user.V1alpha1CreateSshKeyRequest{
+				Name:      "e2e-expired-ssh-key",
+				PublicKey: publicKey,
+				ExpireAt:  expiredAt,
+			})
+			Expect(err).NotTo(HaveOccurred())
+			before, _, err := currentUserApi.CurrentUserListSSHKeys(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(before.Items).To(HaveLen(1))
+			originalID := before.Items[0].Id
