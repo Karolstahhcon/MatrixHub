@@ -64,3 +64,136 @@ service Models {
   rpc GetModelBlob(GetModelBlobRequest) returns (File) {
     option (google.api.http) = {
       get: "/api/v1alpha1/models/{project}/{name}/blob"
+    };
+  }
+  rpc UpdateModelSetting(UpdateModelSettingRequest) returns (UpdateModelSettingResponse) {
+    option (google.api.http) = {
+      put: "/api/v1alpha1/models/{project}/{name}/setting"
+      body: "*"
+    };
+  }
+}
+
+message ListModelTaskLabelsRequest {
+}
+
+message ListModelTaskLabelsResponse {
+  repeated Label items = 1;
+}
+
+message ListModelFrameLabelsRequest {
+}
+
+message ListModelFrameLabelsResponse {
+  repeated Label items = 1;
+}
+
+message ListModelsRequest {
+  repeated string labels = 1;
+  string search = 2;
+  string sort = 3;
+  string project = 4;
+  int32 page = 5;
+  int32 page_size = 6;
+  bool popular = 7;
+}
+
+message ListModelsResponse {
+  repeated Model items = 1;
+  Pagination pagination = 3;
+}
+
+message GetModelRequest {
+  string project = 1 [(validate.rules).string.min_len = 1];
+  string name = 2 [(validate.rules).string = {min_len: 1, not_in: ["models", "datasets", "spaces", "resolve"]}];
+}
+
+message CreateModelRequest {
+  string project = 1 [(validate.rules).string.min_len = 1];
+  string name = 2 [(validate.rules).string = {
+    min_len: 1,
+    max_len: 251,
+    pattern: "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+    not_in: ["models", "datasets", "spaces", "resolve"]
+  }];
+}
+
+message CreateModelResponse {
+}
+
+message DeleteModelRequest {
+  string project = 1 [(validate.rules).string.min_len = 1];
+  string name = 2 [(validate.rules).string.min_len = 1];
+}
+
+message DeleteModelResponse {
+}
+
+message ListModelRevisionsRequest {
+  string project = 1 [(validate.rules).string.min_len = 1];
+  string name = 2 [(validate.rules).string = {min_len: 1, not_in: ["models", "datasets", "spaces", "resolve"]}];
+}
+
+message ListModelRevisionsResponse {
+  Revisions items = 1;
+}
+
+message Revisions {
+  repeated Revision branches = 1;
+  repeated Revision tags = 2;
+}
+
+message ListModelCommitsRequest {
+  string project = 1 [(validate.rules).string.min_len = 1];
+  string name = 2 [(validate.rules).string = {min_len: 1, not_in: ["models", "datasets", "spaces", "resolve"]}];
+  string revision = 3;
+  // If true, include diff information for each commit.
+  // Default is false to avoid returning large amounts of data.
+  bool diff = 4;
+  int32 page = 5;
+  int32 page_size = 6;
+}
+
+message ListModelCommitsResponse {
+  repeated Commit items = 1;
+  Pagination pagination = 2;
+}
+
+message GetModelCommitRequest {
+  string project = 1 [(validate.rules).string.min_len = 1];
+  string name = 2 [(validate.rules).string = {min_len: 1, not_in: ["models", "datasets", "spaces", "resolve"]}];
+  string id = 3 [(validate.rules).string.min_len = 1];
+}
+
+message GetModelTreeRequest {
+  string project = 1 [(validate.rules).string.min_len = 1];
+  string name = 2 [(validate.rules).string = {min_len: 1, not_in: ["models", "datasets", "spaces", "resolve"]}];
+  string revision = 3;
+  string path = 4;
+}
+
+message File {
+  string name = 1;
+  FileType type = 2;
+  string path = 3;
+  int64 size = 4;
+  bool lfs = 5;
+  string Sha256 = 6;
+  // commit with out diffs
+  // only file type have commit
+  Commit commit = 7;
+  string url = 8;
+}
+
+message GetModelTreeResponse {
+  repeated File items = 1;
+}
+
+message GetModelBlobRequest {
+  string project = 1 [(validate.rules).string.min_len = 1];
+  string name = 2 [(validate.rules).string = {min_len: 1, not_in: ["models", "datasets", "spaces", "resolve"]}];
+  string revision = 3;
+  string path = 4;
+}
+
+message Model {
