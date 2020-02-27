@@ -109,3 +109,115 @@ func (h *Handler) handleCreateRepo(w http.ResponseWriter, r *http.Request) {
 	prefix := repoTypePrefix(req.Type)
 	if prefix != "" {
 		storageName = prefix + "/" + repoName
+	}
+	perm := role.ModelPush
+	if req.Type == "dataset" {
+		perm = role.DatasetPush
+	}
+	if passed, err := h.authzService.VerifyProjectPermissionByName(r.Context(), req.Organization, perm); err != nil {
+		responseJSON(w, err.Error(), http.StatusInternalServerError)
+		return
+	} else if !passed {
+		responseJSON(w, "permission denied", http.StatusForbidden)
+		return
+	}
+
+	if h.permissionHookFunc != nil {
+		if ok, err := h.permissionHookFunc(r.Context(), permission.OperationCreateRepo, storageName, permission.Context{}); err != nil {
+			responseJSON(w, err.Error(), http.StatusInternalServerError)
+			return
+		} else if !ok {
+			responseJSON(w, "permission denied", http.StatusForbidden)
+			return
+		}
+	}
+
+	user, ok := authenticate.GetUserInfo(r.Context())
+	if !ok {
+		user = authenticate.UserInfo{
+			User:  "HuggingFace",
+			Email: "hf@users.noreply.huggingface.co",
+		}
+	}
+
+	urlName := "/" + storageName
+
+	repoPath := h.storage.ResolvePath(storageName)
+	if repoPath == "" {
+		responseJSON(w, fmt.Errorf("invalid repository name: %q", repoName), http.StatusBadRequest)
+		return
+	}
+
+	// Check if repository already exists
+	if repository.IsRepository(repoPath) {
+		resp := createRepoResponse{
+			URL: fmt.Sprintf("%s%s", requestOrigin(r), urlName),
+		}
+		responseJSON(w, resp, http.StatusOK)
+		return
+	}
+
+	// Create repository directory
+	if err := os.MkdirAll(filepath.Dir(repoPath), 0755); err != nil {
+		responseJSON(w, fmt.Errorf("failed to create repository directory: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	defaultBranch := "main"
+
+	// Initialize bare repository
+	repo, err := repository.Init(r.Context(), repoPath, defaultBranch)
+	if err != nil {
+		responseJSON(w, fmt.Errorf("failed to initialize repository: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Create initial commit with default .gitattributes
+	_, err = repo.CreateCommit(context.Background(), defaultBranch, "Initial commit", commitAuthorName(user), user.Email, []repository.CommitOperation{
+		{
+			Type:    repository.CommitOperationAdd,
+			Path:    repository.GitattributesFileName,
+			Content: repository.GitattributesText,
+		},
+	}, "")
+	if err != nil {
+		_ = repo.Remove()
+		responseJSON(w, fmt.Errorf("failed to create initial commit: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	resp := createRepoResponse{
+		URL: fmt.Sprintf("%s%s", requestOrigin(r), urlName),
+	}
+	responseJSON(w, resp, http.StatusOK)
+}
+
+// handlePreupload handles POST /api/{repoType}/{repo}/preupload/{rev}
+func (h *Handler) handlePreupload(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	ri := getRepoInformation(r)
+	rev := vars["rev"]
+
+	if h.permissionHookFunc != nil {
+		if ok, err := h.permissionHookFunc(r.Context(), permission.OperationUpdateRepo, ri.RepoName, permission.Context{Ref: rev}); err != nil {
+			responseJSON(w, err.Error(), http.StatusInternalServerError)
+			return
+		} else if !ok {
+			responseJSON(w, "permission denied", http.StatusForbidden)
+			return
+		}
+	}
+
+	var req preuploadRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		responseJSON(w, fmt.Errorf("invalid request body: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	repoPath := h.storage.ResolvePath(ri.RepoName)
+	if repoPath == "" {
+		responseJSON(w, fmt.Errorf("repository not found"), http.StatusNotFound)
+		return
+	}
+
+	repo, err := repository.Open(repoPath)
