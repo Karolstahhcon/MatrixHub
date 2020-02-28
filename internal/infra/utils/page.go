@@ -22,3 +22,16 @@ import (
 
 var (
 	defaultPage     = int32(1)
+	defaultPageSize = int32(10)
+)
+
+func NewPage(page, pageSize int32) *v1alpha1.Pagination {
+	if page <= 0 {
+		page = defaultPage
+	}
+	if pageSize == 0 {
+		pageSize = defaultPageSize
+	}
+
+	return &v1alpha1.Pagination{
+		Page:     page,
