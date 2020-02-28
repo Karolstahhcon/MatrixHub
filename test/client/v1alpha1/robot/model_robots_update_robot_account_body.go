@@ -8,8 +8,3 @@
  */
 
 package v1alpha1
-
-type RobotsUpdateRobotAccountBody struct {
-	Description string `json:"description,omitempty"`
-	Status *V1alpha1RobotAccountStatus `json:"status,omitempty"`
-	PlatformPermissions []string `json:"platformPermissions,omitempty"`
