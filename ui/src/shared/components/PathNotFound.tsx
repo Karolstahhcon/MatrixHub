@@ -7,12 +7,3 @@ import { useTranslation } from 'react-i18next'
 interface PathNotFoundProps {
   path: string
   branch: string
-  rootLinkProps: LinkComponentProps
-}
-
-export function PathNotFound({
-  path,
-  branch,
-  rootLinkProps,
-}: PathNotFoundProps) {
-  const { t } = useTranslation()
