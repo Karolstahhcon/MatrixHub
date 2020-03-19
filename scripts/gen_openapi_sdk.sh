@@ -30,19 +30,3 @@ function gen_openapi_sdk() {
                 if docker info >/dev/null 2>&1; then
                     docker run --rm -u "$(id -u):$(id -g)" \
                         -v "$swagger_path/$version":/swagger \
-                        -v "$target":/gen \
-                        docker.io/swaggerapi/swagger-codegen-cli generate \
-                        -i /swagger/"$file" \
-                        -l go \
-                        -o /gen \
-                        --additional-properties "packageName=$version,isGoSubmodule=true"
-                else
-                    local jar_path="$pro_path/.cache/swagger-codegen-cli-${SWAGGER_CODEGEN_VERSION}.jar"
-                    mkdir -p "$(dirname "$jar_path")"
-                    if [[ ! -f "$jar_path" ]]; then
-                        curl -fsSL \
-                            -o "$jar_path" \
-                            "https://repo1.maven.org/maven2/io/swagger/swagger-codegen-cli/${SWAGGER_CODEGEN_VERSION}/swagger-codegen-cli-${SWAGGER_CODEGEN_VERSION}.jar"
-                    fi
-                    java -jar "$jar_path" generate \
-                        -i "$swagger_path/$version/$file" \
