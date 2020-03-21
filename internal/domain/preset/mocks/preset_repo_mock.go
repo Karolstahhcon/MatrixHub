@@ -12,31 +12,3 @@ package mocks
 import (
 	context "context"
 	reflect "reflect"
-
-	preset "github.com/matrixhub-ai/matrixhub/internal/domain/preset"
-	gomock "go.uber.org/mock/gomock"
-)
-
-// MockIPresetRepo is a mock of IPresetRepo interface.
-type MockIPresetRepo struct {
-	ctrl     *gomock.Controller
-	recorder *MockIPresetRepoMockRecorder
-	isgomock struct{}
-}
-
-// MockIPresetRepoMockRecorder is the mock recorder for MockIPresetRepo.
-type MockIPresetRepoMockRecorder struct {
-	mock *MockIPresetRepo
-}
-
-// NewMockIPresetRepo creates a new mock instance.
-func NewMockIPresetRepo(ctrl *gomock.Controller) *MockIPresetRepo {
-	mock := &MockIPresetRepo{ctrl: ctrl}
-	mock.recorder = &MockIPresetRepoMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockIPresetRepo) EXPECT() *MockIPresetRepoMockRecorder {
-	return m.recorder
-}
