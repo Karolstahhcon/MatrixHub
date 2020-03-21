@@ -11,9 +11,3 @@ export const syncJobStatusFilterValues = [
   SyncJobStatus.SYNC_JOB_STATUS_SUCCEEDED,
   SyncJobStatus.SYNC_JOB_STATUS_FAILED,
   SyncJobStatus.SYNC_JOB_STATUS_STOPPED,
-] as const
-
-export const syncJobResourceTypeFilterValues = [
-  ResourceType.RESOURCE_TYPE_MODEL,
-  ResourceType.RESOURCE_TYPE_DATASET,
-] as const

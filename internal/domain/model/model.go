@@ -60,3 +60,34 @@ type Filter struct {
 	ProjectIDs []int    // filter by accessible project IDs
 	Label      []string // filter by labels
 	Search     string   // project name or model name, prioritize project name matching (supports fuzzy search).
+	Sort       string
+	Page       int32
+	PageSize   int32
+	Popular    *bool // filter by popular flag (true = only popular, false/nil = all)
+}
+
+// MetadataUpdate contains optional fields for updating model metadata.
+type MetadataUpdate struct {
+	ReadmeContent  *string
+	Size           *int64
+	ParameterCount *int64
+}
+
+// SettingUpdate contains optional fields for updating model settings.
+type SettingUpdate struct {
+	IsPopular *bool
+}
+
+// IModelRepo defines the repository interface for model operations.
+//
+//go:generate go tool mockgen -source=model.go -destination=mocks/model_repo_mock.go -package=mocks
+type IModelRepo interface {
+	// Create creates a new model in the database.
+	Create(ctx context.Context, m *Model) (*Model, error)
+
+	// GetByProjectAndName retrieves a model by its project and name.
+	GetByProjectAndName(ctx context.Context, project, name string) (*Model, error)
+
+	// List retrieves a list of models based on the provided filter, along with the total count.
+	List(ctx context.Context, filter *Filter) ([]*Model, int64, error)
+
