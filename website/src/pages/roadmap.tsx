@@ -17,12 +17,3 @@ export default function Roadmap(): React.ReactElement {
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-green-500/10 blur-[120px] rounded-full pointer-events-none"></div>
           <div className="max-w-4xl mx-auto px-6 relative z-10 text-center">
             <h1 className="text-4xl sm:text-5xl font-extrabold text-white mb-6">
-              <Translate id="roadmap.heading">Roadmap</Translate>
-            </h1>
-            <p className="text-lg text-slate-400 max-w-2xl mx-auto">
-              <Translate id="roadmap.subtitle">
-                See what is planned for MatrixHub — upcoming features, improvements, and milestones.
-              </Translate>
-            </p>
-          </div>
-        </section>
