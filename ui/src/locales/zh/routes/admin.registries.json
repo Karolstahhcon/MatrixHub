@@ -31,36 +31,3 @@
     },
     "username": "用户名",
     "usernameHint": "若拉取目标仓库中的私密模型，请输入目标仓库的用户名和访问密钥，支持机器人账号。",
-    "password": "访问密钥",
-    "verifyRemoteCert": "验证远程证书",
-    "verifyRemoteCertHint": "确定远程同步是否要验证远程 MatrixHub 实例的证书。如果远程实例使用的是自签或者非信任证书，不要勾选此项。",
-    "testConnection": "测试连接"
-  },
-  "table": {
-    "name": "目标仓库",
-    "status": "状态",
-    "url": "目标URL",
-    "type": "提供者",
-    "insecure": "验证远程证书",
-    "credential": "认证",
-    "createdAt": "创建时间",
-    "actions": "操作",
-    "empty": "暂无目标仓库数据"
-  },
-  "status": {
-    "healthy": "健康",
-    "unhealthy": "不健康"
-  },
-  "insecure": {
-    "verified": "已验证",
-    "unverified": "未验证"
-  },
-  "credential": {
-    "basic": "basic"
-  },
-  "actions": {
-    "edit": "编辑",
-    "delete": "删除"
-  },
-  "createModal": {
-    "title": "创建目标仓库"

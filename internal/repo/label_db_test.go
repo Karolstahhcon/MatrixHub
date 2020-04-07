@@ -157,3 +157,82 @@ func TestLabelDB_GetOrCreateByName(t *testing.T) {
 	for _, test := range []struct {
 		name    string
 		expect  func(sqlmock.Sqlmock)
+		want    *model.Label
+		wantErr error
+		wantMsg string
+	}{
+		{
+			name: "creates a new label",
+			expect: func(mock sqlmock.Sqlmock) {
+				expectInsert(mock).WillReturnResult(sqlmock.NewResult(11, 1))
+			},
+			want: &model.Label{ID: 11, Name: "transformers", Category: "library", Scope: "model"},
+		},
+		{
+			name: "returns the existing label on conflict",
+			expect: func(mock sqlmock.Sqlmock) {
+				expectInsert(mock).WillReturnResult(sqlmock.NewResult(0, 0))
+				expectLookup(mock).WillReturnRows(labelRows().
+					AddRow(5, "transformers", "library", "model", repoTestCreatedAt, repoTestUpdatedAt))
+			},
+			want: &model.Label{
+				ID: 5, Name: "transformers", Category: "library", Scope: "model",
+				CreatedAt: repoTestCreatedAt, UpdatedAt: repoTestUpdatedAt,
+			},
+		},
+		{
+			name: "conflicting label disappeared",
+			expect: func(mock sqlmock.Sqlmock) {
+				expectInsert(mock).WillReturnResult(sqlmock.NewResult(0, 0))
+				expectLookup(mock).WillReturnRows(labelRows())
+			},
+			wantMsg: "label disappeared after conflict for name=transformers category=library scope=model",
+		},
+		{
+			name: "existing label lookup error",
+			expect: func(mock sqlmock.Sqlmock) {
+				expectInsert(mock).WillReturnResult(sqlmock.NewResult(0, 0))
+				expectLookup(mock).WillReturnError(dbErr)
+			},
+			wantErr: dbErr,
+			wantMsg: "failed to load existing label",
+		},
+		{
+			name: "insert error",
+			expect: func(mock sqlmock.Sqlmock) {
+				expectInsert(mock).WillReturnError(dbErr)
+			},
+			wantErr: dbErr,
+			wantMsg: "failed to create label",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			repo, mock := newLabelDBForTest(t)
+			test.expect(mock)
+
+			label, err := repo.GetOrCreateByName(ctx, "transformers", "library", "model")
+
+			if test.wantMsg != "" {
+				require.ErrorContains(t, err, test.wantMsg)
+				if test.wantErr != nil {
+					require.ErrorIs(t, err, test.wantErr)
+				}
+				require.Nil(t, label)
+			} else {
+				require.NoError(t, err)
+				if test.want.CreatedAt.IsZero() {
+					// gorm stamps the timestamps of a newly inserted label.
+					require.False(t, label.CreatedAt.IsZero())
+					require.False(t, label.UpdatedAt.IsZero())
+					label.CreatedAt, label.UpdatedAt = test.want.CreatedAt, test.want.UpdatedAt
+				}
+				require.Equal(t, test.want, label)
+			}
+			require.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestLabelDB_ReplaceLabelAssociations(t *testing.T) {
+	ctx := context.Background()
+	dbErr := errors.New("database unavailable")

@@ -58,3 +58,63 @@ var _ = Describe("SyncPolicy Manual Pull", Label("sync-policy", "git"), func() {
 				TargetProjectName: project.Name,
 			},
 			IsOverwrite: false,
+		}
+
+		resp, _, err := api.SyncPolicyCreateSyncPolicy(ctx, req)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp.SyncPolicy).NotTo(BeNil())
+		pid := resp.SyncPolicy.Id
+		Expect(pid).To(BeNumerically(">", 0))
+		defer func() {
+			_, _, _ = api.SyncPolicyDeleteSyncPolicy(ctx, pid)
+		}()
+
+		// 3. Manually create SyncTask
+		taskResp, _, err := api.SyncPolicyCreateSyncTask(ctx, pid)
+		Expect(err).NotTo(HaveOccurred())
+		tid := taskResp.Id
+		Expect(tid).To(BeNumerically(">", 0))
+
+		// 4. Poll until task completion
+		task, err := waitForTaskCompletion(ctx, api, pid, tid, 3*time.Minute)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(task).NotTo(BeNil())
+
+		// 5. Verify task statistics
+		Expect(task.TotalItems).NotTo(Equal("0"))
+		Expect(task.Status).NotTo(BeNil())
+
+		// 5a. Exercise task status filtering after the task reaches a terminal state.
+		tasksResp, _, err := api.SyncPolicyListSyncTasks(ctx, pid, &v1alpha1.SyncPolicyApiSyncPolicyListSyncTasksOpts{
+			Page:     optional.NewInt32(1),
+			PageSize: optional.NewInt32(20),
+			Status:   optional.NewString(string(*task.Status)),
+		})
+		Expect(err).NotTo(HaveOccurred())
+		Expect(tasksResp.SyncTasks).NotTo(BeEmpty())
+
+		// 6. Query sync jobs
+		jobsResp, _, err := api.SyncPolicyListSyncJobs(ctx, pid, tid, &v1alpha1.SyncPolicyApiSyncPolicyListSyncJobsOpts{
+			Page:     optional.NewInt32(1),
+			PageSize: optional.NewInt32(20),
+		})
+		Expect(err).NotTo(HaveOccurred())
+		Expect(len(jobsResp.SyncJobs)).To(BeNumerically(">", 0))
+		Expect(jobsResp.SyncJobs[0].Status).NotTo(BeNil())
+		Expect(jobsResp.SyncJobs[0].ResourceType).NotTo(BeNil())
+
+		// Exercise both job filters against the terminal job state and resource type.
+		filteredJobsResp, _, err := api.SyncPolicyListSyncJobs(ctx, pid, tid, &v1alpha1.SyncPolicyApiSyncPolicyListSyncJobsOpts{
+			Page:         optional.NewInt32(1),
+			PageSize:     optional.NewInt32(20),
+			Status:       optional.NewString(string(*jobsResp.SyncJobs[0].Status)),
+			ResourceType: optional.NewString(string(*jobsResp.SyncJobs[0].ResourceType)),
+		})
+		Expect(err).NotTo(HaveOccurred())
+		Expect(filteredJobsResp.SyncJobs).NotTo(BeEmpty())
+		for _, job := range filteredJobsResp.SyncJobs {
+			Expect(job.Status).NotTo(BeNil())
+			Expect(*job.Status).To(Equal(*jobsResp.SyncJobs[0].Status))
+			Expect(job.ResourceType).NotTo(BeNil())
+			Expect(*job.ResourceType).To(Equal(*jobsResp.SyncJobs[0].ResourceType))
+		}
