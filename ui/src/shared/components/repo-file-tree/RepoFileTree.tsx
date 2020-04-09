@@ -62,3 +62,132 @@ function FileNameCell({
   )
 }
 
+function FileSizeCell({ row }: FileCellProps) {
+  if (row.original.type === FileType.DIR) {
+    return null
+  }
+
+  return (
+    <Text size="sm" c="gray.7">
+      {formatStorageSize(row.original.size)}
+    </Text>
+  )
+}
+
+function FileCommitCell({ row }: FileCellProps) {
+  return (
+    <Text size="sm" c="gray.7" truncate>
+      {row.original.commit?.message ?? ''}
+    </Text>
+  )
+}
+
+function FileDateCell({ row }: FileCellProps) {
+  return (
+    <Text size="sm" c="gray.7">
+      {formatRelativeTime(row.original.commit?.createdAt)}
+    </Text>
+  )
+}
+
+function FileActionCell({ row }: DataTableRowActionsProps<RepoFile>) {
+  const { t } = useTranslation()
+  const file = row.original
+
+  if (file.type === FileType.DIR) {
+    return null
+  }
+
+  if (file.url) {
+    return (
+      <a
+        className={classes.downloadLink}
+        href={file.url}
+        download
+        onClick={e => e.stopPropagation()}
+      >
+        {t('common.fileTree.download')}
+      </a>
+    )
+  }
+
+  return (
+    <Text size="sm" c="gray.6">
+      {t('common.fileTree.download')}
+    </Text>
+  )
+}
+
+function FileIcon({ file }: { file: RepoFile }) {
+  const isDir = file.type === FileType.DIR
+  const name = file.name?.toLocaleLowerCase() ?? ''
+
+  if (isDir) {
+    return <IconFolder size={20} color="var(--mantine-color-cyan-6)" />
+  }
+
+  if (name === 'readme' || name === 'readme.md') {
+    return <IconFileDescription size={20} color="var(--mantine-color-gray-6)" />
+  }
+
+  if (
+    name.endsWith('.json')
+    || name.endsWith('.yaml')
+    || name.endsWith('.yml')
+    || name.endsWith('.toml')
+  ) {
+    return <IconFileSettings size={20} color="var(--mantine-color-gray-6)" />
+  }
+
+  return <IconFile size={20} color="var(--mantine-color-gray-6)" />
+}
+
+export function RepoFileTree({
+  files,
+  latestCommit,
+  buildTreeLink,
+  buildBlobLink,
+  buildCommitLink,
+  isLoading,
+}: RepoFileTreeProps) {
+  const { t } = useTranslation()
+
+  const sortedFiles = useMemo(() => sortFiles(files), [files])
+
+  const columns: MRT_ColumnDef<RepoFile>[] = [
+    {
+      id: 'name',
+      Cell: FileNameCell,
+      header: '',
+      size: 185,
+      grow: false,
+    },
+    {
+      id: 'size',
+      header: '',
+      Cell: FileSizeCell,
+      size: 185,
+      grow: false,
+    },
+    {
+      id: 'commit',
+      header: '',
+      Cell: FileCommitCell,
+      size: 360,
+    },
+    {
+      id: 'date',
+      header: '',
+      Cell: FileDateCell,
+      size: 185,
+      grow: false,
+    },
+  ]
+
+  return (
+    <div className={classes.wrapper}>
+      {latestCommit && (
+        <div className={classes.caption}>
+          <div className={classes.captionLeft}>
+            <span className={classes.captionAuthor}>{latestCommit.authorName}</span>
+            <span className={classes.captionMessage}>{latestCommit.message}</span>
