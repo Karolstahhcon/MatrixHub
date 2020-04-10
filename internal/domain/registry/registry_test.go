@@ -12,18 +12,3 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package registry_test
-
-import (
-	"testing"
-
-	"github.com/stretchr/testify/require"
-
-	"github.com/matrixhub-ai/matrixhub/internal/domain/registry"
-)
-
-type unsupportedCredential struct{}
-
-func (unsupportedCredential) Type() string       { return "unsupported" }
-func (unsupportedCredential) String() string     { return "value" }
-func (unsupportedCredential) Value() interface{} { return nil }
