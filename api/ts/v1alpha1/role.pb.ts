@@ -12,11 +12,3 @@ export enum ProjectRoleType {
   ROLE_TYPE_PROJECT_VIEWER = "ROLE_TYPE_PROJECT_VIEWER",
 }
 
-export type ListAllPermissionsRequest = {
-}
-
-export type ListAllPermissionsResponse = {
-  systemCategories?: RoleCategory[]
-  projectCategories?: RoleCategory[]
-}
-
