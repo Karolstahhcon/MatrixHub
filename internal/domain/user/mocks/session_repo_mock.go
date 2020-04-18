@@ -23,3 +23,55 @@ import (
 type MockISessionRepo struct {
 	ctrl     *gomock.Controller
 	recorder *MockISessionRepoMockRecorder
+	isgomock struct{}
+}
+
+// MockISessionRepoMockRecorder is the mock recorder for MockISessionRepo.
+type MockISessionRepoMockRecorder struct {
+	mock *MockISessionRepo
+}
+
+// NewMockISessionRepo creates a new mock instance.
+func NewMockISessionRepo(ctrl *gomock.Controller) *MockISessionRepo {
+	mock := &MockISessionRepo{ctrl: ctrl}
+	mock.recorder = &MockISessionRepoMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockISessionRepo) EXPECT() *MockISessionRepoMockRecorder {
+	return m.recorder
+}
+
+// CommitAndWriteSessionCookie mocks base method.
+func (m *MockISessionRepo) CommitAndWriteSessionCookie(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CommitAndWriteSessionCookie", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CommitAndWriteSessionCookie indicates an expected call of CommitAndWriteSessionCookie.
+func (mr *MockISessionRepoMockRecorder) CommitAndWriteSessionCookie(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CommitAndWriteSessionCookie", reflect.TypeOf((*MockISessionRepo)(nil).CommitAndWriteSessionCookie), ctx)
+}
+
+// GetSessionConfig mocks base method.
+func (m *MockISessionRepo) GetSessionConfig() user.SessionConfig {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSessionConfig")
+	ret0, _ := ret[0].(user.SessionConfig)
+	return ret0
+}
+
+// GetSessionConfig indicates an expected call of GetSessionConfig.
+func (mr *MockISessionRepoMockRecorder) GetSessionConfig() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSessionConfig", reflect.TypeOf((*MockISessionRepo)(nil).GetSessionConfig))
+}
+
+// GetSessionCookie mocks base method.
+func (m *MockISessionRepo) GetSessionCookie() scs.SessionCookie {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSessionCookie")
