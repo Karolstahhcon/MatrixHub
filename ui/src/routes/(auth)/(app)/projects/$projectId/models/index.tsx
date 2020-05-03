@@ -22,15 +22,3 @@ const modelsSearchSchema = z.object({
 
 export type ProjectModelsSearch = z.infer<typeof modelsSearchSchema>
 
-// -- Route definition --
-
-export const Route = createFileRoute(
-  '/(auth)/(app)/projects/$projectId/models/',
-)({
-  validateSearch: modelsSearchSchema,
-  search: {
-    middlewares: [stripSearchParams(defaults)],
-  },
-  loaderDeps: ({ search }) => search,
-  loader({
-    context,
