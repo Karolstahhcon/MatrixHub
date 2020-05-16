@@ -26,3 +26,18 @@ func (c contextKey) String() string {
 var (
 	// ContextOAuth2 takes a oauth2.TokenSource as authentication for the request.
 	ContextOAuth2 = contextKey("token")
+
+	// ContextBasicAuth takes BasicAuth as authentication for the request.
+	ContextBasicAuth = contextKey("basic")
+
+	// ContextAccessToken takes a string oauth2 access token as authentication for the request.
+	ContextAccessToken = contextKey("accesstoken")
+
+	// ContextAPIKey takes an APIKey as authentication for the request
+	ContextAPIKey = contextKey("apikey")
+)
+
+// BasicAuth provides basic http authentication to a request passed via context using ContextBasicAuth
+type BasicAuth struct {
+	UserName string `json:"userName,omitempty"`
+	Password string `json:"password,omitempty"`
