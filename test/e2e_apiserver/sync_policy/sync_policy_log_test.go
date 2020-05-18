@@ -42,3 +42,47 @@ var _ = Describe("SyncPolicy Job Log", Label("sync-policy"), func() {
 		registry, err := tools.CreateHuggingFaceRegistryFixture(ctx, "e2e-log", "https://hf-mirror.com")
 		Expect(err).NotTo(HaveOccurred())
 		defer registry.Cleanup(ctx)
+		Expect(registry.ID).To(BeNumerically(">", 0))
+
+		// 2. Create Manual + Pull Base Policy
+		name := fmt.Sprintf("e2e-log-%d", time.Now().UnixNano())
+		req := v1alpha1.V1alpha1CreateSyncPolicyRequest{
+			Name:        name,
+			Description: "e2e log test",
+			PolicyType:  ptrPolicyType(v1alpha1.PULL_BASE_V1alpha1SyncPolicyType),
+			TriggerType: ptrTriggerType(v1alpha1.MANUAL_V1alpha1TriggerType),
+			PullBasePolicy: &v1alpha1.V1alpha1PullBasePolicy{
+				SourceRegistryId:  registry.ID,
+				ResourceName:      "gpt2",
+				ResourceTypes:     []v1alpha1.V1alpha1ResourceType{v1alpha1.MODEL_V1alpha1ResourceType},
+				TargetProjectName: project.Name,
+			},
+			IsOverwrite: false,
+		}
+
+		resp, _, err := api.SyncPolicyCreateSyncPolicy(ctx, req)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp.SyncPolicy).NotTo(BeNil())
+		pid := resp.SyncPolicy.Id
+		Expect(pid).To(BeNumerically(">", 0))
+		defer func() {
+			_, _, _ = api.SyncPolicyDeleteSyncPolicy(ctx, pid)
+		}()
+
+		// 3. Manually create SyncTask
+		taskResp, _, err := api.SyncPolicyCreateSyncTask(ctx, pid)
+		Expect(err).NotTo(HaveOccurred())
+		tid := taskResp.Id
+		Expect(tid).To(BeNumerically(">", 0))
+
+		// 4. Wait for task completion
+		task, err := waitForTaskCompletion(ctx, api, pid, tid, 3*time.Minute)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(task).NotTo(BeNil())
+
+		// 5. Get job list
+		jobsResp, _, err := api.SyncPolicyListSyncJobs(ctx, pid, tid, &v1alpha1.SyncPolicyApiSyncPolicyListSyncJobsOpts{
+			Page:     optional.NewInt32(1),
+			PageSize: optional.NewInt32(20),
+		})
+		Expect(err).NotTo(HaveOccurred())

@@ -14,19 +14,3 @@
 
 package role_test
 
-import (
-	"testing"
-
-	"github.com/stretchr/testify/require"
-
-	"github.com/matrixhub-ai/matrixhub/internal/domain/role"
-)
-
-func TestPermissionMatching(t *testing.T) {
-	require.Equal(t, "roles", (role.Role{}).TableName())
-	require.Equal(t, "model.push", role.ModelPush.String())
-	require.False(t, role.ModelPush.IsWildcard())
-	require.Nil(t, role.ModelPush.ToRegex())
-	require.True(t, role.Permission("model.*").IsWildcard())
-	require.True(t, role.Permission("model.*").Match(role.ModelPull))
-	require.False(t, role.Permission("model.*").Match(role.DatasetPull))

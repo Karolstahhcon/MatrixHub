@@ -21,11 +21,3 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/matrixhub-ai/matrixhub/internal/domain/robot"
-)
-
-func TestRobotRepoGetRobotByTokenHash(t *testing.T) {
-	database, _ := newSQLiteRepositoryTestDatabase(t)
-	ctx := context.Background()
-	repo := NewRobotRepo(database)
-
-	rb, err := repo.GetRobotByTokenHash(ctx, "unknown")
