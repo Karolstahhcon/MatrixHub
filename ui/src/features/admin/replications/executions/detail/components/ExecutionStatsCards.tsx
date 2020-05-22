@@ -64,3 +64,25 @@ export function ExecutionStatsCards({ task }: ExecutionStatsCardsProps) {
   return (
     <Grid gutter="md">
       {stats.map(stat => (
+        <Grid.Col
+          key={stat.label}
+          span={{
+            base: 12,
+            sm: 6,
+            md: 3,
+          }}
+        >
+          <Card
+            padding="lg"
+            radius="sm"
+            style={{
+              backgroundColor: stat.bgColor,
+              border: 'none',
+            }}
+          >
+            <Group justify="space-between" align="flex-start">
+              <Stack gap={4}>
+                <ThemeIcon
+                  variant="transparent"
+                  color={stat.color}
+                  size={rem(32)}

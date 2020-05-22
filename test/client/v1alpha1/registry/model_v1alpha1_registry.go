@@ -12,3 +12,10 @@ package v1alpha1
 import (
 	"time"
 )
+
+type V1alpha1Registry struct {
+	Id int32 `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
+	Type_ *V1alpha1RegistryType `json:"type,omitempty"`
+	Url string `json:"url,omitempty"`
