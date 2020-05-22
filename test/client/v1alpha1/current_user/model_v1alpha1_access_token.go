@@ -8,7 +8,3 @@
  */
 
 package v1alpha1
-
-type V1alpha1AccessToken struct {
-	Id int64 `json:"id,omitempty"`
-	Name string `json:"name,omitempty"`

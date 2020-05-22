@@ -11,16 +11,3 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-package handler
-
-import (
-	"context"
-
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
-	"github.com/matrixhub-ai/matrixhub/api/go/v1alpha1"
-	"github.com/matrixhub-ai/matrixhub/internal/domain/system"
-	"github.com/matrixhub-ai/matrixhub/internal/infra/log"
-)
