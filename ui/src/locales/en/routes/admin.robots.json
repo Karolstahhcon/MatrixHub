@@ -28,33 +28,3 @@
   "expireStatus": {
     "never": "Never Expires",
     "expired": "Expired"
-  },
-  "actions": {
-    "refreshToken": "Refresh Token",
-    "edit": "Edit",
-    "enable": "Enable",
-    "disable": "Disable",
-    "delete": "Delete"
-  },
-  "deleteModal": {
-    "title": "Delete Robot Account",
-    "description": "Delete {{name}}? This action cannot be undone.",
-    "submit": "Delete"
-  },
-  "enableModal": {
-    "title": "Enable Robot Account",
-    "description": "Enable {{name}}?",
-    "submit": "Enable"
-  },
-  "disableModal": {
-    "title": "Disable Robot Account",
-    "description": "Disable {{name}}? The account will no longer be able to access resources.",
-    "submit": "Disable"
-  },
-  "refreshTokenModal": {
-    "title": "Refresh Token {{name}}",
-    "description": "You can click confirm to randomly generate a new token, or manually specify a new token.",
-    "manualSwitch": "Enable this to manually specify the new token",
-    "token": "New Token",
-    "tokenHint": "{{min}}-{{max}} characters, with at least 1 uppercase letter, 1 lowercase letter and 1 number",
-    "confirmToken": "Confirm Token",
