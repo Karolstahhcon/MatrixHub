@@ -9,3 +9,8 @@
 
 package v1alpha1
 
+type V1alpha1SyncTaskStatus string
+
+// List of v1alpha1SyncTaskStatus
+const (
+	UNSPECIFIED_V1alpha1SyncTaskStatus V1alpha1SyncTaskStatus = "SYNC_TASK_STATUS_UNSPECIFIED"
