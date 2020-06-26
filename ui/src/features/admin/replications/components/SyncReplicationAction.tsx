@@ -19,14 +19,3 @@ export function SyncReplicationAction({
   const mutation = useMutation(syncReplicationMutationOptions())
 
   const handleSync = async () => {
-    if (syncPolicy.id == null) {
-      return
-    }
-
-    await mutation.mutateAsync({ syncPolicyId: syncPolicy.id })
-  }
-
-  return (
-    <Button
-      variant="transparent"
-      size="compact-sm"
