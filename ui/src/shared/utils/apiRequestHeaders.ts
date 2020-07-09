@@ -74,28 +74,3 @@ function mergeRequestHeaders(input: FetchInput, init?: FetchInit) {
 
     if (!providerHeaders) {
       return
-    }
-
-    new Headers(providerHeaders).forEach((value, key) => {
-      // Call-site headers are more specific than global defaults.
-      if (!headers.has(key)) {
-        headers.set(key, value)
-      }
-    })
-  })
-
-  return headers
-}
-
-function withApiRequestHeaders(input: FetchInput, init?: FetchInit) {
-  return {
-    ...init,
-    headers: mergeRequestHeaders(input, init),
-  }
-}
-
-// Configure the generated SDK fetch source instead of patching window.fetch,
-// so this only affects SDK requests.
-export function createApiRequestFetch(baseFetch: FetchFn): FetchFn {
-  return (input, init) => {
-    if (!isApiRequest(input)) {
