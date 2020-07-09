@@ -10,3 +10,9 @@ const isMappedModalSize = (size: unknown): size is keyof typeof modalSizeMap => 
   typeof size === 'string' && Object.prototype.hasOwnProperty.call(modalSizeMap, size)
 )
 
+export const modalTheme = Modal.extend({
+  defaultProps: {
+    size: 'md',
+  },
+  vars: (_, props) => ({
+    root: {
