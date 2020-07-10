@@ -26,13 +26,3 @@ import (
 func TestProjectDomainRules(t *testing.T) {
 	registryID := 7
 	proxied := &project.Project{Type: project.ProjectTypePublic, RegistryID: &registryID}
-	require.Equal(t, "projects", proxied.TableName())
-	require.True(t, proxied.HasProxy())
-	require.True(t, proxied.IsPublic())
-
-	private := &project.Project{Type: project.ProjectTypePrivate}
-	require.False(t, private.HasProxy())
-	require.False(t, private.IsPublic())
-	require.Equal(t, "members_roles_projects", (project.ProjectMember{}).TableName())
-}
-
