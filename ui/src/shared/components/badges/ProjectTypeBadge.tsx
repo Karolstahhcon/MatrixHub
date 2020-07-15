@@ -16,21 +16,3 @@ export function ProjectTypeBadge({
   const { t } = useTranslation()
 
   if (!type) {
-    return null
-  }
-
-  const PROJECT_TYPE_BADGE_CONFIG: Partial<Record<ProjectType, {
-    color: string
-    label: string
-  }>> = {
-    [ProjectType.PROJECT_TYPE_PUBLIC]: {
-      color: 'teal',
-      label: t('projects.type.public'),
-    },
-    [ProjectType.PROJECT_TYPE_PRIVATE]: {
-      color: 'yellow',
-      label: t('projects.type.private'),
-    },
-  }
-
-  const badgeConfig = PROJECT_TYPE_BADGE_CONFIG[type]
