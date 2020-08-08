@@ -14,3 +14,36 @@
     "create": {
       "button": "导入 SSH 公钥",
       "title": "导入 SSH 公钥",
+      "name": "SSH 公钥名称",
+      "publicKey": "导入公钥",
+      "success": "SSH 公钥导入成功"
+    },
+    "delete": {
+      "action": "删除",
+      "title": "删除",
+      "confirm": "确认删除 SSH 公钥 {{name}} 吗？删除此公钥后，此公钥立即失效。",
+      "success": "SSH 公钥删除成功"
+    },
+    "status": {
+      "SSH_KEY_STATUS_VALID": "有效",
+      "SSH_KEY_STATUS_EXPIRED": "已过期",
+      "SSH_KEY_STATUS_UNKNOWN": "未知"
+    }
+  },
+  "password": "密码",
+  "changePassword": "修改密码",
+  "editPassword": "编辑密码",
+  "oldPassword": "旧密码",
+  "newPassword": "新密码",
+  "confirmNewPassword": "确认新密码",
+  "passwordMismatch": "两次密码不一致",
+  "passwordChanged": "密码修改成功",
+  "createToken": "创建密钥",
+  "newTokenName": "密钥名称",
+  "tokenName": "名称",
+  "tokenStatus": "状态",
+  "tokenExpiredAt": "过期时间",
+  "tokenCreatedAt": "创建时间",
+  "status": {
+    "ACCESS_TOKEN_STATUS_VALID": "有效",
+    "ACCESS_TOKEN_STATUS_EXPIRED": "失效",
