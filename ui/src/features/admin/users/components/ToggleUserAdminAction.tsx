@@ -17,3 +17,23 @@ interface ToggleUserAdminActionProps {
 export function ToggleUserAdminAction({
   user,
   disabled,
+}: ToggleUserAdminActionProps) {
+  const { t } = useTranslation()
+  const isAdmin = !!user.isAdmin
+  const mutation = useMutation(
+    isAdmin
+      ? revokeUserAdminMutationOptions()
+      : setUserAdminMutationOptions(),
+  )
+
+  const handleClick = async () => {
+    await mutation.mutateAsync({ id: user.id })
+  }
+
+  return (
+    <Button
+      variant="transparent"
+      size="compact-sm"
+      color="blue"
+      disabled={disabled || mutation.isPending}
+      loading={mutation.isPending}

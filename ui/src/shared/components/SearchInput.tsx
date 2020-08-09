@@ -15,39 +15,3 @@ export interface SearchInputProps extends Omit<TextInputProps, 'value' | 'onChan
 
 const DEFAULT_DEBOUNCE_MS = 300
 
-export function SearchInput({
-  value = '',
-  onChange,
-  debounceMs = DEFAULT_DEBOUNCE_MS,
-  placeholder,
-  w = 260,
-  styles,
-  ...restTextInputProps
-}: SearchInputProps) {
-  const [inputValue, setInputValue] = useState(value)
-
-  const resolvedStyles = typeof styles === 'function'
-    ? styles
-    : {
-        ...styles,
-        input: {
-          height: 32,
-          minHeight: 32,
-          borderRadius: 16,
-          fontSize: '14px',
-          fontWeight: 400,
-          lineHeight: '20px',
-          color: 'var(--mantine-color-gray-8)',
-          '&::placeholder': {
-            color: 'var(--mantine-color-gray-5)',
-            opacity: 1,
-          },
-          ...styles?.input,
-        },
-      }
-
-  const debouncedSearchChange = useDebouncedCallback((value: string) => {
-    startTransition(() => {
-      onChange?.(value)
-    })
-  }, debounceMs)
