@@ -298,3 +298,153 @@ func (x *ExecuteCleanupRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecuteCleanupRequest.ProtoReflect.Descriptor instead.
 func (*ExecuteCleanupRequest) Descriptor() ([]byte, []int) {
+	return file_v1alpha1_cleanup_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *ExecuteCleanupRequest) GetCleanOrphanedRepos() bool {
+	if x != nil {
+		return x.CleanOrphanedRepos
+	}
+	return false
+}
+
+func (x *ExecuteCleanupRequest) GetCleanOrphanedLfs() bool {
+	if x != nil {
+		return x.CleanOrphanedLfs
+	}
+	return false
+}
+
+func (x *ExecuteCleanupRequest) GetDryRun() bool {
+	if x != nil {
+		return x.DryRun
+	}
+	return false
+}
+
+type CleanupResult struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	ReposDeleted        int32                  `protobuf:"varint,1,opt,name=repos_deleted,json=reposDeleted,proto3" json:"repos_deleted,omitempty"`
+	LfsObjectsDeleted   int32                  `protobuf:"varint,2,opt,name=lfs_objects_deleted,json=lfsObjectsDeleted,proto3" json:"lfs_objects_deleted,omitempty"`
+	SpaceReclaimedBytes int64                  `protobuf:"varint,3,opt,name=space_reclaimed_bytes,json=spaceReclaimedBytes,proto3" json:"space_reclaimed_bytes,omitempty"`
+	Errors              []string               `protobuf:"bytes,4,rep,name=errors,proto3" json:"errors,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *CleanupResult) Reset() {
+	*x = CleanupResult{}
+	mi := &file_v1alpha1_cleanup_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CleanupResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CleanupResult) ProtoMessage() {}
+
+func (x *CleanupResult) ProtoReflect() protoreflect.Message {
+	mi := &file_v1alpha1_cleanup_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CleanupResult.ProtoReflect.Descriptor instead.
+func (*CleanupResult) Descriptor() ([]byte, []int) {
+	return file_v1alpha1_cleanup_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *CleanupResult) GetReposDeleted() int32 {
+	if x != nil {
+		return x.ReposDeleted
+	}
+	return 0
+}
+
+func (x *CleanupResult) GetLfsObjectsDeleted() int32 {
+	if x != nil {
+		return x.LfsObjectsDeleted
+	}
+	return 0
+}
+
+func (x *CleanupResult) GetSpaceReclaimedBytes() int64 {
+	if x != nil {
+		return x.SpaceReclaimedBytes
+	}
+	return 0
+}
+
+func (x *CleanupResult) GetErrors() []string {
+	if x != nil {
+		return x.Errors
+	}
+	return nil
+}
+
+type GetStorageStatsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetStorageStatsRequest) Reset() {
+	*x = GetStorageStatsRequest{}
+	mi := &file_v1alpha1_cleanup_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetStorageStatsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetStorageStatsRequest) ProtoMessage() {}
+
+func (x *GetStorageStatsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1alpha1_cleanup_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetStorageStatsRequest.ProtoReflect.Descriptor instead.
+func (*GetStorageStatsRequest) Descriptor() ([]byte, []int) {
+	return file_v1alpha1_cleanup_proto_rawDescGZIP(), []int{6}
+}
+
+type StorageStats struct {
+	state                 protoimpl.MessageState `protogen:"open.v1"`
+	TotalSizeBytes        int64                  `protobuf:"varint,1,opt,name=total_size_bytes,json=totalSizeBytes,proto3" json:"total_size_bytes,omitempty"`
+	RepositoriesSizeBytes int64                  `protobuf:"varint,2,opt,name=repositories_size_bytes,json=repositoriesSizeBytes,proto3" json:"repositories_size_bytes,omitempty"`
+	LfsSizeBytes          int64                  `protobuf:"varint,3,opt,name=lfs_size_bytes,json=lfsSizeBytes,proto3" json:"lfs_size_bytes,omitempty"`
+	OrphanedSizeBytes     int64                  `protobuf:"varint,4,opt,name=orphaned_size_bytes,json=orphanedSizeBytes,proto3" json:"orphaned_size_bytes,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *StorageStats) Reset() {
+	*x = StorageStats{}
+	mi := &file_v1alpha1_cleanup_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StorageStats) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StorageStats) ProtoMessage() {}
