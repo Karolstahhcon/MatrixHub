@@ -40,3 +40,88 @@ import (
 type pullFixture struct {
 	syncJobRepo  *mocks.MockISyncJobRepo
 	registryRepo *registrymocks.MockIRegistryRepo
+	projectRepo  *projectmocks.MockIProjectRepo
+	modelRepo    *modelmocks.MockIModelRepo
+	datasetRepo  *datasetmocks.MockIDatasetRepo
+	gitRepo      *gitmocks.MockIGitRepo
+	modelMeta    *mocks.MockMetadataSyncer
+	datasetMeta  *mocks.MockMetadataSyncer
+}
+
+func TestSyncJobService_ClaimPendingSyncJob(t *testing.T) {
+	ctx := context.Background()
+	f, svc := newPullFixture(t)
+	f.syncJobRepo.EXPECT().GetSyncJob(ctx, 42).Return(&syncjob.SyncJob{
+		ID:     42,
+		Status: syncjob.SyncJobStatusPending,
+	}, nil)
+	f.syncJobRepo.EXPECT().UpdateJobStatusCAS(ctx, 42, syncjob.SyncJobStatusPending, syncjob.SyncJobStatusRunning).Return(true, nil)
+
+	due, claimed, err := svc.(interface {
+		ClaimPendingSyncJob(context.Context, int) (jobdomain.DueJob, bool, error)
+	}).ClaimPendingSyncJob(ctx, 42)
+
+	require.NoError(t, err)
+	require.True(t, claimed)
+	require.Equal(t, 42, due.ID)
+}
+
+func TestSyncJobService_CreateSyncJobsTriggersAfterBatchIsPersisted(t *testing.T) {
+	ctx := context.Background()
+	f, svc := newPullFixture(t)
+	var persistedJobIDs []int
+	f.syncJobRepo.EXPECT().CreateSyncJobs(ctx, gomock.Any()).DoAndReturn(
+		func(_ context.Context, created []*syncjob.SyncJob) error {
+			for index, job := range created {
+				job.ID = 41 + index
+				persistedJobIDs = append(persistedJobIDs, job.ID)
+			}
+			return nil
+		})
+	var triggeredJobIDs []int
+	svc.(interface{ SetOnJobCreated(func(int) bool) }).SetOnJobCreated(func(id int) bool {
+		require.Equal(t, []int{41, 42}, persistedJobIDs, "the complete batch must be persisted before triggering")
+		triggeredJobIDs = append(triggeredJobIDs, id)
+		return true
+	})
+
+	require.NoError(t, svc.CreateSyncJobs(ctx, []*syncjob.SyncJob{{}, {}}))
+	require.Equal(t, []int{41, 42}, triggeredJobIDs)
+}
+
+func newPullFixture(t *testing.T) (*pullFixture, syncjob.ISyncJobService) {
+	t.Helper()
+	ctrl := gomock.NewController(t)
+
+	f := &pullFixture{
+		syncJobRepo:  mocks.NewMockISyncJobRepo(ctrl),
+		registryRepo: registrymocks.NewMockIRegistryRepo(ctrl),
+		projectRepo:  projectmocks.NewMockIProjectRepo(ctrl),
+		modelRepo:    modelmocks.NewMockIModelRepo(ctrl),
+		datasetRepo:  datasetmocks.NewMockIDatasetRepo(ctrl),
+		gitRepo:      gitmocks.NewMockIGitRepo(ctrl),
+		modelMeta:    mocks.NewMockMetadataSyncer(ctrl),
+		datasetMeta:  mocks.NewMockMetadataSyncer(ctrl),
+	}
+
+	svc := syncjob.NewSyncJobService(
+		f.syncJobRepo,
+		f.registryRepo,
+		f.projectRepo,
+		f.modelRepo,
+		f.datasetRepo,
+		f.gitRepo,
+		f.modelMeta,
+		f.datasetMeta,
+		nil,
+	)
+	return f, svc
+}
+
+func pullJob(resourceType string) *syncjob.SyncJob {
+	return &syncjob.SyncJob{
+		ID:                 7,
+		RemoteRegistryID:   3,
+		RemoteProjectName:  "remote-project",
+		RemoteResourceName: "remote-resource",
+		ProjectName:        "local-project",
