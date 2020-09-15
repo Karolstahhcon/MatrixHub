@@ -21,3 +21,26 @@ function requireRegistryId(id?: number) {
   return id
 }
 
+export function createRegistryMutationOptions() {
+  return mutationOptions({
+    mutationFn: (input: CreateRegistryRequest) => Registries.CreateRegistry(input),
+    meta: {
+      successMessage: i18n.t('routes.admin.registries.notifications.createSuccess'),
+      errorMessage: i18n.t('routes.admin.registries.notifications.createError'),
+      invalidates: [adminRegistryKeys.lists()],
+    } satisfies NotificationMeta,
+  })
+}
+
+export function updateRegistryMutationOptions() {
+  return mutationOptions({
+    mutationFn: (input: UpdateRegistryRequest) => Registries.UpdateRegistry({
+      ...input,
+      id: requireRegistryId(input.id),
+    }),
+    meta: {
+      successMessage: i18n.t('routes.admin.registries.notifications.updateSuccess'),
+      errorMessage: i18n.t('routes.admin.registries.notifications.updateError'),
+      invalidates: [adminRegistryKeys.lists()],
+    } satisfies NotificationMeta,
+  })
