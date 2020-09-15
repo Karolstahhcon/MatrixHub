@@ -1,0 +1,11 @@
+# Snapshot of guides/optimized-baseline/router/optimized-baseline.values.yaml
+# from llm-d commit 7029aac48505752dd51344ce552acc81b0deb774.
+router:
+  extraServicePorts:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 8081
+
+  epp:
+    pluginsConfigFile: optimized-baseline-plugins.yaml

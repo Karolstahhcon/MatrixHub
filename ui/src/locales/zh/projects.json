@@ -31,36 +31,3 @@
       "commandPlaceholder": "<模型名称>",
       "completionNotice": "执行命令后，模型将从已配置的目标仓库下载。下载完成后请刷新模型列表。",
       "viewDocs": "查看下载说明",
-      "acknowledge": "知道了"
-    },
-    "settingsPage": {
-      "projectType": "项目类型",
-      "public": "公开",
-      "private": "私有",
-      "proxyAddress": "代理地址",
-      "proxyOrganization": "代理组织",
-      "save": "保存",
-      "cancel": "取消",
-      "updateSuccess": "项目设置已更新",
-      "updateError": "更新项目设置失败"
-    },
-    "membersPage": {
-      "searchPlaceholder": "用户名称",
-      "addMember": "添加成员",
-      "table": {
-        "name": "名称",
-        "memberType": "成员类型",
-        "roleType": "权限类型",
-        "empty": "暂无成员"
-      },
-      "memberType": {
-        "user": "用户",
-        "group": "用户组"
-      },
-      "role": {
-        "admin": "管理员权限",
-        "editor": "开发权限",
-        "viewer": "只读权限"
-      },
-      "roleDescription": {
-        "hint": "<0>查看权限说明文档</0>了解更多详情。"
