@@ -13,3 +13,8 @@ type V1alpha1SyncPolicyItem struct {
 	Id int32 `json:"id,omitempty"`
 	Name string `json:"name,omitempty"`
 	Description string `json:"description,omitempty"`
+	PolicyType *V1alpha1SyncPolicyType `json:"policyType,omitempty"`
+	TriggerType *V1alpha1TriggerType `json:"triggerType,omitempty"`
+	PullBasePolicy *V1alpha1PullBasePolicy `json:"pullBasePolicy,omitempty"`
+	PushBasePolicy *V1alpha1PushBasePolicy `json:"pushBasePolicy,omitempty"`
+	// The bandwidth to use for the sync policy.
