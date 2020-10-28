@@ -27,13 +27,3 @@ export function ToggleUserAdminAction({
   )
 
   const handleClick = async () => {
-    await mutation.mutateAsync({ id: user.id })
-  }
-
-  return (
-    <Button
-      variant="transparent"
-      size="compact-sm"
-      color="blue"
-      disabled={disabled || mutation.isPending}
-      loading={mutation.isPending}
