@@ -37,22 +37,3 @@ export default function RemoteSync(): React.ReactElement {
               </Translate>
             </p>
           </div>
-
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="bg-slate-800/30 p-8 rounded-3xl border border-slate-700/50 hover:border-slate-600/50 transition-colors">
-              <div className="text-4xl mb-4">🔁</div>
-              <h3 className="text-xl font-bold text-white mb-3">
-                <Translate id="sync.resume.title">Chunking & Resume</Translate>
-              </h3>
-              <p className="text-slate-400">
-                <Translate id="sync.resume.desc">
-                  Transfers use chunking, resume, and retry so that network instability over WAN links does not require restarting massive 100GB+ downloads from scratch.
-                </Translate>
-              </p>
-            </div>
-            <div className="bg-slate-800/30 p-8 rounded-3xl border border-slate-700/50 hover:border-slate-600/50 transition-colors">
-              <div className="text-4xl mb-4">⚙️</div>
-              <h3 className="text-xl font-bold text-white mb-3">
-                <Translate id="sync.policy.title">Policy-Driven</Translate>
-              </h3>
-              <p className="text-slate-400">
