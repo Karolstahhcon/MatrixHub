@@ -28,33 +28,3 @@ const StatusCell = ({ row }: { row: MRT_Row<SSHKey> }) => {
   const status = row.original.status ?? SSHKeyStatus.SSH_KEY_STATUS_UNKNOWN
 
   const statusColor = {
-    [SSHKeyStatus.SSH_KEY_STATUS_VALID]: 'teal.6',
-    [SSHKeyStatus.SSH_KEY_STATUS_EXPIRED]: 'red.6',
-    [SSHKeyStatus.SSH_KEY_STATUS_UNKNOWN]: 'gray.5',
-  }
-
-  return (
-    <Group gap={6}>
-      <Box w={12} h={12} bdrs="50%" bg={statusColor[status]} />
-      <Text size="sm">{t(`profile.sshKey.status.${status}`)}</Text>
-    </Group>
-  )
-}
-
-function ActionCell({
-  row,
-  table,
-}: DataTableRowActionsProps<SSHKey>) {
-  const { t } = useTranslation()
-  const onDelete = (
-    table.options.meta as { onDelete?: (key: SSHKey) => void } | undefined
-  )?.onDelete
-
-  return (
-    <Anchor
-      component="button"
-      size="sm"
-      c="red"
-      onClick={() => onDelete?.(row.original)}
-    >
-      {t('profile.sshKey.delete.action')}

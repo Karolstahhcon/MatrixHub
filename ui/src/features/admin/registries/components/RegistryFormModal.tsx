@@ -80,3 +80,85 @@ export function RegistryFormModal({
         await submitMutation.mutateAsync(buildCreateRegistryRequest(value))
       } else if (registry?.id != null) {
         await submitMutation.mutateAsync(buildUpdateRegistryRequest(registry.id, value))
+      }
+
+      onClose()
+    },
+  })
+
+  const providerOptions = supportedRegistryTypes.map((type) => {
+    const labelKey = registryProviderLabelKeys[type]
+
+    return {
+      value: type,
+      label: labelKey ? t(labelKey) : type,
+    }
+  })
+  const isSubmitting = useStore(form.store, state => state.isSubmitting)
+  const [pendingType, setPendingType] = useState<RegistryType | null>(null)
+  const [
+    switchConfirmOpened,
+    {
+      open: openSwitchConfirm,
+      close: closeSwitchConfirm,
+    },
+  ] = useDisclosure(false)
+
+  const applyProviderChange = (nextType: RegistryType, nextUrl: string) => {
+    form.setFieldValue('type', nextType)
+    form.setFieldValue('url', nextUrl)
+
+    /* Switching providers rewrites the URL on the user's behalf, so the field
+    starts over as untouched instead of complaining about the value it just got. */
+    form.setFieldMeta('url', meta => ({
+      ...meta,
+      isTouched: false,
+      isDirty: false,
+      errors: [],
+      errorMap: {},
+    }))
+  }
+
+  const handleProviderChange = (nextType: RegistryType) => {
+    const currentValues = form.state.values
+
+    if (nextType === currentValues.type) {
+      return
+    }
+
+    /* Only a user-customized URL is worth a confirmation prompt;
+    an untouched one is replaced with the new provider default silently. */
+    if (isRegistryUrlPristine(currentValues.url, currentValues.type)) {
+      applyProviderChange(nextType, getRegistryDefaultUrl(nextType))
+
+      return
+    }
+
+    setPendingType(nextType)
+    openSwitchConfirm()
+  }
+
+  const closeProviderSwitchConfirm = () => {
+    closeSwitchConfirm()
+    setPendingType(null)
+  }
+
+  const handleKeepUrlAndSwitch = () => {
+    if (pendingType != null) {
+      applyProviderChange(pendingType, form.state.values.url)
+    }
+
+    closeProviderSwitchConfirm()
+  }
+
+  const handleClearUrlAndSwitch = () => {
+    if (pendingType != null) {
+      applyProviderChange(pendingType, getRegistryDefaultUrl(pendingType))
+    }
+
+    closeProviderSwitchConfirm()
+  }
+
+  const handleTestConnection = async () => {
+    await pingMutation.mutateAsync(buildPingRegistryRequest(form.state.values))
+  }
