@@ -16,12 +16,3 @@ package auth_test
 
 import (
 	"context"
-	"testing"
-
-	"github.com/stretchr/testify/require"
-
-	"github.com/matrixhub-ai/matrixhub/internal/domain/auth"
-	"github.com/matrixhub-ai/matrixhub/internal/domain/user"
-)
-
-func TestIdentityContext(t *testing.T) {

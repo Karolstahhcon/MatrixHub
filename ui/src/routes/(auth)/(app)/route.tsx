@@ -19,3 +19,10 @@ function AppLayout() {
       <Box
         w="86vw"
         h="100%"
+        maw="1760px"
+        px="32px"
+        py="0"
+        my="0"
+        mx="auto"
+        miw="1100px"
+        style={{

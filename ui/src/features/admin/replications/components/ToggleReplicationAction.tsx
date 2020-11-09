@@ -17,13 +17,3 @@ export function ToggleReplicationAction({
 }: ToggleReplicationActionProps) {
   const { t } = useTranslation()
   const mutation = useMutation(switchReplicationMutationOptions())
-  const nextIsDisabled = !syncPolicy.isDisabled
-
-  const handleToggle = async () => {
-    if (syncPolicy.id == null) {
-      return
-    }
-
-    await mutation.mutateAsync({
-      syncPolicyId: syncPolicy.id,
-      isDisabled: nextIsDisabled,
