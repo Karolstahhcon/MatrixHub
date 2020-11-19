@@ -7,3 +7,7 @@ import { CurrentUserContext } from '@/context/current-user-context'
 import { projectRolesQueryOptions } from './auth.query'
 
 export function useProjectRole(projectId: string) {
+  const user = use(CurrentUserContext)
+  const { data: projectRoles } = useQuery(projectRolesQueryOptions())
+
+  if (user?.isAdmin) {
