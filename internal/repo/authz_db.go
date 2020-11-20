@@ -23,3 +23,28 @@ import (
 
 	"github.com/matrixhub-ai/matrixhub/internal/domain/authz"
 	"github.com/matrixhub-ai/matrixhub/internal/domain/project"
+	"github.com/matrixhub-ai/matrixhub/internal/domain/robot"
+	"github.com/matrixhub-ai/matrixhub/internal/domain/role"
+)
+
+type AuthzDBRepo struct {
+	db *gorm.DB
+}
+
+var _ authz.IAuthzProjectRepo = (*AuthzDBRepo)(nil)
+
+func NewAuthzDBRepo(db *gorm.DB) authz.IAuthzProjectRepo {
+	return &AuthzDBRepo{db: db}
+}
+
+// GetUserProjectPermissions gets user's permissions in a project
+func (r *AuthzDBRepo) GetUserProjectPermissions(ctx context.Context, userID int, projectID int) ([]role.Permission, error) {
+	var result struct {
+		Permissions datatypes.JSONSlice[role.Permission]
+	}
+	err := r.db.WithContext(ctx).
+		Table("roles").
+		Select("roles.permissions").
+		Joins("INNER JOIN members_roles_projects mrp ON mrp.role_id = roles.id").
+		Where("mrp.project_id = ? AND mrp.member_id = ? AND mrp.member_type = ?", projectID, userID, project.MemberTypeUser).
+		First(&result).Error
