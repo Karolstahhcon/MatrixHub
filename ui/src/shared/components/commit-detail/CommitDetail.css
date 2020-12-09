@@ -15,11 +15,3 @@
   color: var(--mantine-color-cyan-text);
 }
 
-.d2h-file-list {
-  margin-bottom: -5px;
-}
-
-.d2h-file-header {
-  border-radius: var(--mantine-radius-md)  var(--mantine-radius-md) 0 0;
-}
-

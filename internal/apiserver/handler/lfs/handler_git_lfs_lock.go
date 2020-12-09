@@ -95,3 +95,52 @@ func (h *Handler) handleLocksVerify(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", metaMediaType)
 
 	reqBody := &lfs.VerifiableLockRequest{}
+	if err := dec.Decode(reqBody); err != nil {
+		responseJSON(w, &lfs.VerifiableLockList{Message: err.Error()}, http.StatusBadRequest)
+		return
+	}
+
+	// Limit is optional
+	limit := reqBody.Limit
+	if limit == 0 {
+		limit = 100
+	}
+
+	ll := &lfs.VerifiableLockList{}
+	locks, nextCursor, err := h.locksStorage.Filtered(repoName,
+		"",
+		reqBody.Cursor,
+		limit,
+	)
+	if err != nil {
+		ll.Message = err.Error()
+	} else {
+		ll.NextCursor = nextCursor
+
+		for _, l := range locks {
+			if l.Owner.Name == user {
+				ll.Ours = append(ll.Ours, l)
+			} else {
+				ll.Theirs = append(ll.Theirs, l)
+			}
+		}
+	}
+
+	responseJSON(w, ll, http.StatusOK)
+}
+
+func (h *Handler) handleCreateLock(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	repoName := vars["repo"]
+
+	if h.permissionHookFunc != nil {
+		op := permission.OperationUpdateRepo
+		if ok, err := h.permissionHookFunc(r.Context(), op, repoName, permission.Context{}); err != nil {
+			responseJSON(w, &lfs.VerifiableLockList{Message: err.Error()}, http.StatusInternalServerError)
+			return
+		} else if !ok {
+			responseJSON(w, &lfs.VerifiableLockList{Message: "permission denied"}, http.StatusForbidden)
+			return
+		}
+	}
+
