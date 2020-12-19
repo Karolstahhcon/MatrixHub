@@ -28,33 +28,3 @@ type ProjectScope string
 
 const (
 	RobotPrefix = "robot$"
-
-	ProjectScopeSelected ProjectScope = "selected"
-	ProjectScopeAll      ProjectScope = "all"
-)
-
-type Robot struct {
-	ID                  int `gorm:"primary_key"`
-	Name                string
-	Description         string
-	Enabled             bool
-	ProjectId           int
-	ExpireAt            *time.Time
-	Duration            int
-	TokenHash           string
-	ProjectScope        ProjectScope
-	Projects            []*project.Project                   `gorm:"many2many:robots_projects"`
-	PlatformPermissions datatypes.JSONSlice[role.Permission] `gorm:"type:json"`
-	ProjectPermissions  datatypes.JSONSlice[role.Permission] `gorm:"type:json"`
-	CreateBy            int
-	CreatedAt           time.Time
-	UpdatedAt           time.Time
-}
-
-func (Robot) TableName() string {
-	return "robots"
-}
-
-func (r Robot) CheckTokenHash(hash string) bool {
-	return r.TokenHash == hash
-}
