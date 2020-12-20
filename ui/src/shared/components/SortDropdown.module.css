@@ -51,30 +51,3 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-.orderIcon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--mantine-color-gray-6);
-  flex-shrink: 0;
-  transition: opacity 150ms ease, transform 150ms ease;
-}
-
-.orderIcon[data-order='asc'] {
-  transform: rotate(180deg);
-}
-
-.orderIcon[data-refreshing='true'] {
-  opacity: 0.7;
-}
-
-.dropdown {
-  background: var(--mantine-color-white);
-  border: 1px solid var(--mantine-color-gray-3);
-  border-radius: var(--mantine-radius-sm);
-  box-shadow:
-    0 4px 8px 0 rgba(0, 0, 0, 0.04),
-    0 16px 24px 0 rgba(0, 0, 0, 0.08),
-    0 0 6px 0 rgba(0, 0, 0, 0.06);
-  padding: 4px;
