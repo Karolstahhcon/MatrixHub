@@ -42,3 +42,25 @@ func TestReconcileModelReturnsFailedStep(t *testing.T) {
 		setup   func(models *modelmocks.MockIModelRepo, projects *projectmocks.MockIProjectRepo, gitRepo *gitmocks.MockIGitRepo)
 		wantErr string
 	}{
+		{
+			name: "deleted model is skipped",
+			setup: func(models *modelmocks.MockIModelRepo, _ *projectmocks.MockIProjectRepo, _ *gitmocks.MockIGitRepo) {
+				models.EXPECT().GetByProjectAndName(ctx, "project", "model").Return(nil, errors.New("record not found"))
+			},
+		},
+		{
+			name: "model lookup",
+			setup: func(models *modelmocks.MockIModelRepo, _ *projectmocks.MockIProjectRepo, _ *gitmocks.MockIGitRepo) {
+				models.EXPECT().GetByProjectAndName(ctx, "project", "model").Return(nil, failure)
+			},
+			wantErr: "dependency unavailable",
+		},
+		{
+			name: "project lookup",
+			setup: func(models *modelmocks.MockIModelRepo, projects *projectmocks.MockIProjectRepo, _ *gitmocks.MockIGitRepo) {
+				gomock.InOrder(
+					models.EXPECT().GetByProjectAndName(ctx, "project", "model").Return(&model.Model{}, nil),
+					projects.EXPECT().GetProjectByName(ctx, "project").Return(nil, failure),
+				)
+			},
+			wantErr: "dependency unavailable",
