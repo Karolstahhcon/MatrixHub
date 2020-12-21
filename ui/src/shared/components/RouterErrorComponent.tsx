@@ -35,3 +35,22 @@ export function RouterErrorComponent({ error }: RouterErrorComponentProps) {
       setIsReloading(false)
     }
   }
+
+  return (
+    <Center h="100%" p="xl" style={{ flexGrow: 1 }}>
+      <Stack align="center" gap="lg" maw={500}>
+        <Alert
+          variant="light"
+          color="red"
+          title={t('shared.components.RouterErrorComponent.somethingWentWrong')}
+          icon={<IconAlertCircle size={20} />}
+          w="100%"
+        >
+          <Text size="sm" style={{ wordBreak: 'break-word' }}>
+            {getErrorMessage(error)}
+          </Text>
+        </Alert>
+        <Group>
+          <Button
+            variant="outline"
+            leftSection={<IconRefresh size={16} />}

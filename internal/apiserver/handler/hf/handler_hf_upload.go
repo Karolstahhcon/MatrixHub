@@ -221,3 +221,115 @@ func (h *Handler) handlePreupload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	repo, err := repository.Open(repoPath)
+	if err != nil {
+		if errors.Is(err, repository.ErrRepositoryNotExists) {
+			responseJSON(w, fmt.Errorf("repository %q not found", ri.RepoName), http.StatusNotFound)
+			return
+		}
+		responseJSON(w, fmt.Errorf("failed to open repository %q: %v", ri.RepoName, err), http.StatusInternalServerError)
+		return
+	}
+
+	gitAttrs, err := repo.GitAttributes(rev)
+	if err != nil {
+		responseJSON(w, fmt.Errorf("failed to read .gitattributes for repository %q: %v", ri.RepoName, err), http.StatusInternalServerError)
+		return
+	}
+
+	var respFiles []preuploadResponseFile
+	for _, file := range req.Files {
+		uploadMode := "regular"
+		if file.Size > lfsThreshold || gitAttrs.IsLFS(file.Path) {
+			uploadMode = "lfs"
+		}
+
+		respFiles = append(respFiles, preuploadResponseFile{
+			Path:       file.Path,
+			UploadMode: uploadMode,
+		})
+	}
+
+	resp := preuploadResponse{
+		Files: respFiles,
+	}
+	responseJSON(w, resp, http.StatusOK)
+}
+
+// handleCommit handles POST /api/{repoType}/{repo}/commit/{rev}
+func (h *Handler) handleCommit(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	ri := getRepoInformation(r)
+	rev := vars["rev"]
+
+	if h.permissionHookFunc != nil {
+		if ok, err := h.permissionHookFunc(r.Context(), permission.OperationUpdateRepo, ri.RepoName, permission.Context{
+			Ref: rev,
+		}); err != nil {
+			responseJSON(w, err.Error(), http.StatusInternalServerError)
+			return
+		} else if !ok {
+			responseJSON(w, "permission denied", http.StatusForbidden)
+			return
+		}
+	}
+
+	user, ok := authenticate.GetUserInfo(r.Context())
+	if !ok {
+		user = authenticate.UserInfo{
+			User:  "HuggingFace",
+			Email: "hf@users.noreply.huggingface.co",
+		}
+	}
+
+	repoPath := h.storage.ResolvePath(ri.RepoName)
+	if repoPath == "" {
+		responseJSON(w, fmt.Errorf("repository %q not found", ri.RepoName), http.StatusNotFound)
+		return
+	}
+
+	// Parse NDJSON body
+	scanner := bufio.NewScanner(r.Body)
+	scanner.Buffer(make([]byte, 1024*1024), 100*1024*1024) // Allow up to 100MB lines
+
+	var header commitHeader
+	var ops []git.CommitOperation
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+
+		var op commitOperation
+		if err := json.Unmarshal([]byte(line), &op); err != nil {
+			responseJSON(w, fmt.Errorf("invalid NDJSON line: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		switch op.Key {
+		case "header":
+			if err := json.Unmarshal(op.Value, &header); err != nil {
+				responseJSON(w, fmt.Errorf("invalid header: %v", err), http.StatusBadRequest)
+				return
+			}
+
+		case "file":
+			var file commitFile
+			if err := json.Unmarshal(op.Value, &file); err != nil {
+				responseJSON(w, fmt.Errorf("invalid file operation: %v", err), http.StatusBadRequest)
+				return
+			}
+
+			content := []byte(file.Content)
+			if file.Encoding == "base64" {
+				decoded, err := base64.StdEncoding.DecodeString(file.Content)
+				if err != nil {
+					responseJSON(w, fmt.Errorf("failed to decode base64 content for %s: %v", file.Path, err), http.StatusBadRequest)
+					return
+				}
+				content = decoded
+			}
+
+			ops = append(ops, git.CommitOperation{
+				Type:    git.CommitOperationAdd,
+				Path:    file.Path,
