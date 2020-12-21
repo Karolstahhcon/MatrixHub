@@ -17,23 +17,3 @@ package middleware
 import (
 	"context"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
-	"github.com/matrixhub-ai/matrixhub/internal/apiserver/middleware/authenticator"
-	"github.com/matrixhub-ai/matrixhub/internal/domain/auth"
-	"github.com/matrixhub-ai/matrixhub/internal/domain/robot"
-	"github.com/matrixhub-ai/matrixhub/internal/domain/user"
-	"github.com/matrixhub-ai/matrixhub/internal/infra/log"
-)
-
-var publicMethods = map[string]bool{
-	"/matrixhub.v1alpha1.Login/Login":                   true,
-	"/matrixhub.v1alpha1.SystemService/GetSystemConfig": true,
-}
-
-func AuthInterceptor(sessionRepo user.ISessionRepo, userRepo user.IUserRepo, tokenRepo user.IAccessTokenRepo, robotRepo robot.IRobotRepo) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		if publicMethods[info.FullMethod] {
-			return handler(ctx, req)
