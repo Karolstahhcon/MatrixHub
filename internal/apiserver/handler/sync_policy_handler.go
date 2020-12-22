@@ -173,3 +173,178 @@ func (h *SyncPolicyHandler) UpdateSyncPolicy(ctx context.Context, request *v1alp
 	h.applyCommonFields(existingPolicy, request.Name, request.Description, request.Bandwidth,
 		request.TriggerTypeSchedule, syncpolicy.TriggerType(request.TriggerType),
 		request.IsOverwrite, request.IsDisabled)
+
+	if pullPolicy := request.GetPullBasePolicy(); pullPolicy != nil {
+		h.applyPullBasePolicy(existingPolicy, pullPolicy)
+	} else if pushPolicy := request.GetPushBasePolicy(); pushPolicy != nil {
+		h.applyPushBasePolicy(existingPolicy, pushPolicy)
+	}
+
+	if err := h.syncPolicyService.UpdateSyncPolicy(ctx, existingPolicy); err != nil {
+		return nil, status.Error(codes.Internal, "failed to update sync policy")
+	}
+
+	return &v1alpha1.UpdateSyncPolicyResponse{
+		SyncPolicy: h.syncPolicyToProto(ctx, existingPolicy),
+	}, nil
+}
+
+// DeleteSyncPolicy deletes a sync policy
+func (h *SyncPolicyHandler) DeleteSyncPolicy(ctx context.Context, request *v1alpha1.DeleteSyncPolicyRequest) (*v1alpha1.DeleteSyncPolicyResponse, error) {
+	if err := request.ValidateAll(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	// Get policy first for response
+	policy, err := h.syncPolicyService.GetSyncPolicy(ctx, int(request.SyncPolicyId))
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil, status.Error(codes.NotFound, "sync policy not found")
+		}
+		return nil, status.Error(codes.Internal, "failed to get sync policy")
+	}
+
+	if err := h.syncPolicyService.DeleteSyncPolicy(ctx, int(request.SyncPolicyId)); err != nil {
+		return nil, status.Error(codes.Internal, "failed to delete sync policy")
+	}
+
+	return &v1alpha1.DeleteSyncPolicyResponse{
+		SyncPolicy: h.syncPolicyToProto(ctx, policy),
+	}, nil
+}
+
+// CreateSyncTask creates a new sync task and executes it asynchronously
+func (h *SyncPolicyHandler) CreateSyncTask(ctx context.Context, request *v1alpha1.CreateSyncTaskRequest) (*v1alpha1.CreateSyncTaskResponse, error) {
+	if err := request.ValidateAll(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	// Get the policy
+	policy, err := h.syncPolicyService.GetSyncPolicy(ctx, int(request.SyncPolicyId))
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil, status.Error(codes.NotFound, "sync policy not found")
+		}
+		return nil, status.Error(codes.Internal, "failed to get sync policy")
+	}
+
+	// Create a pending task; syncTaskProcessor will pick it up and execute.
+	task, err := h.syncPolicyService.CreateSyncTaskAsync(ctx, policy)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to create sync task")
+	}
+
+	return &v1alpha1.CreateSyncTaskResponse{
+		Id: int32(task.ID),
+	}, nil
+}
+
+// ListSyncTasks lists sync tasks for a policy
+func (h *SyncPolicyHandler) ListSyncTasks(ctx context.Context, request *v1alpha1.ListSyncTasksRequest) (*v1alpha1.ListSyncTasksResponse, error) {
+	if err := request.ValidateAll(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	page := int(request.Page)
+	pageSize := int(request.PageSize)
+	if page <= 0 {
+		page = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 20
+	}
+
+	tasks, total, err := h.syncPolicyService.ListSyncTasksByPolicyID(ctx, int(request.SyncPolicyId), page, pageSize, syncpolicy.SyncTaskStatus(request.Status))
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to list sync tasks")
+	}
+
+	items := make([]*v1alpha1.SyncTask, len(tasks))
+	for i, t := range tasks {
+		items[i] = syncTaskToProto(t)
+	}
+
+	return &v1alpha1.ListSyncTasksResponse{
+		SyncTasks: items,
+		Pagination: &v1alpha1.Pagination{
+			Total:    utils.ClampInt32(total),
+			Page:     int32(page),
+			PageSize: int32(pageSize),
+			Pages:    utils.CalculatePages(total, int32(pageSize)),
+		},
+	}, nil
+}
+
+// GetSyncTask gets a sync task by ID
+func (h *SyncPolicyHandler) GetSyncTask(ctx context.Context, request *v1alpha1.GetSyncTaskRequest) (*v1alpha1.GetSyncTaskResponse, error) {
+	if err := request.ValidateAll(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	task, err := h.syncPolicyService.GetSyncTask(ctx, int(request.SyncTaskId))
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil, status.Error(codes.NotFound, "sync task not found")
+		}
+		return nil, status.Error(codes.Internal, "failed to get sync task")
+	}
+
+	if task.SyncPolicyID != int(request.SyncPolicyId) {
+		return nil, status.Error(codes.InvalidArgument, "sync task does not belong to the specified policy")
+	}
+
+	return &v1alpha1.GetSyncTaskResponse{
+		SyncTask: syncTaskToProto(task),
+	}, nil
+}
+
+// UpdateSyncPolicySwitch toggles a sync policy's enable/disable state
+func (h *SyncPolicyHandler) UpdateSyncPolicySwitch(ctx context.Context, request *v1alpha1.UpdateSyncPolicySwitchRequest) (*v1alpha1.UpdateSyncPolicySwitchResponse, error) {
+	if err := request.ValidateAll(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	policy, err := h.syncPolicyService.GetSyncPolicy(ctx, int(request.SyncPolicyId))
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil, status.Error(codes.NotFound, "sync policy not found")
+		}
+		return nil, status.Error(codes.Internal, "failed to get sync policy")
+	}
+
+	policy.IsDisabled = request.IsDisabled
+
+	if err := h.syncPolicyService.UpdateSyncPolicy(ctx, policy); err != nil {
+		return nil, status.Error(codes.Internal, "failed to update sync policy")
+	}
+
+	return &v1alpha1.UpdateSyncPolicySwitchResponse{
+		SyncPolicy: h.syncPolicyToProto(ctx, policy),
+	}, nil
+}
+
+// StopSyncTask stops a running sync task and cancels in-flight jobs.
+func (h *SyncPolicyHandler) StopSyncTask(ctx context.Context, request *v1alpha1.StopSyncTaskRequest) (*v1alpha1.StopSyncTaskResponse, error) {
+	if err := request.ValidateAll(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	task, err := h.syncPolicyService.GetSyncTask(ctx, int(request.SyncTaskId))
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil, status.Error(codes.NotFound, "sync task not found")
+		}
+		return nil, status.Error(codes.Internal, "failed to get sync task")
+	}
+
+	if task.SyncPolicyID != int(request.SyncPolicyId) {
+		return nil, status.Error(codes.InvalidArgument, "sync task does not belong to the specified policy")
+	}
+
+	// Cancel running jobs and mark pending jobs as stopped.
+	allJobs, _, err := h.syncJobService.ListSyncJobsByTaskID(ctx, task.ID, 1, 10000, syncjob.SyncJobStatusUnspecified, "")
+	if err == nil {
+		for _, j := range allJobs {
+			if j.Status == syncjob.SyncJobStatusRunning {
+				h.canceller.Cancel(j.ID)
+			}
