@@ -10,3 +10,7 @@ message Pagination {
   int32 total = 1;
 
   // Page is current page.
+  int32 page = 2;
+
+  // PageSize is the data number shown per page.
+  int32 page_size = 3;

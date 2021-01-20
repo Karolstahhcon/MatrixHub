@@ -59,3 +59,125 @@ const (
 
 // InitAuth initializes authentication with admin login
 func InitAuth() error {
+	authInitOnce.Do(func() {
+		// Get admin credentials from environment or use defaults
+		adminUsername = os.Getenv(EnvAdminUsername)
+		if adminUsername == "" {
+			adminUsername = DefaultAdminUsername
+		}
+		adminPassword = os.Getenv(EnvAdminPassword)
+		if adminPassword == "" {
+			adminPassword = DefaultAdminPassword
+		}
+
+		log.Printf("Initializing auth with admin user: %s\n", adminUsername)
+
+		// Login as admin to get cookie
+		cookie, err := LoginUser(adminUsername, adminPassword)
+		if err != nil {
+			authInitErr = fmt.Errorf("failed to login as admin: %w", err)
+			return
+		}
+
+		adminCookie = cookie
+		log.Println("Admin login successful")
+
+		// Initialize admin API clients with cookie
+		initAdminClients()
+	})
+
+	return authInitErr
+}
+
+// initAdminClients initializes API clients with admin cookie
+func initAdminClients() {
+	baseURL := GetBaseURL()
+
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // #nosec G402
+			Proxy:           http.ProxyFromEnvironment,
+		},
+	}
+
+	defaultHeaders := map[string]string{
+		"Cookie":       adminCookie,
+		"Content-Type": "application/json",
+	}
+
+	// Initialize Login API client
+	loginCfg := &v1alpha1login.Configuration{
+		BasePath:      baseURL,
+		DefaultHeader: defaultHeaders,
+		HTTPClient:    httpClient,
+	}
+	adminLoginApi = v1alpha1login.NewAPIClient(loginCfg).LoginApi
+
+	// Initialize Users API client
+	userCfg := &v1alpha1user.Configuration{
+		BasePath:      baseURL,
+		DefaultHeader: defaultHeaders,
+		HTTPClient:    httpClient,
+	}
+	adminUsersApi = v1alpha1user.NewAPIClient(userCfg).UsersApi
+}
+
+// LoginUser logs in a user and returns the session cookie
+func LoginUser(username, password string) (string, error) {
+	baseURL := GetBaseURL()
+
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // #nosec G402
+			Proxy:           http.ProxyFromEnvironment,
+		},
+	}
+
+	cfg := &v1alpha1login.Configuration{
+		BasePath: baseURL,
+		DefaultHeader: map[string]string{
+			"Content-Type": "application/json",
+		},
+		HTTPClient: httpClient,
+	}
+
+	loginApi := v1alpha1login.NewAPIClient(cfg).LoginApi
+
+	ctx := context.Background()
+	_, httpResponse, err := loginApi.LoginLogin(ctx, v1alpha1login.V1alpha1LoginRequest{
+		Username: username,
+		Password: password,
+	})
+	if err != nil {
+		return "", fmt.Errorf("login failed: %w", err)
+	}
+
+	// Extract cookie from response header
+	if httpResponse != nil {
+		// Try to get Set-Cookie header
+		setCookie := httpResponse.Header.Get("Set-Cookie")
+		if setCookie != "" {
+			// Extract only the name=value part (before the first semicolon)
+			cookie := extractCookieValue(setCookie)
+			if cookie != "" {
+				log.Printf("User %s logged in successfully\n", username)
+				return cookie, nil
+			}
+		}
+	}
+	return "", fmt.Errorf("no cookie received from login")
+}
+
+// GetAdminCookie returns the admin session cookie
+func GetAdminCookie() string {
+	if adminCookie == "" {
+		err := InitAuth()
+		if err != nil {
+			panic(err)
+		}
+	}
+	return adminCookie
+}
+
+// GetAdminLoginApi returns the Login API client with admin auth
+func GetAdminLoginApi() *v1alpha1login.LoginApiService {
