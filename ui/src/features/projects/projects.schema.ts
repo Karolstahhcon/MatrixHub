@@ -27,32 +27,3 @@ export const projectNameSchema = z
         message: i18n.t('projects.validation.nameMinLength'),
       })
 
-      return
-    }
-
-    if (!NAME_REGEX.test(val)) {
-      ctx.addIssue({
-        code: 'custom',
-        message: i18n.t('projects.validation.nameFormat'),
-      })
-
-      return
-    }
-  })
-
-export const registryIdSchema = z
-  .number().optional()
-  .superRefine((val, ctx) => {
-    if (val == null) {
-      ctx.addIssue({
-        code: 'custom',
-        message: i18n.t('projects.validation.registryRequired'),
-      })
-    }
-  })
-
-export const organizationSchema = z
-  .string()
-  .trim()
-  .optional()
-  .superRefine((val, ctx) => {
