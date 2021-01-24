@@ -25,12 +25,3 @@ export function EditReplicationAction({
       <Button
         variant="transparent"
         size="compact-sm"
-        color="blue"
-        disabled={disabled}
-        onClick={open}
-      >
-        {t('routes.admin.replications.actions.edit')}
-      </Button>
-
-      {opened && (
-        <ReplicationFormModal
