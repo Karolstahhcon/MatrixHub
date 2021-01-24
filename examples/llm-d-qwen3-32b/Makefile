@@ -4,3 +4,10 @@ check:
 	@./scripts/common.sh
 	@./tests/validate-router-integration.sh
 
+render:
+	@./scripts/render.sh
+
+prepare-router:
+	@./scripts/prepare-router.sh
+
+run-direct:
