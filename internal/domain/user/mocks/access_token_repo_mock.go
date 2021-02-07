@@ -26,3 +26,32 @@ type MockIAccessTokenRepo struct {
 
 // MockIAccessTokenRepoMockRecorder is the mock recorder for MockIAccessTokenRepo.
 type MockIAccessTokenRepoMockRecorder struct {
+	mock *MockIAccessTokenRepo
+}
+
+// NewMockIAccessTokenRepo creates a new mock instance.
+func NewMockIAccessTokenRepo(ctrl *gomock.Controller) *MockIAccessTokenRepo {
+	mock := &MockIAccessTokenRepo{ctrl: ctrl}
+	mock.recorder = &MockIAccessTokenRepoMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockIAccessTokenRepo) EXPECT() *MockIAccessTokenRepoMockRecorder {
+	return m.recorder
+}
+
+// CreateAccessToken mocks base method.
+func (m *MockIAccessTokenRepo) CreateAccessToken(ctx context.Context, token user.AccessToken) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateAccessToken", ctx, token)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateAccessToken indicates an expected call of CreateAccessToken.
+func (mr *MockIAccessTokenRepoMockRecorder) CreateAccessToken(ctx, token any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAccessToken", reflect.TypeOf((*MockIAccessTokenRepo)(nil).CreateAccessToken), ctx, token)
+}
+
