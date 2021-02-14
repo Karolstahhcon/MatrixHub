@@ -16,12 +16,3 @@ package utils
 
 import (
 	"crypto/sha256"
-	"encoding/base64"
-	"errors"
-	"strings"
-
-	"golang.org/x/crypto/ssh"
-)
-
-// ParseFingerprint extracts a standard SHA256 fingerprint from either a raw
-// public key string or an already-formatted "SHA256:..." fingerprint string.
