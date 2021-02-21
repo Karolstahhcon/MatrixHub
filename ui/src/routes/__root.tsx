@@ -23,16 +23,3 @@ const TanStackDevtools = import.meta.env.DEV
                 render: <queryDevtools.ReactQueryDevtoolsPanel />,
               },
               {
-                name: 'TanStack Router',
-                render: <routerDevtools.TanStackRouterDevtoolsPanel />,
-              },
-              formDevtools.formDevtoolsPlugin(),
-            ]}
-          />
-        ),
-      })),
-    )
-  : () => null
-
-export const Route = createRootRouteWithContext<{
-  queryClient: QueryClient
