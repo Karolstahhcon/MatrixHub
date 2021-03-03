@@ -12,3 +12,17 @@ export interface ParameterCountBadgeProps extends Omit<BaseBadgeProps, 'icon' | 
 }
 
 export type ParameterCountBadgeFactory = PolymorphicFactory<{
+  props: ParameterCountBadgeProps
+  defaultComponent: 'div'
+  defaultRef: HTMLDivElement
+  stylesNames: 'root' | 'label'
+}>
+
+export const ParameterCountBadge = polymorphicFactory<ParameterCountBadgeFactory>((_props, ref) => {
+  const {
+    parameterCount,
+    ...badgeProps
+  } = useProps('ParameterCountBadge', {}, _props)
+
+  return (
+    <BaseBadge
