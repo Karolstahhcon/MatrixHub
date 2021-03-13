@@ -35,3 +35,78 @@ function CreateUserModal({
       confirmPassword: '',
       isAdmin: false,
     },
+    validators: {
+      onSubmit: createUserFormSchema(),
+    },
+    onSubmit: async ({ value }) => {
+      await mutation.mutateAsync({
+        username: value.username,
+        password: value.password,
+        isAdmin: value.isAdmin,
+      })
+      onClose()
+    },
+  })
+
+  return (
+    <ModalWrapper
+      size="xs"
+      opened={opened}
+      onClose={onClose}
+      title={t('routes.admin.users.createModal.title')}
+      confirmLoading={form.state.isSubmitting}
+      onConfirm={form.handleSubmit}
+    >
+
+      <Stack gap="lg">
+        <form.Field
+          name="username"
+        >
+          {field => (
+            <TextInput
+              required
+              autoComplete="username"
+              label={t('routes.admin.users.form.username')}
+              value={field.state.value}
+              onChange={event => field.handleChange(event.currentTarget.value)}
+              onBlur={field.handleBlur}
+              error={fieldError(field)}
+            />
+          )}
+        </form.Field>
+
+        <form.Field
+          name="password"
+        >
+          {field => (
+            <PasswordInput
+              required
+              autoComplete="new-password"
+              label={t('routes.admin.users.form.password')}
+              value={field.state.value}
+              onChange={event => field.handleChange(event.currentTarget.value)}
+              onBlur={field.handleBlur}
+              error={fieldError(field)}
+            />
+          )}
+        </form.Field>
+
+        <form.Field
+          name="confirmPassword"
+        >
+          {field => (
+            <PasswordInput
+              required
+              autoComplete="new-password"
+              label={t('routes.admin.users.form.confirmPassword')}
+              value={field.state.value}
+              onChange={event => field.handleChange(event.currentTarget.value)}
+              onBlur={field.handleBlur}
+              error={fieldError(field)}
+            />
+          )}
+        </form.Field>
+
+        <form.Field name="isAdmin">
+          {field => (
+            <Checkbox

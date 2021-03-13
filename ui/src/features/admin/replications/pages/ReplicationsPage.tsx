@@ -21,27 +21,3 @@ export function ReplicationsPage() {
   const {
     data,
     isLoading,
-    isFetching,
-  } = useReplications(search)
-  const replications = data?.replications ?? []
-  const pagination = data?.pagination
-
-  const refreshReplications = () => queryClient.invalidateQueries({
-    queryKey: adminReplicationKeys.lists(),
-  })
-
-  const {
-    onSearchChange,
-    onRefresh,
-    onPageChange,
-  } = useRouteListState({
-    search,
-    navigate,
-    records: replications,
-    getRecordId: getReplicationRowId,
-    refresh: refreshReplications,
-  })
-
-  return (
-    <ReplicationsTable
-      data={replications}
