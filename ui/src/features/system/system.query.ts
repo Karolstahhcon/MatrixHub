@@ -6,7 +6,3 @@ export const systemKeys = {
   config: () => [...systemKeys.all, 'config'] as const,
 }
 
-export function systemConfigQueryOptions() {
-  return queryOptions({
-    queryKey: systemKeys.config(),
-    queryFn: () => SystemService.GetSystemConfig({}),
