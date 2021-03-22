@@ -23,3 +23,28 @@ import (
 
 	datasetmocks "github.com/matrixhub-ai/matrixhub/internal/domain/dataset/mocks"
 	"github.com/matrixhub-ai/matrixhub/internal/domain/git"
+	gitmocks "github.com/matrixhub-ai/matrixhub/internal/domain/git/mocks"
+	modelmocks "github.com/matrixhub-ai/matrixhub/internal/domain/model/mocks"
+)
+
+func TestCleanupServicePreviewUsesDomainPorts(t *testing.T) {
+	ctx := context.Background()
+	ctrl := gomock.NewController(t)
+	modelRepo := modelmocks.NewMockIModelRepo(ctrl)
+	datasetRepo := datasetmocks.NewMockIDatasetRepo(ctrl)
+	gitRepo := gitmocks.NewMockIGitRepo(ctrl)
+
+	modelPaths := []string{"project/model"}
+	datasetPaths := []string{"project/dataset"}
+	orphanedRepos := []*git.OrphanedRepo{{Path: "orphan/model.git", SizeBytes: 10}}
+	orphanedLFS := []*git.OrphanedLFS{{OID: "12345678", SizeBytes: 20}}
+	modelRepo.EXPECT().ListAllPaths(ctx).Return(modelPaths, nil)
+	datasetRepo.EXPECT().ListAllPaths(ctx).Return(datasetPaths, nil)
+	gitRepo.EXPECT().FindOrphanedRepos(ctx, modelPaths, datasetPaths).Return(orphanedRepos, nil)
+	gitRepo.EXPECT().FindOrphanedLFS(ctx).Return(orphanedLFS, nil)
+
+	service := NewCleanupService(modelRepo, datasetRepo, gitRepo)
+
+	preview, err := service.PreviewCleanup(ctx, true, true)
+	require.NoError(t, err)
+	require.EqualValues(t, 30, preview.TotalReclaimable)
