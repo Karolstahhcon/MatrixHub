@@ -8,23 +8,3 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-package utils
-
-import (
-	"fmt"
-	"strings"
-	"time"
-)
-
-func FormatDuration(d time.Duration) string {
-	totalSeconds := int(d.Seconds())
-	days := totalSeconds / 86400
-	hours := (totalSeconds % 86400) / 3600
-	minutes := (totalSeconds % 3600) / 60
-
-	var res string
-	if days > 0 {

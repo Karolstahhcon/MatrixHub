@@ -58,33 +58,3 @@ func (r *syncJobDB) GetSyncJob(ctx context.Context, id int) (*syncjob.SyncJob, e
 
 // UpdateSyncJob updates a sync job
 func (r *syncJobDB) UpdateSyncJob(ctx context.Context, job *syncjob.SyncJob) error {
-	return r.db.WithContext(ctx).Save(job).Error
-}
-
-// DeleteSyncJob deletes a sync job by ID
-func (r *syncJobDB) DeleteSyncJob(ctx context.Context, id int) error {
-	return r.db.WithContext(ctx).Delete(&syncjob.SyncJob{}, id).Error
-}
-
-// ListSyncJobsByTaskID lists sync jobs by task ID with pagination and filtering
-func (r *syncJobDB) ListSyncJobsByTaskID(ctx context.Context, taskID int, page, pageSize int, status syncjob.SyncJobStatus, resourceType string) ([]*syncjob.SyncJob, int64, error) {
-	var jobs []*syncjob.SyncJob
-	var total int64
-
-	query := r.db.WithContext(ctx).Model(&syncjob.SyncJob{}).
-		Where("sync_task_id = ?", taskID)
-
-	if status > syncjob.SyncJobStatusUnspecified {
-		query = query.Where("status = ?", status)
-	}
-	if resourceType != "" {
-		query = query.Where("resource_type = ?", resourceType)
-	}
-
-	if err := query.Count(&total).Error; err != nil {
-		return nil, 0, err
-	}
-
-	offset := (page - 1) * pageSize
-	if err := query.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&jobs).Error; err != nil {
-		return nil, 0, err
