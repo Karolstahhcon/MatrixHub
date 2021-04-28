@@ -16,12 +16,3 @@ export interface CopyButtonProps {
 
 export function CopyButton({
   children,
-  timeout = 1000,
-  value,
-}: CopyButtonProps) {
-  const clipboard = useClipboard({
-    timeout,
-  })
-  const copy = () => clipboard.copy(value)
-
-  return (
