@@ -82,3 +82,31 @@ test('commit diffs follow the Hugging Face file size and file count limits', asy
       '-old',
       '+new',
       `+${'界'.repeat(40_000)}`,
+      '',
+    ].join('\n')
+
+    assert.ok(Buffer.byteLength(oversizedModifiedDiff) > 100_000)
+
+    const overLimitResult = renderCommitDiff(
+      oversizedModifiedDiff,
+      message,
+      linkText,
+    )
+
+    assert.equal(overLimitResult.hasTooManyFiles, false)
+    assert.equal(overLimitResult.html.includes(message), true)
+    assert.match(overLimitResult.html, /data-commit-raw-diff-link="0"/)
+    assert.match(overLimitResult.html, />See raw diff<\/a>/)
+    assert.match(overLimitResult.html, /d2h-lines-added">\+2<\/span>/)
+    assert.match(overLimitResult.html, /d2h-lines-deleted">-1<\/span>/)
+    assert.ok(overLimitResult.html.length < 10_000)
+
+    const changedLines = Array.from({ length: 9_000 }, (_, index) => String(index))
+    const changedLinesDiff = addedLinesDiff('many-lines.txt', changedLines)
+
+    assert.ok(Buffer.byteLength(changedLinesDiff) < 100_000)
+
+    const changedLinesResult = renderCommitDiff(
+      changedLinesDiff,
+      message,
+      linkText,
