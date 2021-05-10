@@ -235,3 +235,121 @@ func (c *APIClient) prepareRequest(
 	if err != nil {
 		return nil, err
 	}
+
+	// Adding Query Param
+	query := url.Query()
+	for k, v := range queryParams {
+		for _, iv := range v {
+			query.Add(k, iv)
+		}
+	}
+
+	// Encode the parameters.
+	url.RawQuery = query.Encode()
+
+	// Generate a new request
+	if body != nil {
+		localVarRequest, err = http.NewRequest(method, url.String(), body)
+	} else {
+		localVarRequest, err = http.NewRequest(method, url.String(), nil)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	// add header parameters, if any
+	if len(headerParams) > 0 {
+		headers := http.Header{}
+		for h, v := range headerParams {
+			headers.Set(h, v)
+		}
+		localVarRequest.Header = headers
+	}
+
+	// Override request host, if applicable
+	if c.cfg.Host != "" {
+		localVarRequest.Host = c.cfg.Host
+	}
+
+	// Add the user agent to the request.
+	localVarRequest.Header.Add("User-Agent", c.cfg.UserAgent)
+
+	if ctx != nil {
+		// add context to the request
+		localVarRequest = localVarRequest.WithContext(ctx)
+
+		// Walk through any authentication.
+
+		// OAuth2 authentication
+		if tok, ok := ctx.Value(ContextOAuth2).(oauth2.TokenSource); ok {
+			// We were able to grab an oauth2 token from the context
+			var latestToken *oauth2.Token
+			if latestToken, err = tok.Token(); err != nil {
+				return nil, err
+			}
+
+			latestToken.SetAuthHeader(localVarRequest)
+		}
+
+		// Basic HTTP Authentication
+		if auth, ok := ctx.Value(ContextBasicAuth).(BasicAuth); ok {
+			localVarRequest.SetBasicAuth(auth.UserName, auth.Password)
+		}
+
+		// AccessToken Authentication
+		if auth, ok := ctx.Value(ContextAccessToken).(string); ok {
+			localVarRequest.Header.Add("Authorization", "Bearer "+auth)
+		}
+	}
+
+	for header, value := range c.cfg.DefaultHeader {
+		localVarRequest.Header.Add(header, value)
+	}
+
+	return localVarRequest, nil
+}
+
+func (c *APIClient) decode(v interface{}, b []byte, contentType string) (err error) {
+		if strings.Contains(contentType, "application/xml") {
+			if err = xml.Unmarshal(b, v); err != nil {
+				return err
+			}
+			return nil
+		} else if strings.Contains(contentType, "application/json") {
+			if err = json.Unmarshal(b, v); err != nil {
+				return err
+			}
+			return nil
+		}
+	return errors.New("undefined response type")
+}
+
+// Add a file to the multipart request
+func addFile(w *multipart.Writer, fieldName, path string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	part, err := w.CreateFormFile(fieldName, filepath.Base(path))
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(part, file)
+
+	return err
+}
+
+// Prevent trying to import "fmt"
+func reportError(format string, a ...interface{}) error {
+	return fmt.Errorf(format, a...)
+}
+
+// Set request body from an interface{}
+func setBody(body interface{}, contentType string) (bodyBuf *bytes.Buffer, err error) {
+	if bodyBuf == nil {
+		bodyBuf = &bytes.Buffer{}
+	}
+
+	if reader, ok := body.(io.Reader); ok {

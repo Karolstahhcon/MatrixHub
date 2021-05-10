@@ -3,3 +3,9 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { getRouteApi } from '@tanstack/react-router'
 
 import { modelCommitQueryOptions } from '@/features/models/models.query'
+import { CommitDetail } from '@/shared/components/commit-detail/CommitDetail.tsx'
+
+const { useParams } = getRouteApi('/(auth)/(app)/projects_/$projectId/models/$modelId/commit/$commitId/')
+
+export function ModelCommitDetailPage() {
+  const {
