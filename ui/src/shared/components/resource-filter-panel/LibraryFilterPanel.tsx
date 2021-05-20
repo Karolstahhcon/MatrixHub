@@ -13,18 +13,3 @@ interface LibraryFilterPanelProps {
   onSelect: (name: string) => void
 }
 
-export function LibraryFilterPanel({
-  options,
-  loading,
-  searchPlaceholder = '',
-  selectedNames,
-  onSelect,
-}: LibraryFilterPanelProps) {
-  return (
-    <BaseFilterPanel
-      searchPlaceholder={searchPlaceholder}
-      loading={loading}
-    >
-      {({ keyword }) => {
-        const filteredOptions = filterByKeyword(options, keyword)
-

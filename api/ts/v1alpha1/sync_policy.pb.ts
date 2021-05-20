@@ -171,3 +171,61 @@ export type SyncTask = {
   totalItems?: string
   successfulItems?: string
   stoppedItems?: string
+  failedItems?: string
+}
+
+export type ListSyncTasksRequest = {
+  syncPolicyId?: number
+  page?: number
+  pageSize?: number
+  status?: SyncTaskStatus
+}
+
+export type ListSyncTasksResponse = {
+  syncTasks?: SyncTask[]
+  pagination?: MatrixhubV1alpha1Utils.Pagination
+}
+
+export type StopSyncTaskRequest = {
+  syncPolicyId?: number
+  syncTaskId?: number
+}
+
+export type StopSyncTaskResponse = {
+  syncTask?: SyncTask
+}
+
+export type SyncJob = {
+  id?: number
+  syncTaskId?: number
+  resourceType?: ResourceType
+  resourceName?: string
+  targetResourceName?: string
+  action?: string
+  status?: SyncJobStatus
+  completedTimestamp?: string
+  createdTimestamp?: string
+}
+
+export type ListSyncJobsRequest = {
+  syncPolicyId?: number
+  syncTaskId?: number
+  page?: number
+  pageSize?: number
+  status?: SyncJobStatus
+  resourceType?: ResourceType
+}
+
+export type ListSyncJobsResponse = {
+  syncJobs?: SyncJob[]
+  pagination?: MatrixhubV1alpha1Utils.Pagination
+}
+
+export type GetSyncJobLogRequest = {
+  syncPolicyId?: number
+  syncTaskId?: number
+  syncJobId?: number
+}
+
+export type GetSyncJobLogResponse = {
+  log?: string
