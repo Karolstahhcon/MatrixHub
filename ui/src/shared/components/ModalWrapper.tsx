@@ -25,30 +25,3 @@ export type ModalWrapperProps = Omit<ModalProps, 'title'> & {
 }
 
 export function ModalWrapper({
-  type,
-  title,
-  children,
-  footer,
-  confirmLoading,
-  onConfirm,
-  ...rest
-}: ModalWrapperProps) {
-  const { t } = useTranslation()
-  const icon = type ? modalTypeIcons[type] : null
-
-  const header = (
-    <Group gap="xs">
-      { icon }
-      <Text fw={600} fz="md">
-        {title}
-      </Text>
-    </Group>
-  )
-
-  const defaultFooter = (
-    <Group justify="flex-end" gap="md">
-      <Button
-        color="default"
-        variant="subtle"
-        fw={400}
-        onClick={rest.onClose}
