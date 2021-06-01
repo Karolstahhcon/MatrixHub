@@ -23,28 +23,3 @@ import (
 
 	"github.com/matrixhub-ai/matrixhub/internal/apiserver/middleware/authenticator"
 	"github.com/matrixhub-ai/matrixhub/internal/domain/robot"
-	"github.com/matrixhub-ai/matrixhub/internal/domain/user"
-	"github.com/matrixhub-ai/matrixhub/internal/infra/authcodec"
-)
-
-func GitHTTPAuthn(akRepo user.IAccessTokenRepo, userRepo user.IUserRepo, robotRepo robot.IRobotRepo) authenticate.TokenValidatorFunc {
-	return func(ctx context.Context, token string) (user string, next, ok bool, err error) {
-		auth := authenticator.NewGitAuthenticator(akRepo, userRepo, robotRepo)
-		_, identity, next, ok, err := auth.AuthenticateToken(ctx, "", token)
-		if err != nil || !ok {
-			return "", next, false, err
-		}
-		id, err := authcodec.Marshal(identity)
-		if err != nil {
-			return "", false, false, err
-		}
-		return id, false, true, nil
-	}
-}
-
-func GitBasicAuthAuthn(akRepo user.IAccessTokenRepo, userRepo user.IUserRepo, robotRepo robot.IRobotRepo) authenticate.BasicAuthValidatorFunc {
-	return func(ctx context.Context, username, password string) (user string, next, ok bool, err error) {
-		auth := authenticator.NewGitAuthenticator(akRepo, userRepo, robotRepo)
-		_, identity, next, ok, err := auth.AuthenticateToken(ctx, username, password)
-		if err != nil || !ok {
-			return "", next, false, err
