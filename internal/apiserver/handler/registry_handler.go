@@ -108,3 +108,58 @@ func (rh *RegistryHandler) CreateRegistry(ctx context.Context, request *registry
 	created, err := rh.registryRepo.CreateRegistry(ctx, domainRegistry)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	return &registryv1alpha1.CreateRegistryResponse{
+		Registry: convertDomainRegistryToAPIRegistry(created),
+	}, nil
+}
+
+func (rh *RegistryHandler) UpdateRegistry(ctx context.Context, request *registryv1alpha1.UpdateRegistryRequest) (*registryv1alpha1.UpdateRegistryResponse, error) {
+	if err := request.ValidateAll(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	if strings.TrimSpace(request.Name) == "" || strings.TrimSpace(request.Url) == "" {
+		return nil, status.Error(codes.InvalidArgument, "name and url are required for a registry update")
+	}
+
+	domainRegistry := registry.Registry{
+		ID:          int(request.Id),
+		Name:        request.Name,
+		Description: request.Description,
+		URL:         request.Url,
+		Insecure:    request.Insecure,
+	}
+	if b := request.GetBasic(); b != nil {
+		domainRegistry.SetCredential(registry.NewBasicCredential(b.Username, b.Password))
+	}
+	if err := rh.registryRepo.UpdateRegistry(ctx, domainRegistry); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	updated, err := rh.registryRepo.GetRegistry(ctx, int(request.Id))
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return &registryv1alpha1.UpdateRegistryResponse{
+		Registry: convertDomainRegistryToAPIRegistry(updated),
+	}, nil
+}
+
+func (rh *RegistryHandler) DeleteRegistry(ctx context.Context, request *registryv1alpha1.DeleteRegistryRequest) (*registryv1alpha1.DeleteRegistryResponse, error) {
+	if err := request.ValidateAll(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	if err := rh.registryRepo.DeleteRegistry(ctx, int(request.Id)); err != nil {
+		if errors.Is(err, registry.ErrInUse) {
+			return nil, status.Error(codes.FailedPrecondition, "registry is still referenced by a project or sync policy")
+		}
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	return &registryv1alpha1.DeleteRegistryResponse{}, nil
+}
+
+func (rh *RegistryHandler) PingRegistry(ctx context.Context, request *registryv1alpha1.PingRegistryRequest) (*registryv1alpha1.PingRegistryResponse, error) {
+	if err := request.ValidateAll(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
