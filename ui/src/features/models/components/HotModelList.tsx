@@ -31,3 +31,37 @@ export function HotModelList() {
     ...search,
     page: 1,
     pageSize: -1,
+    popular: true,
+  }))
+
+  const cardElements = items.map((model) => {
+    const projectId = model.project?.trim() ?? '-'
+    const modelName = model.name?.trim() ?? '-'
+
+    return <ModelCard key={`${projectId}/${modelName}`} model={model} />
+  })
+
+  return (
+    <Box>
+      <Group justify="space-between">
+        <Text fz="md" fw={600} lh="20px" mb="sm">
+          {t('model.list.recommend') }
+        </Text>
+        {cardElements.length > 4 && (
+          <UnstyledButton onClick={toggle}>
+            <Group gap={8}>
+              <Text fz="sm" c="gray.5">
+                {opened ? t('model.list.collapse') : t('model.list.viewMore')}
+              </Text>
+              <IconChevronDown
+                size={16}
+                color="var(--mantine-color-gray-5)"
+                style={{
+                  transform: opened ? 'rotate(180deg)' : 'rotate(0deg)',
+                }}
+              />
+            </Group>
+          </UnstyledButton>
+        )}
+      </Group>
+
