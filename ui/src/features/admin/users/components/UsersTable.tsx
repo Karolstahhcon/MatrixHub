@@ -41,3 +41,46 @@ function UserAdminCell({ row }: UserCellProps) {
     </Badge>
   )
 }
+
+function UserSourceCell({ row }: UserCellProps) {
+  const { t } = useTranslation()
+
+  if (row.original.source === UserSource.USER_SOURCE_LOCAL) {
+    return <Text size="sm">{t('routes.admin.users.source.local')}</Text>
+  }
+
+  return <Text size="sm">-</Text>
+}
+
+function UserActionsCell({
+  row,
+}: DataTableRowActionsProps<User>) {
+  const actionDisabled = row.original.id == null
+
+  return (
+    <Group gap={4} wrap="nowrap">
+      <ToggleUserAdminAction
+        user={row.original}
+        disabled={actionDisabled}
+      />
+      <ResetUserPasswordAction
+        user={row.original}
+        disabled={actionDisabled}
+      />
+      <DeleteUserAction
+        user={row.original}
+        disabled={actionDisabled}
+      />
+    </Group>
+  )
+}
+
+export function UsersTable({
+  tableOptions,
+  ...props
+}: UsersTableProps) {
+  const { t } = useTranslation()
+
+  const columns = useMemo<MRT_ColumnDef<User>[]>(() => [
+    {
+      id: 'username',
