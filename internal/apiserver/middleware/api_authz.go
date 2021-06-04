@@ -21,3 +21,27 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/matrixhub-ai/matrixhub/internal/domain/auth"
+	"github.com/matrixhub-ai/matrixhub/internal/domain/role"
+)
+
+// methodPermissions maps GRPC methods to required permissions
+var methodPermissions = map[string]role.Permission{
+	// User management
+	"/matrixhub.v1alpha1.Users/GetUser":           role.UserGet,
+	"/matrixhub.v1alpha1.Users/CreateUser":        role.UserCreate,
+	"/matrixhub.v1alpha1.Users/SetUserSysAdmin":   role.UserAuthorize,
+	"/matrixhub.v1alpha1.Users/DeleteUser":        role.UserDelete,
+	"/matrixhub.v1alpha1.Users/ResetUserPassword": role.UserResetPassword,
+
+	// Registry management
+	"/matrixhub.v1alpha1.Registries/ListRegistries": role.RegistryGet,
+	"/matrixhub.v1alpha1.Registries/GetRegistry":    role.RegistryGet,
+	"/matrixhub.v1alpha1.Registries/PingRegistry":   role.RegistryGet,
+	"/matrixhub.v1alpha1.Registries/CreateRegistry": role.RegistryCreate,
+	"/matrixhub.v1alpha1.Registries/UpdateRegistry": role.RegistryUpdate,
+	"/matrixhub.v1alpha1.Registries/DeleteRegistry": role.RegistryDelete,
+
+	// Sync policy management
+	"/matrixhub.v1alpha1.SyncPolicy/ListSyncPolicies": role.SyncGet,
+	"/matrixhub.v1alpha1.SyncPolicy/GetSyncPolicy":    role.SyncGet,

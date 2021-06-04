@@ -50,3 +50,56 @@ const StatusCell = ({ row }: { row: MRT_Row<AccessToken> }) => {
   )
 }
 
+const ActionCell = ({
+  row, table,
+}: DataTableRowActionsProps<AccessToken>) => {
+  const { t } = useTranslation()
+
+  const handleDeleteOpen = (
+    table.options.meta as { handleDeleteOpen?: (token: AccessToken) => void } | undefined
+  )?.handleDeleteOpen
+
+  return (
+    <Anchor
+      component="button"
+      size="sm"
+      c="red"
+      onClick={() => handleDeleteOpen?.(row.original)}
+    >
+      {t('profile.deleteToken')}
+    </Anchor>
+  )
+}
+
+export function AccessTokenTable({
+  tokens, fetching, onRefresh, toolbarExtra,
+}: AccessTokenTableProps) {
+  const { t } = useTranslation()
+  const [deleteOpened, {
+    open: openDelete, close: closeDelete,
+  }] = useDisclosure(false)
+  const [deletingToken, setDeletingToken] = useState<AccessToken | null>(null)
+
+  const {
+    mutate: deleteToken, isPending: isDeleting,
+  } = useMutation({
+    mutationFn: () => CurrentUser.DeleteAccessToken({ id: deletingToken?.id }),
+    meta: {
+      successMessage: t('profile.tokenDeleted'),
+      invalidates: [profileKeys.accessTokens],
+    },
+    onSuccess: () => {
+      closeDelete()
+      setDeletingToken(null)
+    },
+  })
+
+  const handleDeleteOpen = (token: AccessToken) => {
+    setDeletingToken(token)
+    openDelete()
+  }
+
+  const handleDeleteClose = () => {
+    closeDelete()
+    setDeletingToken(null)
+  }

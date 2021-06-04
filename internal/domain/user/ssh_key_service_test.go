@@ -25,3 +25,30 @@ import (
 
 	"github.com/matrixhub-ai/matrixhub/internal/domain/user"
 	usermocks "github.com/matrixhub-ai/matrixhub/internal/domain/user/mocks"
+)
+
+func TestSSHKeyServiceCreateSSHKey(t *testing.T) {
+	ctx := context.Background()
+	key := user.SSHKey{Name: "laptop", Fingerprint: "SHA256:test"}
+
+	t.Run("creates a new key", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		repo := usermocks.NewMockISSHKeyRepo(ctrl)
+		repo.EXPECT().GetByFingerprint(ctx, key.Fingerprint).Return(&user.SSHKey{}, nil)
+		repo.EXPECT().CreateSSHKey(ctx, key).Return(nil)
+
+		require.NoError(t, user.NewSSHKeyService(repo).CreateSSHKey(ctx, key))
+	})
+
+	t.Run("rejects an active duplicate", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		repo := usermocks.NewMockISSHKeyRepo(ctrl)
+		repo.EXPECT().GetByFingerprint(ctx, key.Fingerprint).Return(&user.SSHKey{Id: 1}, nil)
+
+		err := user.NewSSHKeyService(repo).CreateSSHKey(ctx, key)
+		require.ErrorIs(t, err, user.ErrSSHKeyAlreadyExists)
+	})
+
+	t.Run("rejects an expired duplicate", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		repo := usermocks.NewMockISSHKeyRepo(ctrl)
