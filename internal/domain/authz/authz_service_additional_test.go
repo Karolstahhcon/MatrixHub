@@ -42,3 +42,91 @@ func (s *authzRepoStub) GetUserProjectPermissions(ctx context.Context, userID, p
 func (s *authzRepoStub) GetUserPlatformPermissions(ctx context.Context, userID int) ([]role.Permission, error) {
 	return s.userPlatform(ctx, userID)
 }
+func (s *authzRepoStub) GetUserAccessibleProjectIDs(ctx context.Context, userID int) ([]int, error) {
+	return s.accessible(ctx, userID)
+}
+func (s *authzRepoStub) GetRobotProjectPermissions(ctx context.Context, robotID, projectID int) ([]role.Permission, error) {
+	return s.robotProject(ctx, robotID, projectID)
+}
+
+type completeProjectRepoStub struct {
+	project.IProjectRepo
+	byName func(context.Context, string) (*project.Project, error)
+	byID   func(context.Context, int) (*project.Project, error)
+}
+
+func (s *completeProjectRepoStub) GetProjectByName(ctx context.Context, name string) (*project.Project, error) {
+	return s.byName(ctx, name)
+}
+func (s *completeProjectRepoStub) GetProjectByID(ctx context.Context, id int) (*project.Project, error) {
+	return s.byID(ctx, id)
+}
+
+type robotRepoStub struct {
+	robot.IRobotRepo
+	get func(context.Context, int) (*robot.Robot, error)
+}
+
+func (s *robotRepoStub) GetRobot(ctx context.Context, id int) (*robot.Robot, error) {
+	return s.get(ctx, id)
+}
+
+type unknownIdentity struct{}
+
+func (unknownIdentity) GetID() int       { return 1 }
+func (unknownIdentity) GetName() string  { return "unknown" }
+func (unknownIdentity) TypeName() string { return "unknown" }
+
+func TestAuthzServiceUserPermissions(t *testing.T) {
+	repo := &authzRepoStub{
+		userPlatform: func(_ context.Context, userID int) ([]role.Permission, error) {
+			require.Equal(t, 7, userID)
+			return []role.Permission{role.UserGet}, nil
+		},
+		userProject: func(_ context.Context, userID, projectID int) ([]role.Permission, error) {
+			require.Equal(t, 7, userID)
+			require.Equal(t, 9, projectID)
+			return []role.Permission{role.ModelPull}, nil
+		},
+		accessible: func(_ context.Context, userID int) ([]int, error) {
+			require.Equal(t, 7, userID)
+			return []int{9, 10}, nil
+		},
+	}
+	service := authz.NewAuthzService(repo, nil, nil)
+	permissions, err := service.GetUserPermissions(context.Background(), 7, 9)
+	require.NoError(t, err)
+	require.Equal(t, []role.Permission{role.UserGet, role.ModelPull}, permissions)
+	projectIDs, err := service.GetUserAccessibleProjectIDs(context.Background(), 7)
+	require.NoError(t, err)
+	require.Equal(t, []int{9, 10}, projectIDs)
+}
+
+func TestAuthzServiceVerifyPlatformPermission(t *testing.T) {
+	repo := &authzRepoStub{userPlatform: func(context.Context, int) ([]role.Permission, error) {
+		return []role.Permission{"user.*"}, nil
+	}}
+	service := authz.NewAuthzService(repo, nil, nil)
+
+	allowed, err := service.VerifyPlatformPermission(context.Background(), role.UserDelete)
+	require.NoError(t, err)
+	require.False(t, allowed)
+
+	ctx := auth.WithIdentity(context.Background(), user.NewUserIdentity(1, "alice"))
+	allowed, err = service.VerifyPlatformPermission(ctx, role.UserDelete)
+	require.NoError(t, err)
+	require.True(t, allowed)
+
+	ctx = auth.WithIdentity(context.Background(), unknownIdentity{})
+	allowed, err = service.VerifyPlatformPermission(ctx, role.UserDelete)
+	require.ErrorContains(t, err, "unknown identity")
+	require.False(t, allowed)
+}
+
+func TestAuthzServiceRobotPermissions(t *testing.T) {
+	repo := &authzRepoStub{robotProject: func(_ context.Context, robotID, projectID int) ([]role.Permission, error) {
+		require.Equal(t, 3, robotID)
+		require.Equal(t, 11, projectID)
+		return []role.Permission{role.DatasetPush}, nil
+	}}
+	robots := &robotRepoStub{get: func(_ context.Context, id int) (*robot.Robot, error) {
