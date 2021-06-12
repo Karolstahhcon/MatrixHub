@@ -157,3 +157,82 @@ export default function Home(): React.ReactElement {
                     values={{
                       br: <br className="hidden sm:block" />,
                       hub: <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-600 animate-glow inline-block">Hub</span>
+                    }}>
+                    {'The Open Source {br}{hub} for AI Models'}
+                  </Translate>
+                </h1>
+                <p className="text-base sm:text-lg text-slate-400 mb-8 max-w-xl mx-auto lg:mx-0 leading-relaxed animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+                  <Translate 
+                    id="homepage.hero.subtitle"
+                    values={{
+                      hf: <span className="text-white">Hugging Face</span>,
+                      vllm: <span className="text-white">vLLM</span>,
+                      sglang: <span className="text-white">SGLang</span>
+                    }}>
+                    {'MatrixHub is an open-source, self-hosted AI model registry engineered for large-scale enterprise inference. It serves as a drop-in private replacement for {hf}, purpose-built to accelerate {vllm} and {sglang} workloads.'}
+                  </Translate>
+                </p>
+
+                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+                  <Link
+                    to="/docs/getting-started"
+                    className="homepage-quick-start px-6 sm:px-8 py-3 sm:py-4 bg-green-600 hover:bg-green-500 rounded-lg font-bold text-base sm:text-lg transition-all shadow-[0_0_20px_rgba(22,163,74,0.4)] hover:shadow-[0_0_30px_rgba(22,163,74,0.6)] flex items-center justify-center gap-2 hover:no-underline hover:scale-105 transform"
+                  >
+                    <Translate id="homepage.hero.quickStart">Quick Start</Translate> <ArrowRight size={20} />
+                  </Link>
+                  <a
+                    href="https://github.com/matrixhub-ai/matrixhub"
+                    className="px-6 sm:px-8 py-3 sm:py-4 bg-[#161b22] hover:bg-[#21262d] text-white border border-slate-700 rounded-lg font-bold text-base sm:text-lg transition-all flex items-center justify-center gap-2 hover:text-white hover:no-underline hover:border-slate-600"
+                  >
+                    <Code size={20} /> <Translate id="homepage.hero.github">View on GitHub</Translate>
+                  </a>
+                </div>
+              </div>
+
+              {/* Right: Terminal / Visual */}
+              <div className="relative group mt-8 lg:mt-0 animate-fade-in-right" style={{ animationDelay: '0.4s' }}>
+                <div className="absolute -inset-1 bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
+                <div className="relative rounded-xl bg-[#0d1117] border border-slate-700 shadow-2xl overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-3 bg-[#161b22] border-b border-slate-800">
+                    <div className="w-3 h-3 rounded-full bg-red-500 hover:bg-red-400 transition-colors cursor-pointer"></div>
+                    <div className="w-3 h-3 rounded-full bg-yellow-500 hover:bg-yellow-400 transition-colors cursor-pointer"></div>
+                    <div className="w-3 h-3 rounded-full bg-green-500 hover:bg-green-400 transition-colors cursor-pointer"></div>
+                    <span className="ml-2 text-xs text-slate-500 font-mono">matrixhub-ai/matrixhub</span>
+                  </div>
+                  <div className="p-4 sm:p-6 font-mono text-xs sm:text-sm overflow-hidden min-h-[240px]">
+                    {terminalLines.includes(0) && (
+                      <div className="flex items-start text-slate-400 mb-2 animate-fade-in-left">
+                        <span className="text-green-500 mr-2 flex-shrink-0">➜</span>
+                        <span className="break-all">~ export HF_ENDPOINT=https://hub.matrix.internal</span>
+                      </div>
+                    )}
+                    {terminalLines.includes(1) && (
+                      <div className="flex items-start text-slate-400 mb-2 animate-fade-in-left">
+                        <span className="text-green-500 mr-2 flex-shrink-0">➜</span>
+                        <span className="break-all">~ vllm serve "deepseek-ai/deepseek-coder-33b"</span>
+                      </div>
+                    )}
+                    {terminalLines.includes(2) && (
+                      <div className="mt-4 text-slate-300 space-y-1">
+                        {terminalLines.includes(3) && (
+                          <div className="animate-fade-in-left"><span className="text-blue-400">INFO</span>: Connected to MatrixHub Proxy</div>
+                        )}
+                        {terminalLines.includes(4) && (
+                          <div className="animate-fade-in-left"><span className="text-blue-400">INFO</span>: Cache HIT for layer 1 (sha256:a1b2...)</div>
+                        )}
+                        {terminalLines.includes(5) && (
+                          <div className="animate-fade-in-left"><span className="text-blue-400">INFO</span>: Cache HIT for layer 2 (sha256:c3d4...)</div>
+                        )}
+                        {terminalLines.includes(6) && (
+                          <div className="animate-fade-in-left"><span className="text-green-400">SUCCESS</span>: Model loaded in 2.4s (via LAN)</div>
+                        )}
+                      </div>
+                    )}
+                    <div className="mt-4 flex items-center gap-2">
+                       <span className="text-green-500 animate-pulse">➜</span>
+                       <span className="w-2 h-5 bg-slate-500 terminal-cursor"></span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Float Card - Hidden on mobile */}

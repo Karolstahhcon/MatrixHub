@@ -133,3 +133,70 @@ func (b *processor) Trigger(id int) bool {
 	case b.triggerCh <- id:
 		return true
 	default:
+		log.Warnw("jobserver: trigger queue full; periodic polling will recover work", "processor", b.processor, "id", id)
+		return false
+	}
+}
+
+// String returns the string representation.
+func (p Processor) String() string { return string(p) }
+
+// Start launches the poll loop in a background goroutine (non-blocking).
+func (b *processor) Start(ctx context.Context) {
+	b.done = make(chan struct{})
+	go func() {
+		defer close(b.done)
+		defer func() {
+			if r := recover(); r != nil {
+				log.Errorw("jobserver: processor loop panic recovered", "processor", b.processor, "recover", r)
+			}
+		}()
+		b.runLoop(ctx)
+	}()
+}
+
+// Wait blocks until the poll loop exits and all in-flight executions finish.
+func (b *processor) Wait() {
+	<-b.done
+	b.wg.Wait()
+}
+
+func (b *processor) runLoop(ctx context.Context) {
+	log.Infow("jobserver: processor loop start", "processor", b.processor, "pollInterval", b.interval)
+	b.pollOnce(ctx)
+	tick := time.NewTicker(b.interval)
+	defer tick.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-tick.C:
+			b.pollOnce(ctx)
+		case id := <-b.triggerCh:
+			log.Debugw("jobserver: processing triggered work", "processor", b.processor, "id", id)
+			b.triggerOne(ctx, id)
+		}
+	}
+}
+
+func (b *processor) triggerOne(ctx context.Context, id int) {
+	if b.claimOne == nil {
+		b.pollOnce(ctx)
+		return
+	}
+	d, claimed, err := b.claimOne(ctx, id)
+	if err != nil {
+		log.Errorw("jobserver: claim triggered work failed", "processor", b.processor, "id", id, "error", err)
+		return
+	}
+	if claimed {
+		b.runDue(ctx, d)
+	}
+}
+
+func (b *processor) pollOnce(ctx context.Context) {
+	nowMs := time.Now().UnixMilli()
+	dues, err := b.pollDueFn(ctx, nowMs)
+	if err != nil {
+		log.Errorw("jobserver: poll due jobs failed", "processor", b.processor, "error", err)
+		return
