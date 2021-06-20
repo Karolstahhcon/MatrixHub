@@ -20,3 +20,14 @@ import (
 
 	"google.golang.org/grpc/metadata"
 
+	"github.com/matrixhub-ai/matrixhub/internal/domain/user"
+)
+
+func GetCookieFromContext(ctx context.Context) (token string) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return
+	}
+	cookieHeader := firstMD(md, "grpcgateway-cookie", "cookie")
+	if cookieHeader == "" {
+		return
