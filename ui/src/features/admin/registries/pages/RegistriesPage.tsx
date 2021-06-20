@@ -9,15 +9,3 @@ import {
   adminRegistryKeys,
   useRegistries,
 } from '../registries.query'
-import { DEFAULT_REGISTRIES_PAGE } from '../registries.schema'
-import { getRegistryRowId } from '../registries.utils'
-
-const registriesRouteApi = getRouteApi('/(auth)/admin/registries')
-
-export function RegistriesPage() {
-  const queryClient = useQueryClient()
-  const navigate = registriesRouteApi.useNavigate()
-  const search = registriesRouteApi.useSearch()
-  const {
-    data,
-    isLoading,
