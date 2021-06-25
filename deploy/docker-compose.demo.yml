@@ -2,3 +2,7 @@
 # repository's default Docker Compose deployment remains SQLite-backed.
 # Run with:
 #   docker compose -f docker-compose.mysql.yml -f docker-compose.demo.yml --profile prod up -d
+services:
+  nginx:
+    profiles: [prod]
+    image: docker.io/library/nginx:1.29.4
