@@ -52,3 +52,57 @@ export function AddMemberModal({
     },
   })
 
+  const memberTypeOptions = [
+    {
+      value: MemberType.MEMBER_TYPE_USER,
+      label: t('projects.detail.membersPage.memberType.user'),
+    },
+    {
+      value: MemberType.MEMBER_TYPE_GROUP,
+      disabled: true, // Group member type is not supported yet
+      label: t('projects.detail.membersPage.memberType.group'),
+    },
+  ]
+
+  const memberType = useStore(form.store, s => s.values.memberType)
+
+  const roleOptions = useProjectRoleOptions()
+  const roleDescription = useProjectRoleDescription()
+
+  const { data: usersData } = useQuery({
+    queryKey: ['users', 'list'],
+    queryFn: () => Users.ListUsers({
+      page: 1,
+      pageSize: -1,
+    }),
+    enabled: opened && memberType === MemberType.MEMBER_TYPE_USER,
+  })
+
+  const userOptions = (usersData?.users ?? []).map(u => ({
+    value: String(u.id ?? ''),
+    label: u.username ?? '',
+  }))
+
+  const handleClose = () => {
+    form.reset()
+    onClose()
+  }
+
+  const canSubmit = useStore(form.store, s => s.canSubmit && !s.isSubmitting)
+  const isSubmitting = useStore(form.store, s => s.isSubmitting)
+
+  const handleConfirm = () => {
+    void form.handleSubmit()
+  }
+
+  return (
+    <ModalWrapper
+      opened={opened}
+      onClose={handleClose}
+      title={t('projects.detail.membersPage.addMemberModal.title')}
+      confirmLoading={isSubmitting}
+      onConfirm={canSubmit ? handleConfirm : undefined}
+    >
+      <Stack gap="md">
+        <form.Field
+          name="memberType"
