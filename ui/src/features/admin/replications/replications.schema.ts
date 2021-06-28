@@ -51,3 +51,29 @@ export function replicationCronExpressionSchema() {
     .min(1, t('routes.admin.replications.validation.cronRequired'))
     .refine(
       value => isFiveFieldCronExpression(value),
+      t('routes.admin.replications.validation.cronInvalid'),
+    )
+}
+
+function replicationFormBaseSchema() {
+  return z.object({
+    name: withNameValidCharsRule(withNameStartCharRule(z
+      .string()
+      .trim()
+      .min(2))),
+    description: z.string().trim().max(DESCRIPTION_MAX_LENGTH),
+    policyType: z.union([
+      z.literal(SyncPolicyType.SYNC_POLICY_TYPE_PULL_BASE),
+      z.literal(SyncPolicyType.SYNC_POLICY_TYPE_PUSH_BASE),
+    ]),
+    triggerType: z.enum(replicationTriggerTypeValues),
+    cronExpression: z.string().trim(),
+    bandwidth: z.string().trim().optional(),
+    bandwidthUnit: z.enum(replicationBandwidthUnitValues),
+    isOverwrite: z.boolean(),
+    // Phase 1 backend contract only requires resourceName to be present.
+    // Keep validation limited to "required" for now and defer pattern checks.
+    resourceName: z.string().trim().min(1, t('routes.admin.replications.validation.resourceNameRequired')),
+    resourceTypes: z.array(z.enum(replicationResourceTypeValues)),
+    sourceRegistryId: z.number(),
+    targetProjectName: z.string().trim().optional(),
