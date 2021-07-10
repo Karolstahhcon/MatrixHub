@@ -31,3 +31,14 @@ func GetCookieFromContext(ctx context.Context) (token string) {
 	cookieHeader := firstMD(md, "grpcgateway-cookie", "cookie")
 	if cookieHeader == "" {
 		return
+	}
+
+	return extractSessionToken(cookieHeader, user.CookieName)
+}
+
+func extractSessionToken(cookieHeader, name string) string {
+	h := http.Header{}
+	h.Add("Cookie", cookieHeader)
+	c, err := (&http.Request{Header: h}).Cookie(name)
+	if err != nil {
+		return ""
