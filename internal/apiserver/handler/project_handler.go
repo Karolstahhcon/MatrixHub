@@ -114,3 +114,235 @@ func (h *ProjectHandler) GetProject(ctx context.Context, req *projectv1alpha1.Ge
 	}
 
 	return resp, nil
+}
+
+func (h *ProjectHandler) ListProjects(ctx context.Context, req *projectv1alpha1.ListProjectsRequest) (*projectv1alpha1.ListProjectsResponse, error) {
+	if err := req.ValidateAll(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	identity, ok := auth.IdentityFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, codes.Unauthenticated.String())
+	}
+
+	switch identity.(type) {
+	case *user.Identity:
+		return h.listProjectsForUser(ctx, req)
+	case *robot.Identity:
+		return nil, status.Error(codes.Unimplemented, "list projects for robot is not implemented yet")
+	default:
+		return nil, status.Error(codes.Unauthenticated, codes.Unauthenticated.String())
+	}
+}
+
+func (h *ProjectHandler) listProjectsForUser(ctx context.Context, req *projectv1alpha1.ListProjectsRequest) (*projectv1alpha1.ListProjectsResponse, error) {
+	page := utils.NewPage(req.Page, req.PageSize)
+
+	permFilter := convertProtoPermissionFilterToDomain(req.GetPermissionFilter())
+
+	hasPlatformPermission, err := h.hasPlatformPermissionForFilter(ctx, permFilter)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	projects, total, err := h.projectRepo.ListProjects(
+		ctx,
+		req.GetName(),
+		convertProtoTypeToDomain(req.GetType()),
+		permFilter,
+		hasPlatformPermission,
+		int(page.Page),
+		int(page.PageSize),
+	)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &projectv1alpha1.ListProjectsResponse{
+		Projects: lo.Map(projects, func(p *project.Project, _ int) *projectv1alpha1.Project {
+			return &projectv1alpha1.Project{
+				Name:            p.Name,
+				Type:            convertDomainTypeToProto(p.Type),
+				EnabledRegistry: p.HasProxy(),
+				ModelCount:      uint32(p.ModelCount),
+				DatasetCount:    uint32(p.DatasetCount),
+				UpdatedAt:       timestamppb.New(p.UpdatedAt),
+			}
+		}),
+		Pagination: &projectv1alpha1.Pagination{
+			Total:    int32(total),
+			Page:     req.GetPage(),
+			PageSize: req.GetPageSize(),
+			Pages:    utils.CalculatePages(total, req.GetPageSize()),
+		},
+	}, nil
+}
+
+func (h *ProjectHandler) hasPlatformPermissionForFilter(ctx context.Context, permFilter project.PermissionFilter) (bool, error) {
+	for _, perm := range project.PermissionsForFilter(permFilter) {
+		allowed, err := h.authzService.VerifyPlatformPermission(ctx, perm)
+		if err != nil {
+			return false, err
+		}
+		if allowed {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func (h *ProjectHandler) UpdateProject(ctx context.Context, req *projectv1alpha1.UpdateProjectRequest) (*projectv1alpha1.UpdateProjectResponse, error) {
+	if err := req.ValidateAll(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	p, err := h.projectRepo.GetProjectByName(ctx, req.GetName())
+	if err != nil {
+		return nil, status.Error(codes.NotFound, err.Error())
+	}
+
+	if allowed, err := h.authzService.VerifyProjectPermission(ctx, p.ID, role.ProjectUpdate); err != nil || !allowed {
+		return nil, status.Error(codes.PermissionDenied, "permission denied")
+	}
+
+	p.Type = convertProtoTypeToDomain(req.GetType())
+
+	if err := h.projectRepo.UpdateProject(ctx, p); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &projectv1alpha1.UpdateProjectResponse{}, nil
+}
+
+func (h *ProjectHandler) DeleteProject(ctx context.Context, req *projectv1alpha1.DeleteProjectRequest) (*projectv1alpha1.DeleteProjectResponse, error) {
+	if err := req.ValidateAll(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	projectID, err := h.projectRepo.GetProjectIDByName(ctx, req.GetName())
+	if err != nil {
+		return nil, status.Error(codes.NotFound, err.Error())
+	}
+
+	if allowed, err := h.authzService.VerifyProjectPermission(ctx, projectID, role.ProjectDelete); err != nil || !allowed {
+		return nil, status.Error(codes.PermissionDenied, "permission denied")
+	}
+
+	if err := h.projectRepo.DeleteProject(ctx, projectID); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &projectv1alpha1.DeleteProjectResponse{}, nil
+}
+
+func (h *ProjectHandler) ListProjectMembers(ctx context.Context, req *projectv1alpha1.ListProjectMembersRequest) (*projectv1alpha1.ListProjectMembersResponse, error) {
+	if err := req.ValidateAll(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	page := utils.NewPage(req.Page, req.PageSize)
+
+	projectID, err := h.projectRepo.GetProjectIDByName(ctx, req.GetName())
+	if err != nil {
+		return nil, status.Error(codes.NotFound, err.Error())
+	}
+
+	if allowed, err := h.authzService.VerifyProjectPermission(ctx, projectID, role.MemberGet); err != nil || !allowed {
+		return nil, status.Error(codes.PermissionDenied, "permission denied")
+	}
+
+	members, total, err := h.projectRepo.ListProjectMembers(
+		ctx,
+		projectID,
+		req.GetMemberName(),
+		int(page.Page),
+		int(page.PageSize),
+	)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &projectv1alpha1.ListProjectMembersResponse{
+		Members: lo.Map(members, func(m *project.ProjectMember, _ int) *projectv1alpha1.ProjectMember {
+			return &projectv1alpha1.ProjectMember{
+				MemberId:   int32(m.MemberID),
+				MemberName: m.MemberName,
+				MemberType: convertDomainMemberTypeToProto(m.MemberType),
+				Role:       convertDomainRoleToProto(m.RoleID),
+			}
+		}),
+		Pagination: &projectv1alpha1.Pagination{
+			Total:    int32(total),
+			Page:     req.GetPage(),
+			PageSize: req.GetPageSize(),
+			Pages:    utils.CalculatePages(total, req.GetPageSize()),
+		},
+	}, nil
+}
+
+func (h *ProjectHandler) AddProjectMemberWithRole(ctx context.Context, req *projectv1alpha1.AddProjectMemberWithRoleRequest) (*projectv1alpha1.AddProjectMemberWithRoleResponse, error) {
+	if err := req.ValidateAll(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	projectID, err := h.projectRepo.GetProjectIDByName(ctx, req.GetName())
+	if err != nil {
+		return nil, status.Error(codes.NotFound, err.Error())
+	}
+
+	if allowed, err := h.authzService.VerifyProjectPermission(ctx, projectID, role.MemberAdd); err != nil || !allowed {
+		return nil, status.Error(codes.PermissionDenied, "permission denied")
+	}
+
+	pm := &project.ProjectMember{
+		ProjectID:  &projectID,
+		MemberID:   int(req.GetMemberId()),
+		MemberType: convertProtoMemberTypeToDomain(req.GetMemberType()),
+		RoleID:     convertProtoRoleToDomain(req.GetRole()),
+	}
+
+	if err := h.projectRepo.AddProjectMemberWithRole(ctx, pm); err != nil {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			return nil, status.Error(codes.AlreadyExists, "member already exists in this project")
+		}
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &projectv1alpha1.AddProjectMemberWithRoleResponse{}, nil
+}
+
+func (h *ProjectHandler) RemoveProjectMembers(ctx context.Context, req *projectv1alpha1.RemoveProjectMembersRequest) (*projectv1alpha1.RemoveProjectMembersResponse, error) {
+	if err := req.ValidateAll(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	currentUserID := user.GetCurrentUserId(ctx)
+	for _, m := range req.GetMembers() {
+		if m.GetMemberType() == projectv1alpha1.MemberType_MEMBER_TYPE_USER && int(m.GetMemberId()) == currentUserID {
+			return nil, status.Error(codes.InvalidArgument, "cannot remove yourself from the project")
+		}
+	}
+
+	projectID, err := h.projectRepo.GetProjectIDByName(ctx, req.GetName())
+	if err != nil {
+		return nil, status.Error(codes.NotFound, err.Error())
+	}
+
+	if allowed, err := h.authzService.VerifyProjectPermission(ctx, projectID, role.MemberRemove); err != nil || !allowed {
+		return nil, status.Error(codes.PermissionDenied, "permission denied")
+	}
+
+	members := lo.Map(req.GetMembers(), func(m *projectv1alpha1.MemberToRemove, _ int) *project.Member {
+		return &project.Member{
+			MemberID:   int(m.GetMemberId()),
+			MemberType: convertProtoMemberTypeToDomain(m.GetMemberType()),
+		}
+	})
+
+	if err := h.projectRepo.RemoveProjectMembers(ctx, projectID, members); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &projectv1alpha1.RemoveProjectMembersResponse{}, nil
+}
