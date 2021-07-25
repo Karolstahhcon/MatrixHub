@@ -85,3 +85,47 @@ func TestTokenGenerationAndHTTPBearerParsing(t *testing.T) {
 	userToken, userHash, err := utils.GenerateUserToken()
 	require.NoError(t, err)
 	require.Contains(t, userToken, utils.TokenPrefix)
+	require.Equal(t, utils.Sha256Hex(userToken), userHash)
+
+	robotToken, robotHash, err := utils.GenerateRobotToken()
+	require.NoError(t, err)
+	require.Contains(t, robotToken, utils.RobotTokenPrefix)
+	require.Equal(t, utils.Sha256Hex(robotToken), robotHash)
+	require.NotEqual(t, userToken, robotToken)
+
+	salt, err := utils.GenerateSalt()
+	require.NoError(t, err)
+	require.Len(t, salt, 16)
+
+	request, err := http.NewRequest(http.MethodGet, "http://example.com", nil)
+	require.NoError(t, err)
+	_, ok := utils.ParseBearerToken(request)
+	require.False(t, ok)
+	request.Header.Set("Authorization", "Basic abc")
+	_, ok = utils.ParseBearerToken(request)
+	require.False(t, ok)
+	request.Header.Set("Authorization", "Bearer  token-value ")
+	token, ok := utils.ParseBearerToken(request)
+	require.True(t, ok)
+	require.Equal(t, "token-value", token)
+}
+
+func TestGRPCAuthenticationParsing(t *testing.T) {
+	_, err := utils.ParseBearerTokenFromGRPCContext(context.Background())
+	require.ErrorContains(t, err, "missing metadata")
+
+	ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "Bearer token-value"))
+	token, err := utils.ParseBearerTokenFromGRPCContext(ctx)
+	require.NoError(t, err)
+	require.Equal(t, "token-value", token)
+
+	ctx = metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "Basic abc"))
+	_, err = utils.ParseBearerTokenFromGRPCContext(ctx)
+	require.ErrorContains(t, err, "expected Bearer")
+
+	encoded := base64.StdEncoding.EncodeToString([]byte("alice:secret"))
+	ctx = metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "Basic "+encoded))
+	username, password, err := utils.ParseBasicAuthFromGRPCContext(ctx)
+	require.NoError(t, err)
+	require.Equal(t, "alice", username)
+	require.Equal(t, "secret", password)

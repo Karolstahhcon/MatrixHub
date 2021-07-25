@@ -235,3 +235,82 @@ var _ = Describe("Robot", Label("robot"), func() {
 
 	// ═══════════════════════════════════════════════════════════
 	// 3. UpdateRobotAccount API
+	// ═══════════════════════════════════════════════════════════
+	Context("UpdateRobotAccount API", func() {
+		var (
+			robotName string
+			robotID   int64
+		)
+
+		BeforeEach(func() {
+			robotName = generateRobotName("rb-upd")
+			_, _, err := robotsApi.RobotsCreateRobotAccount(ctx, v1alpha1robot.V1alpha1CreateRobotAccountRequest{
+				Name:        robotName,
+				Description: "original description",
+				ExpireDays:  30,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			listResp, _, err := robotsApi.RobotsListRobotAccounts(ctx, &v1alpha1robot.RobotsApiRobotsListRobotAccountsOpts{
+				Search: optional.NewString(robotPrefix + robotName),
+			})
+			Expect(err).NotTo(HaveOccurred())
+			for _, r := range listResp.Items {
+				if r.Name == robotPrefix+robotName {
+					robotID = r.Id
+					break
+				}
+			}
+			Expect(robotID).NotTo(BeZero())
+		})
+
+		AfterEach(func() {
+			if robotID != 0 {
+				_, _, _ = robotsApi.RobotsDeleteRobotAccount(ctx, robotID)
+			}
+		})
+
+		It("should update the robot description successfully", Label("R00010"), func() {
+			_, _, err := robotsApi.RobotsUpdateRobotAccount(ctx, robotID, v1alpha1robot.RobotsUpdateRobotAccountBody{
+				Description: "updated description",
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			resp, _, err := robotsApi.RobotsGetRobotAccount(ctx, robotID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.Description).To(Equal("updated description"))
+
+			GinkgoWriter.Printf("Updated robot description: %s\n", resp.Description)
+		})
+
+		It("should update the robot to never-expire when expire_days is set to 0", Label("R00011"), func() {
+			// First create with expiry.
+			_, _, err := robotsApi.RobotsUpdateRobotAccount(ctx, robotID, v1alpha1robot.RobotsUpdateRobotAccountBody{
+				ExpireDays: 0,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			resp, _, err := robotsApi.RobotsGetRobotAccount(ctx, robotID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.ExpireDays).To(Equal(int32(0)))
+			Expect(*resp.ExpireStatus).To(Equal(v1alpha1robot.NEVER_V1alpha1RobotAccountExpireStatus))
+			Expect(resp.Status).NotTo(BeNil())
+			Expect(*resp.Status).To(Equal(v1alpha1robot.ENABLED_V1alpha1RobotAccountStatus))
+		})
+
+		It("should fail to update a non-existent robot account", Label("R00012"), func() {
+			_, _, err := robotsApi.RobotsUpdateRobotAccount(ctx, 999999999, v1alpha1robot.RobotsUpdateRobotAccountBody{
+				Description: "ghost",
+			})
+			Expect(err).To(HaveOccurred(), "updating non-existent robot must return an error")
+		})
+	})
+
+	// ═══════════════════════════════════════════════════════════
+	// 4. RefreshRobotAccountToken API
+	// ═══════════════════════════════════════════════════════════
+	Context("RefreshRobotAccountToken API", func() {
+		var (
+			robotName    string
+			robotID      int64
+			initialToken string
