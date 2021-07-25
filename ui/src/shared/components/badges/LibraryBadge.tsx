@@ -18,3 +18,14 @@ export type LibraryBadgeFactory = PolymorphicFactory<{
   defaultComponent: 'div'
   defaultRef: HTMLDivElement
   stylesNames: 'root' | 'label'
+}>
+
+const LIBRARY_ICON_ENTRIES = [
+  {
+    matcher: /pytorch/i,
+    icon: <PytorchIcon width={16} height={16} style={{ color: 'gray.6' }} />,
+  },
+] as const
+
+function resolveLibraryIcon(library: string): ReactNode {
+  const matched = LIBRARY_ICON_ENTRIES.find(item => item.matcher.test(library))

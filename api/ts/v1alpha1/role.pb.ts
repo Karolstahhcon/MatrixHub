@@ -5,10 +5,3 @@
 */
 
 import * as fm from "../fetch.pb"
-
-export enum ProjectRoleType {
-  ROLE_TYPE_PROJECT_ADMIN = "ROLE_TYPE_PROJECT_ADMIN",
-  ROLE_TYPE_PROJECT_EDITOR = "ROLE_TYPE_PROJECT_EDITOR",
-  ROLE_TYPE_PROJECT_VIEWER = "ROLE_TYPE_PROJECT_VIEWER",
-}
-

@@ -17,10 +17,3 @@ export function EmptyStatePrompt({
   helper,
 }: EmptyStatePromptProps) {
   const { t } = useTranslation()
-
-  return (
-    <Center py="xl">
-      <Stack align="center" gap="xs">
-        <Text fw={500} size="sm">{title ?? t('common.noResults')}</Text>
-        {helper && (
-          <Text size="sm" c="dimmed">
