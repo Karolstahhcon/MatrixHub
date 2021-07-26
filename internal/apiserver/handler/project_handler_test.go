@@ -21,15 +21,3 @@ import (
 	projectmocks "github.com/matrixhub-ai/matrixhub/internal/domain/project/mocks"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-	"gorm.io/gorm"
-)
-
-func TestProjectHandlerCreateProjectRejectsOrganizationWithoutRegistry(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	projectRepo := projectmocks.NewMockIProjectRepo(ctrl)
-	h := &ProjectHandler{projectRepo: projectRepo}
-	projectRepo.EXPECT().
-		GetProjectByName(gomock.Any(), "proxy-project").
-		Return(nil, gorm.ErrRecordNotFound).
-		AnyTimes()
