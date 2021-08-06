@@ -6,3 +6,7 @@ services:
   nginx:
     profiles: [prod]
     image: docker.io/library/nginx:1.29.4
+    container_name: matrixhub-nginx
+    ports:
+      - "80:80"
+      - "443:443"
