@@ -14,11 +14,3 @@ export function ModelRevisionSelect({
   projectId,
   modelId,
   revision,
-}: ModelRevisionSelectProps) {
-  const navigate = useNavigate()
-  const { data: revisions } = useSuspenseQuery(modelRevisionsQueryOptions(projectId, modelId))
-
-  return (
-    <RevisionSelect
-      revision={revision}
-      branches={revisions?.items?.branches}
