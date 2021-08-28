@@ -38,3 +38,44 @@ type JobServer struct {
 
 // New builds a JobServer from config and domain services (cfg is copied; defaults applied without mutating the caller's struct).
 func New(cfg *config.JobServerConfig, syncSvc syncpolicy.ISyncPolicyService, syncJobSvc syncjob.ISyncJobService, ls logstore.LogStore, canc canceller.Canceller) *JobServer {
+	c := *cfg
+	if c.ShutdownGrace == 0 {
+		c.ShutdownGrace = 30 * time.Second
+	}
+	if c.SyncPolicy.PollInterval == 0 {
+		c.SyncPolicy.PollInterval = 10 * time.Second
+	}
+	if c.SyncPolicy.MaxConcurrent == 0 {
+		c.SyncPolicy.MaxConcurrent = 5
+	}
+	if c.SyncPolicy.TaskMaxDuration == 0 {
+		c.SyncPolicy.TaskMaxDuration = 2 * time.Hour
+	}
+	if c.SyncTask.PollInterval == 0 {
+		c.SyncTask.PollInterval = 5 * time.Second
+	}
+	if c.SyncTask.MaxConcurrent == 0 {
+		c.SyncTask.MaxConcurrent = 5
+	}
+	if c.SyncTask.TaskMaxDuration == 0 {
+		c.SyncTask.TaskMaxDuration = 2 * time.Hour
+	}
+	if c.SyncJob.PollInterval == 0 {
+		c.SyncJob.PollInterval = 3 * time.Second
+	}
+	if c.SyncJob.MaxConcurrent == 0 {
+		c.SyncJob.MaxConcurrent = 5
+	}
+	if c.SyncJob.TaskMaxDuration == 0 {
+		c.SyncJob.TaskMaxDuration = 2 * time.Hour
+	}
+	syncPolicyProcessor := processor.NewSyncPolicyProcessor(c.SyncPolicy, syncSvc)
+	syncTaskProcessor := processor.NewSyncTaskProcessor(c.SyncTask, syncSvc)
+	syncJobProcessor := processor.NewSyncJobProcessor(c.SyncJob, syncJobSvc, canc)
+	return &JobServer{
+		cfg:             &c,
+		processors:      []processor.Adapter{syncPolicyProcessor, syncTaskProcessor, syncJobProcessor},
+		syncTaskTrigger: syncTaskProcessor,
+		syncJobTrigger:  syncJobProcessor,
+	}
+}

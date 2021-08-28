@@ -41,24 +41,3 @@ function LazyFallback() {
   return (
     <Center p="xl" bg="var(--mantine-color-default-hover)">
       <Loader size="sm" />
-    </Center>
-  )
-}
-
-export function FileViewer({
-  file,
-  content,
-  loading,
-  error,
-}: FileViewerProps) {
-  const category = classifyFile(file.name)
-  const isMarkdown = category === 'markdown'
-  const isReady = !loading && !error && content != null
-  const [viewMode, setViewMode] = useState<ViewMode>(isMarkdown ? 'preview' : 'code')
-
-  return (
-    <Paper
-      radius="md"
-      style={{ overflow: 'hidden' }}
-      bg="var(--mantine-color-default-hover)"
-    >
