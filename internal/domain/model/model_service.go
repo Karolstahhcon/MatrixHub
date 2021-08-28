@@ -276,3 +276,96 @@ func (s *ModelService) GetModelTree(ctx context.Context, project, name, revision
 
 	// Check if model exists in database first
 	_, err := s.modelRepo.GetByProjectAndName(ctx, project, name)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.gitRepo.GetTree(ctx, "models", project, name, revision, path)
+}
+
+// GetModelBlob returns the content of a file at a specific revision.
+func (s *ModelService) GetModelBlob(ctx context.Context, project, name, revision, path string) (*git.TreeEntry, error) {
+	if project == "" {
+		return nil, errors.New("invalid project")
+	}
+	if name == "" {
+		return nil, errors.New("invalid input")
+	}
+
+	// Check if model exists in database first
+	_, err := s.modelRepo.GetByProjectAndName(ctx, project, name)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.gitRepo.GetBlob(ctx, "models", project, name, revision, path)
+}
+
+// UpdateModelSetting updates model settings such as the popular flag.
+func (s *ModelService) UpdateModelSetting(ctx context.Context, project, name string, update *SettingUpdate) error {
+	if project == "" {
+		return errors.New("invalid project")
+	}
+	if name == "" {
+		return errors.New("invalid name")
+	}
+
+	m, err := s.modelRepo.GetByProjectAndName(ctx, project, name)
+	if err != nil {
+		return err
+	}
+
+	return s.modelRepo.UpdateSetting(ctx, m.ID, update)
+}
+
+// SyncMetadata synchronizes Git repository metadata to the database.
+func (s *ModelService) SyncMetadata(ctx context.Context, project, name string) error {
+	m, err := s.modelRepo.GetByProjectAndName(ctx, project, name)
+	if err != nil {
+		return fmt.Errorf("model not found: %w", err)
+	}
+
+	files, err := s.gitRepo.ExtractMetadata(ctx, "models", project, name)
+	if err != nil {
+		return fmt.Errorf("failed to read metadata files: %w", err)
+	}
+
+	metadata, err := AnalyzeRepoMetadata(files)
+	if err != nil {
+		return fmt.Errorf("failed to analyze metadata: %w", err)
+	}
+
+	update := &MetadataUpdate{
+		ReadmeContent:  &metadata.ReadmeContent,
+		Size:           &metadata.Size,
+		ParameterCount: &metadata.ParameterCount,
+	}
+	if err := s.modelRepo.UpdateMetadata(ctx, m.ID, update); err != nil {
+		return fmt.Errorf("failed to update model metadata: %w", err)
+	}
+
+	return s.updateModelLabels(ctx, m.ID, metadata.Tags)
+}
+
+// updateModelLabels replaces all labels for a model with classified tags.
+func (s *ModelService) updateModelLabels(ctx context.Context, modelID int64, tags []ClassifiedTag) error {
+	var labelIDs []int
+
+	for _, tag := range tags {
+		label, err := s.labelRepo.GetOrCreateByName(ctx, tag.Name, tag.Category, "model")
+		if err != nil {
+			return fmt.Errorf("failed to get/create label %s (category=%s): %w", tag.Name, tag.Category, err)
+		}
+		labelIDs = append(labelIDs, label.ID)
+	}
+
+	return s.labelRepo.UpdateModelLabels(ctx, modelID, labelIDs)
+}
+
+func (s *ModelService) CheckOrSyncFromRemote(ctx context.Context, project, name string) error {
+	prj, err := s.projectRepo.GetProjectByName(ctx, project)
+	if err != nil {
+		return err
+	}
+	if !prj.HasProxy() {
+		return nil

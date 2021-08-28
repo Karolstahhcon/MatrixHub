@@ -46,28 +46,3 @@ func TestHTTPHandlerOptionsAndFallback(t *testing.T) {
 		backend.WithPermissionHookFunc(nil),
 		backend.WithPreReceiveHookFunc(nil),
 		backend.WithPostReceiveHookFunc(nil),
-		backend.WithMirror(nil),
-		backend.WithServices(nil, nil, nil),
-	)
-
-	response := httptest.NewRecorder()
-	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/not-git", nil))
-	require.Equal(t, http.StatusTeapot, response.Code)
-
-	response = httptest.NewRecorder()
-	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/org/repo.git/info/refs", nil))
-	require.Equal(t, http.StatusBadRequest, response.Code)
-	require.Equal(t, "true", response.Header().Get("X-Test-Middleware"))
-}
-
-func TestHTTPHandlerRejectsInvalidDiscoveryRequests(t *testing.T) {
-	handler := backend.NewHandler(
-		backend.WithStorage(storage.NewStorage(storage.WithRootDir(t.TempDir()))),
-	)
-	tests := []struct {
-		name       string
-		method     string
-		target     string
-		wantStatus int
-		wantBody   string
-	}{
