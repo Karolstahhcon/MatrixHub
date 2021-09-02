@@ -30,35 +30,3 @@ function TokenInfoRow({
   label,
   value,
   copyable,
-}: TokenInfoRowProps) {
-  return (
-    <Group gap="lg" wrap="nowrap">
-      <Text size="sm" c="dimmed">
-        {label}
-      </Text>
-
-      <Group gap="sm" align="center" wrap="nowrap">
-        <Text
-          size="sm"
-          style={{ wordBreak: 'break-all' }}
-        >
-          {value}
-        </Text>
-
-        {copyable && (
-          <CopyValueButton
-            value={value}
-            iconSize={16}
-          />
-        )}
-      </Group>
-    </Group>
-  )
-}
-
-export function RobotTokenInfoModal({
-  opened,
-  title,
-  name,
-  token,
-  onClose,
