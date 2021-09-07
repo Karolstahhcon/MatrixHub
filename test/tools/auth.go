@@ -181,3 +181,64 @@ func GetAdminCookie() string {
 
 // GetAdminLoginApi returns the Login API client with admin auth
 func GetAdminLoginApi() *v1alpha1login.LoginApiService {
+	if adminLoginApi == nil {
+		err := InitAuth()
+		if err != nil {
+			panic(err)
+		}
+	}
+	return adminLoginApi
+}
+
+// GetAdminUsersApi returns the Users API client with admin auth
+func GetAdminUsersApi() *v1alpha1user.UsersApiService {
+	if adminUsersApi == nil {
+		err := InitAuth()
+		if err != nil {
+			panic(err)
+		}
+	}
+	return adminUsersApi
+}
+
+// CreateUser creates a new user with admin privileges
+func CreateUser(username, password string, isAdmin bool) error {
+	ctx := context.Background()
+	_, _, err := GetAdminUsersApi().UsersCreateUser(ctx, v1alpha1user.V1alpha1CreateUserRequest{
+		Username: username,
+		Password: password,
+		IsAdmin:  isAdmin,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create user %s: %w", username, err)
+	}
+	log.Printf("User %s created successfully (isAdmin: %v)\n", username, isAdmin)
+	return nil
+}
+
+// CreateUserAndLogin creates a user and logs in, returning the cookie
+func CreateUserAndLogin(username, password string, isAdmin bool) (string, error) {
+	// Create user first
+	err := CreateUser(username, password, isAdmin)
+	if err != nil {
+		return "", err
+	}
+
+	// Login to get cookie
+	cookie, err := LoginUser(username, password)
+	if err != nil {
+		return "", fmt.Errorf("failed to login after creating user: %w", err)
+	}
+
+	return cookie, nil
+}
+
+// GetUserIDByUsername searches for a user by username and returns the numeric ID
+func GetUserIDByUsername(username string) (int64, error) {
+	ctx := context.Background()
+	resp, _, err := GetAdminUsersApi().UsersListUsers(ctx, &v1alpha1user.UsersApiUsersListUsersOpts{
+		Page:     optional.NewInt32(1),
+		PageSize: optional.NewInt32(100),
+		Search:   optional.NewString(username),
+	})
+	if err != nil {

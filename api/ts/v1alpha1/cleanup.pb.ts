@@ -19,25 +19,3 @@ export type CleanupPreview = {
 export type OrphanedRepo = {
   path?: string
   type?: string
-  projectName?: string
-  resourceName?: string
-  sizeBytes?: string
-}
-
-export type OrphanedLFS = {
-  oid?: string
-  sizeBytes?: string
-}
-
-export type ExecuteCleanupRequest = {
-  cleanOrphanedRepos?: boolean
-  cleanOrphanedLfs?: boolean
-  dryRun?: boolean
-}
-
-export type CleanupResult = {
-  reposDeleted?: number
-  lfsObjectsDeleted?: number
-  spaceReclaimedBytes?: string
-  errors?: string[]
-}

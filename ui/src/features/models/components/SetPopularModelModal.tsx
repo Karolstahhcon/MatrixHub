@@ -34,3 +34,15 @@ export function SetPopularModelModal({
 
   const handleConfirm = async () => {
     await updateMutation.mutateAsync({
+      project: projectId,
+      name: modelId,
+      popular: !isPopular,
+    })
+
+    onClose()
+    await router.invalidate()
+  }
+
+  return (
+    <ModalWrapper
+      type="info"
