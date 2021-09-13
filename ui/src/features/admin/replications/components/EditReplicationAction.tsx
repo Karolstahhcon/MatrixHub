@@ -16,12 +16,3 @@ export function EditReplicationAction({
   disabled,
 }: EditReplicationActionProps) {
   const { t } = useTranslation()
-  const [opened, {
-    open, close,
-  }] = useDisclosure(false)
-
-  return (
-    <>
-      <Button
-        variant="transparent"
-        size="compact-sm"
