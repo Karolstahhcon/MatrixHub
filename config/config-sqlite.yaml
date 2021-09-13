@@ -1,0 +1,17 @@
+# Config for local single-process development with SQLite.
+debug: true
+migrationPath: ./db/migrations
+dataDir: ./data
+log:
+  level: debug
+database:
+  driver: sqlite
+  # When omitted, MatrixHub derives file:<absolute dataDir>/matrixhub.db with
+  # the recommended pragmas. Set MATRIXHUB_DATABASE_DSN to override it.
+  maxOpenConns: 1
+  maxIdleConns: 1
+  connMaxLifetimeSeconds: 0
+  connMaxIdleSeconds: 0
+  migrate: true
+apiServer:
+  port: 3001
