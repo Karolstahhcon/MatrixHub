@@ -29,13 +29,3 @@ export function LanguageSwitcher() {
     }
 
     i18n.changeLanguage(normalized)
-  }
-
-  return (
-    <Select
-      size="xs"
-      value={currentLanguage}
-      onChange={handleChange}
-      allowDeselect={false}
-      data={[
-        {

@@ -11,3 +11,9 @@ export function CreateReplicationAction() {
   const [opened, {
     open, close,
   }] = useDisclosure(false)
+
+  return (
+    <>
+      <Button
+        onClick={open}
+        leftSection={<Icon size={16} />}
