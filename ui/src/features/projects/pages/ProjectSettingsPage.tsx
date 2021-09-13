@@ -52,3 +52,30 @@ export function ProjectSettingsPage() {
                   />
                 )}
               >
+                <Checkbox
+                  checked={field.state.value === ProjectType.PROJECT_TYPE_PUBLIC}
+                  onChange={(event) => {
+                    field.setValue(event.currentTarget.checked
+                      ? ProjectType.PROJECT_TYPE_PUBLIC
+                      : ProjectType.PROJECT_TYPE_PRIVATE)
+                  }}
+                  label={t('projects.type.public')}
+                />
+              </InputWrapper>
+            )}
+          </projectSettingForm.Field>
+        </Stack>
+
+        {isProxy && (
+          <>
+            <TextInput
+              label={t('projects.detail.settingsPage.proxyAddress')}
+              value={project.registryUrl ?? ''}
+              w={rem('260px')}
+              disabled
+            />
+            <TextInput
+              label={t('projects.detail.settingsPage.proxyOrganization')}
+              value={project.organization ?? ''}
+              w={rem('260px')}
+              disabled
