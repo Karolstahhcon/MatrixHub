@@ -348,3 +348,178 @@ func (h *SyncPolicyHandler) StopSyncTask(ctx context.Context, request *v1alpha1.
 			if j.Status == syncjob.SyncJobStatusRunning {
 				h.canceller.Cancel(j.ID)
 			}
+			if j.Status != syncjob.SyncJobStatusStopped {
+				j.Status = syncjob.SyncJobStatusStopped
+				if upErr := h.syncJobService.UpdateSyncJob(ctx, j); upErr != nil {
+					log.Warnw("update stopped job failed", "jobID", j.ID, "error", upErr)
+				}
+			}
+		}
+	}
+
+	// Refresh task statistics so StoppedItems reflects reality.
+	if repErr := h.syncPolicyService.ReportTaskStatus(ctx, task.ID); repErr != nil {
+		log.Warnw("report task status failed after stop", "taskID", task.ID, "error", repErr)
+	}
+
+	task, err = h.syncPolicyService.GetSyncTask(ctx, task.ID)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to refresh sync task")
+	}
+	task.Status = syncpolicy.SyncTaskStatusStopped
+	task.CompletedTimestamp = time.Now().Unix()
+
+	if err := h.syncPolicyService.UpdateSyncTask(ctx, task); err != nil {
+		return nil, status.Error(codes.Internal, "failed to stop sync task")
+	}
+
+	return &v1alpha1.StopSyncTaskResponse{
+		SyncTask: syncTaskToProto(task),
+	}, nil
+}
+
+// ListSyncJobs lists sync jobs for a task
+func (h *SyncPolicyHandler) ListSyncJobs(ctx context.Context, request *v1alpha1.ListSyncJobsRequest) (*v1alpha1.ListSyncJobsResponse, error) {
+	if err := request.ValidateAll(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	page := int(request.Page)
+	pageSize := int(request.PageSize)
+	if page <= 0 {
+		page = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 20
+	}
+
+	statusFilter := syncjob.SyncJobStatusUnspecified
+	if request.Status != v1alpha1.SyncJobStatus_SYNC_JOB_STATUS_UNSPECIFIED {
+		statusFilter = syncjob.SyncJobStatus(request.Status)
+	}
+
+	resourceTypeFilter := ""
+	if request.ResourceType != v1alpha1.ResourceType_RESOURCE_TYPE_UNSPECIFIED {
+		resourceTypeFilter = resourceTypeProtoToString(request.ResourceType)
+	}
+
+	jobs, total, err := h.syncJobService.ListSyncJobsByTaskID(ctx, int(request.SyncTaskId), page, pageSize, statusFilter, resourceTypeFilter)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to list sync jobs")
+	}
+
+	items := make([]*v1alpha1.SyncJob, len(jobs))
+	for i, j := range jobs {
+		items[i] = h.syncJobToProto(ctx, j)
+	}
+
+	return &v1alpha1.ListSyncJobsResponse{
+		SyncJobs: items,
+		Pagination: &v1alpha1.Pagination{
+			Total:    utils.ClampInt32(total),
+			Page:     int32(page),
+			PageSize: int32(pageSize),
+			Pages:    utils.CalculatePages(total, int32(pageSize)),
+		},
+	}, nil
+}
+
+// GetSyncJobLog gets the log for a sync job
+func (h *SyncPolicyHandler) GetSyncJobLog(ctx context.Context, request *v1alpha1.GetSyncJobLogRequest) (*v1alpha1.GetSyncJobLogResponse, error) {
+	if err := request.ValidateAll(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	_, err := h.syncJobService.GetSyncJob(ctx, int(request.SyncJobId))
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil, status.Error(codes.NotFound, "sync job not found")
+		}
+		return nil, status.Error(codes.Internal, "failed to get sync job")
+	}
+
+	rc, err := h.logStore.Reader(int(request.SyncJobId))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return &v1alpha1.GetSyncJobLogResponse{Log: ""}, nil
+		}
+		return nil, status.Error(codes.Internal, "failed to read job log")
+	}
+	defer func() { _ = rc.Close() }()
+
+	content, err := io.ReadAll(rc)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to read job log content")
+	}
+
+	return &v1alpha1.GetSyncJobLogResponse{
+		Log: string(content),
+	}, nil
+}
+
+// applyCommonFields fills the common scalar fields of a SyncPolicy.
+func (h *SyncPolicyHandler) applyCommonFields(p *syncpolicy.SyncPolicy, name, desc, bandwidth string, triggerSchedule *v1alpha1.TriggerTypeSchedule, triggerType syncpolicy.TriggerType, isOverwrite, isDisabled bool) {
+	p.Name = name
+	p.Description = desc
+	p.TriggerType = triggerType
+	p.Bandwidth = bandwidth
+	p.Cron = ""
+	if triggerSchedule != nil {
+		p.Cron = triggerSchedule.Cron
+	}
+	p.IsOverwrite = isOverwrite
+	p.IsDisabled = isDisabled
+}
+
+// applyPullBasePolicy fills pull-base-specific fields into a SyncPolicy.
+func (h *SyncPolicyHandler) applyPullBasePolicy(p *syncpolicy.SyncPolicy, pull *v1alpha1.PullBasePolicy) {
+	p.PolicyType = syncpolicy.SyncPolicyTypePull
+	p.RegistryID = int(pull.SourceRegistryId)
+	p.ResourceTypes = resourceTypesToString(pull.GetResourceTypes())
+	remoteProject, remoteName := parseResourcePath(pull.ResourceName)
+	p.RemoteProjectName = remoteProject
+	p.RemoteResourceName = remoteName
+	p.LocalProjectName = pull.TargetProjectName
+	// LocalResourceName is intentionally left empty; generator auto-fills from remote
+}
+
+// applyPushBasePolicy fills push-base-specific fields into a SyncPolicy.
+func (h *SyncPolicyHandler) applyPushBasePolicy(p *syncpolicy.SyncPolicy, push *v1alpha1.PushBasePolicy) {
+	p.PolicyType = syncpolicy.SyncPolicyTypePush
+	p.RegistryID = int(push.TargetRegistryId)
+	p.ResourceTypes = resourceTypesToString(push.GetResourceTypes())
+	localProject, localName := parseResourcePath(push.ResourceName)
+	p.LocalProjectName = localProject
+	p.LocalResourceName = localName
+	p.RemoteProjectName = push.TargetProjectName
+	// RemoteResourceName is intentionally left empty; generator auto-fills from local
+}
+
+// Helper functions
+
+func (h *SyncPolicyHandler) syncPolicyToProto(ctx context.Context, p *syncpolicy.SyncPolicy) *v1alpha1.SyncPolicyItem {
+	if p == nil {
+		return nil
+	}
+
+	item := &v1alpha1.SyncPolicyItem{
+		Id:          int32(p.ID),
+		Name:        p.Name,
+		Description: p.Description,
+		PolicyType:  v1alpha1.SyncPolicyType(p.PolicyType),
+		TriggerType: v1alpha1.TriggerType(p.TriggerType),
+		Bandwidth:   p.Bandwidth,
+		IsOverwrite: p.IsOverwrite,
+		IsDisabled:  p.IsDisabled,
+	}
+	if p.Cron != "" {
+		item.TriggerTypeSchedule = &v1alpha1.TriggerTypeSchedule{
+			Cron: p.Cron,
+		}
+	}
+
+	resourceTypes := parseResourceTypesString(p.ResourceTypes)
+
+	switch p.PolicyType {
+	case syncpolicy.SyncPolicyTypePull:
+		pullPolicy := &v1alpha1.PullBasePolicy{
