@@ -290,3 +290,149 @@ func TestDatasetHandlerRejectsInvalidRequests(t *testing.T) {
 		{
 			name:  "GetDatasetTree with reserved name",
 			field: "GetDatasetTreeRequest.Name",
+			call: func(ctx context.Context, h *DatasetHandler) error {
+				_, err := h.GetDatasetTree(ctx, &v1alpha1.GetDatasetTreeRequest{Project: datasetHandlerTestProject, Name: "spaces"})
+				return err
+			},
+		},
+		{
+			name:  "GetDatasetBlob without project",
+			field: "GetDatasetBlobRequest.Project",
+			call: func(ctx context.Context, h *DatasetHandler) error {
+				_, err := h.GetDatasetBlob(ctx, &v1alpha1.GetDatasetBlobRequest{Name: datasetHandlerTestName})
+				return err
+			},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			// No mock expectations: validation must fail before the service is called.
+			h, _ := datasetHandlerTestSetup(t)
+
+			err := tc.call(context.Background(), h)
+			require.Equal(t, codes.InvalidArgument, status.Code(err), "unexpected error: %v", err)
+			require.Contains(t, status.Convert(err).Message(), tc.field)
+		})
+	}
+}
+
+func TestDatasetHandlerCreateDataset(t *testing.T) {
+	ctx := context.Background()
+	request := &v1alpha1.CreateDatasetRequest{Project: datasetHandlerTestProject, Name: datasetHandlerTestName}
+
+	t.Run("creates the dataset", func(t *testing.T) {
+		h, svc := datasetHandlerTestSetup(t)
+		svc.EXPECT().CreateDataset(ctx, datasetHandlerTestProject, datasetHandlerTestName).Return(&dataset.Dataset{ID: 11}, nil)
+
+		got, err := h.CreateDataset(ctx, request)
+		require.NoError(t, err)
+		require.NotNil(t, got)
+	})
+
+	for _, tc := range []handlerTestErrorCase{
+		{name: "duplicate dataset", err: errors.New("dataset already exists"), wantCode: codes.AlreadyExists},
+		{name: "missing project", err: errors.New("project not found"), wantCode: codes.NotFound},
+		{name: "repository failure", err: errors.New("disk full"), wantCode: codes.Internal},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			h, svc := datasetHandlerTestSetup(t)
+			svc.EXPECT().CreateDataset(ctx, datasetHandlerTestProject, datasetHandlerTestName).Return(nil, tc.err)
+
+			got, err := h.CreateDataset(ctx, request)
+			require.Nil(t, got)
+			requireHandlerTestStatus(t, err, tc.wantCode, tc.wantMsg)
+		})
+	}
+}
+
+func TestDatasetHandlerDeleteDataset(t *testing.T) {
+	ctx := context.Background()
+	request := &v1alpha1.DeleteDatasetRequest{Project: datasetHandlerTestProject, Name: datasetHandlerTestName}
+
+	t.Run("deletes the dataset", func(t *testing.T) {
+		h, svc := datasetHandlerTestSetup(t)
+		svc.EXPECT().DeleteDataset(ctx, datasetHandlerTestProject, datasetHandlerTestName).Return(nil)
+
+		got, err := h.DeleteDataset(ctx, request)
+		require.NoError(t, err)
+		require.NotNil(t, got)
+	})
+
+	for _, tc := range []handlerTestErrorCase{
+		{name: "missing dataset", err: errors.New("record not found"), wantCode: codes.NotFound},
+		{name: "repository failure", err: errors.New("permission denied by filesystem"), wantCode: codes.Internal},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			h, svc := datasetHandlerTestSetup(t)
+			svc.EXPECT().DeleteDataset(ctx, datasetHandlerTestProject, datasetHandlerTestName).Return(tc.err)
+
+			got, err := h.DeleteDataset(ctx, request)
+			require.Nil(t, got)
+			requireHandlerTestStatus(t, err, tc.wantCode, tc.wantMsg)
+		})
+	}
+}
+
+func TestDatasetHandlerGetDataset(t *testing.T) {
+	ctx := context.Background()
+	request := &v1alpha1.GetDatasetRequest{Project: datasetHandlerTestProject, Name: datasetHandlerTestName}
+
+	t.Run("returns the dataset", func(t *testing.T) {
+		h, svc := datasetHandlerTestSetup(t)
+		svc.EXPECT().GetDataset(ctx, datasetHandlerTestProject, datasetHandlerTestName).Return(datasetHandlerTestDataset(), nil)
+
+		got, err := h.GetDataset(ctx, request)
+		require.NoError(t, err)
+		requireProtoEqual(t, datasetHandlerTestDatasetProto(), got)
+	})
+
+	for _, tc := range []handlerTestErrorCase{
+		{name: "missing dataset", err: errors.New("record not found"), wantCode: codes.NotFound},
+		{name: "storage failure", err: errors.New("connection refused"), wantCode: codes.Internal},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			h, svc := datasetHandlerTestSetup(t)
+			svc.EXPECT().GetDataset(ctx, datasetHandlerTestProject, datasetHandlerTestName).Return(nil, tc.err)
+
+			got, err := h.GetDataset(ctx, request)
+			require.Nil(t, got)
+			requireHandlerTestStatus(t, err, tc.wantCode, tc.wantMsg)
+		})
+	}
+}
+
+func TestDatasetHandlerListDatasetRevisions(t *testing.T) {
+	ctx := context.Background()
+	request := &v1alpha1.ListDatasetRevisionsRequest{Project: datasetHandlerTestProject, Name: datasetHandlerTestName}
+
+	t.Run("returns branches and tags", func(t *testing.T) {
+		h, svc := datasetHandlerTestSetup(t)
+		svc.EXPECT().ListDatasetRevisions(ctx, datasetHandlerTestProject, datasetHandlerTestName).Return(&git.Revisions{
+			Branches: []*git.Revision{{Name: "main"}},
+			Tags:     []*git.Revision{{Name: "v1"}, {Name: "v2"}},
+		}, nil)
+
+		got, err := h.ListDatasetRevisions(ctx, request)
+		require.NoError(t, err)
+		requireProtoEqual(t, &v1alpha1.ListDatasetRevisionsResponse{Items: &v1alpha1.Revisions{
+			Branches: []*v1alpha1.Revision{{Name: "main"}},
+			Tags:     []*v1alpha1.Revision{{Name: "v1"}, {Name: "v2"}},
+		}}, got)
+	})
+
+	for _, tc := range []handlerTestErrorCase{
+		{name: "missing dataset record", err: errors.New("record not found"), wantCode: codes.NotFound, wantMsg: "dataset imdb not found in project demo"},
+		{name: "missing git repository", err: errors.New("repository does not exist at /data/datasets/demo/imdb"), wantCode: codes.NotFound, wantMsg: "dataset imdb not found in project demo"},
+		{name: "git failure", err: errors.New("bad object HEAD"), wantCode: codes.Internal, wantMsg: "failed to list revisions: bad object HEAD"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			h, svc := datasetHandlerTestSetup(t)
+			svc.EXPECT().ListDatasetRevisions(ctx, datasetHandlerTestProject, datasetHandlerTestName).Return(nil, tc.err)
+
+			got, err := h.ListDatasetRevisions(ctx, request)
+			require.Nil(t, got)
+			requireHandlerTestStatus(t, err, tc.wantCode, tc.wantMsg)
+		})
+	}
+}
+
