@@ -15,20 +15,3 @@
 package user
 
 import (
-	"context"
-	"time"
-)
-
-type AccessToken struct {
-	Id        int `gorm:"primary_key"`
-	Name      string
-	UserId    int
-	TokenHash string
-	Enabled   bool
-	ExpireAt  *time.Time
-	CreatedAt time.Time
-}
-
-func (at AccessToken) IsExpired(t time.Time) bool {
-	return at.ExpireAt != nil && at.ExpireAt.Before(t)
-}
