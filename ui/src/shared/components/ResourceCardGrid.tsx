@@ -23,15 +23,3 @@ const DEFAULT_SKELETON_HEIGHT = 116
 export function ResourceCardGrid({
   loading,
   skeletonCount = DEFAULT_SKELETON_COUNT,
-  skeletonHeight = DEFAULT_SKELETON_HEIGHT,
-  emptyTitle,
-  emptyHelper,
-  children,
-}: ResourceCardGridProps) {
-  const skeletonKeys = useMemo(
-    () => Array.from(
-      { length: skeletonCount },
-      (_, i) => `skeleton-${i + 1}`,
-    ),
-    [skeletonCount],
-  )

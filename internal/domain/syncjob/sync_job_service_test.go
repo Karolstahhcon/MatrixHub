@@ -125,3 +125,46 @@ func pullJob(resourceType string) *syncjob.SyncJob {
 		RemoteProjectName:  "remote-project",
 		RemoteResourceName: "remote-resource",
 		ProjectName:        "local-project",
+		ResourceName:       "local-resource",
+		ResourceType:       resourceType,
+		SyncType:           "pull",
+	}
+}
+
+func TestExecuteSyncJob_PullRefreshesMetadata(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("model pull syncs metadata after the git pull", func(t *testing.T) {
+		f, svc := newPullFixture(t)
+
+		f.registryRepo.EXPECT().GetRegistry(gomock.Any(), 3).
+			Return(&registrydomain.Registry{ID: 3, Name: "remote", URL: "https://remote.example.com"}, nil)
+		f.projectRepo.EXPECT().GetProjectByName(gomock.Any(), "local-project").
+			Return(&projectdomain.Project{ID: 11, Name: "local-project"}, nil)
+		// Model record does not exist yet, so the job creates it with empty metadata.
+		f.modelRepo.EXPECT().GetByProjectAndName(gomock.Any(), "local-project", "local-resource").
+			Return(nil, errors.New("not found"))
+		f.modelRepo.EXPECT().Create(gomock.Any(), gomock.Any()).
+			DoAndReturn(func(_ context.Context, m *modeldomain.Model) (*modeldomain.Model, error) {
+				m.ID = 42
+				return m, nil
+			})
+
+		gomock.InOrder(
+			f.gitRepo.EXPECT().PullFromRemote(gomock.Any(), gomock.Any()).
+				DoAndReturn(func(_ context.Context, gr *gitdomain.GitRepository) error {
+					require.Equal(t, "model", gr.ResourceType)
+					return nil
+				}),
+			// The regression this guards: README/size/labels only land in the
+			// database when the job explicitly refreshes metadata after the pull.
+			f.modelMeta.EXPECT().SyncMetadata(gomock.Any(), "local-project", "local-resource").Return(nil),
+		)
+
+		f.syncJobRepo.EXPECT().UpdateSyncJob(gomock.Any(), gomock.Any()).Return(nil)
+
+		require.NoError(t, svc.ExecuteSyncJob(ctx, pullJob("model")))
+	})
+
+	t.Run("dataset pull creates a dataset record and syncs dataset metadata", func(t *testing.T) {
+		f, svc := newPullFixture(t)
