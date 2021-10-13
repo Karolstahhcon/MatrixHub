@@ -14,9 +14,3 @@ export const router = createRouter({
     contentViewportSelector,
     adminContentViewportSelector,
   ],
-  basepath: rawBasePath,
-  context: {
-    queryClient,
-  },
-  defaultPendingComponent: RouterPendingComponent,
-})
