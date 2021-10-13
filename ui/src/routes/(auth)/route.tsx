@@ -117,3 +117,122 @@ function AppNavbar() {
       fontWeight: '600',
       color: isActive ? 'var(--nl-color)' : '#868E96',
     },
+    section: {
+      marginInlineEnd: '8px',
+    },
+    label: {
+      whiteSpace: 'nowrap',
+    },
+  })
+
+  return (
+    <Group
+      gap="sm"
+      wrap="nowrap"
+    >
+      {navRoutes.map((route) => {
+        let isActive = !!matchRoute({
+          to: route.to,
+          fuzzy: true,
+        })
+
+        if (isActive && 'repelMatch' in route) {
+          isActive = !route.repelMatch.some(repelRoute => matchRoute({
+            to: repelRoute,
+            fuzzy: true,
+          }))
+        } else if (!isActive && 'extraMatch' in route) {
+          isActive = !!matchRoute({
+            to: route.extraMatch,
+            fuzzy: true,
+          })
+        }
+
+        return (
+          <NavLink
+            key={route.to}
+            label={route.label}
+            component={Link}
+            to={route.to}
+            activeOptions={{ exact: true }}
+            leftSection={(
+              <route.icon
+                size={rem(20)}
+              />
+            )}
+            active={isActive}
+            styles={navLinkStyles(isActive)}
+          />
+        )
+      })}
+
+      <NavLink
+        label={t('nav.docs')}
+        component="a"
+        href={t('common.docs', { doc: DOCS_URL })}
+        target="_blank"
+        rel="noopener noreferrer"
+        leftSection={(
+          <DocsIcon
+            size={rem(20)}
+          />
+        )}
+        styles={navLinkStyles(false)}
+      />
+    </Group>
+  )
+}
+
+function AccountMenu() {
+  const { t } = useTranslation()
+  const user = use(CurrentUserContext)
+
+  const baseMenuItems = linkOptions([
+    {
+      label: t('nav.profile'),
+      icon: UserIcon,
+      to: ProfileRoute.to,
+    },
+    {
+      label: t('nav.createModel'),
+      icon: ModelIcon,
+      to: CreateModelRoute.to,
+    },
+  ])
+
+  const adminMenuItem = linkOptions([{
+    label: t('nav.settings'),
+    icon: SettingsIcon,
+    to: AdminRoute.to,
+  }])
+
+  const menuItems = user?.isAdmin
+    ? [...baseMenuItems, ...adminMenuItem]
+    : baseMenuItems
+
+  const {
+    mutate: logout,
+  } = useMutation({
+    mutationFn: () => Login.Logout({}),
+    onSuccess: () => {
+      queryClient.clear()
+      window.location.reload()
+    },
+  })
+
+  return (
+    <Menu
+      shadow="md"
+      withArrow
+    >
+      <Menu.Target>
+        <UnstyledButton>
+          <Group
+            gap={8}
+            wrap="nowrap"
+          >
+            <Avatar
+              radius="xl"
+              size={24}
+            />
+            <Text size="sm">

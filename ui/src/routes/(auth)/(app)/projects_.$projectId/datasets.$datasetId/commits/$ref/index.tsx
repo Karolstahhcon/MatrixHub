@@ -8,13 +8,3 @@ export const Route = createFileRoute(
 
 function RouteComponent() {
   const {
-    projectId, datasetId, ref,
-  } = Route.useParams()
-
-  return (
-    <div>
-      Dataset Commits History
-      <br />
-      Project ID:
-      {' '}
-      {projectId}
