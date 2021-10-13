@@ -56,3 +56,22 @@ if [ "$(printf '%s\n' "$MIN_KIND_VERSION" "$KIND_VERSION" | sort -V | head -n1)"
     echo "Error: kind version $KIND_VERSION is too old (require >= $MIN_KIND_VERSION)"
     exit 1
 fi
+
+# Check if cluster already exists
+if kind get clusters | grep -q "^${E2E_CLUSTER_NAME}$"; then
+    echo "Cluster '${E2E_CLUSTER_NAME}' already exists, deleting it..."
+    kind delete cluster --name="${E2E_CLUSTER_NAME}"
+fi
+
+# Create KIND cluster
+echo ""
+echo "Creating KIND cluster..."
+cat <<EOF > /tmp/kind-config.yaml
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+- role: control-plane
+  extraPortMappings:
+  - containerPort: 30001
+    hostPort: 30001
+    listenAddress: "127.0.0.1"

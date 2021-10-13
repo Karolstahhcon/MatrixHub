@@ -46,3 +46,52 @@ func TestHTTPHandlerOptionsAndFallback(t *testing.T) {
 		backend.WithPermissionHookFunc(nil),
 		backend.WithPreReceiveHookFunc(nil),
 		backend.WithPostReceiveHookFunc(nil),
+		backend.WithMirror(nil),
+		backend.WithServices(nil, nil, nil),
+	)
+
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/not-git", nil))
+	require.Equal(t, http.StatusTeapot, response.Code)
+
+	response = httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/org/repo.git/info/refs", nil))
+	require.Equal(t, http.StatusBadRequest, response.Code)
+	require.Equal(t, "true", response.Header().Get("X-Test-Middleware"))
+}
+
+func TestHTTPHandlerRejectsInvalidDiscoveryRequests(t *testing.T) {
+	handler := backend.NewHandler(
+		backend.WithStorage(storage.NewStorage(storage.WithRootDir(t.TempDir()))),
+	)
+	tests := []struct {
+		name       string
+		method     string
+		target     string
+		wantStatus int
+		wantBody   string
+	}{
+		{name: "missing service", method: http.MethodGet, target: "/org/repo.git/info/refs", wantStatus: http.StatusBadRequest, wantBody: "service parameter is required"},
+		{name: "unsupported service", method: http.MethodGet, target: "/org/repo.git/info/refs?service=git-archive", wantStatus: http.StatusForbidden, wantBody: "unsupported service"},
+		{name: "missing repository info refs", method: http.MethodGet, target: "/org/repo.git/info/refs?service=git-upload-pack", wantStatus: http.StatusNotFound, wantBody: "not found"},
+		{name: "missing repository upload", method: http.MethodPost, target: "/org/repo.git/git-upload-pack", wantStatus: http.StatusNotFound, wantBody: "not found"},
+		{name: "missing repository receive", method: http.MethodPost, target: "/org/repo.git/git-receive-pack", wantStatus: http.StatusNotFound, wantBody: "not found"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			response := httptest.NewRecorder()
+			handler.ServeHTTP(response, httptest.NewRequest(tt.method, tt.target, nil))
+			require.Equal(t, tt.wantStatus, response.Code)
+			require.Contains(t, response.Body.String(), tt.wantBody)
+		})
+	}
+}
+
+func TestHTTPHandlerPermissionFailures(t *testing.T) {
+	hookError := errors.New("permission backend unavailable")
+	tests := []struct {
+		name       string
+		user       string
+		allowed    bool
+		err        error
+		wantStatus int
