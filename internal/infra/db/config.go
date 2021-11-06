@@ -56,3 +56,32 @@ func (config *Config) applyDefaults() {
 }
 
 func (config *Config) validate() error {
+	switch config.Driver {
+	case DriverMySQL, DriverPostgres, DriverSQLite:
+	default:
+		return fmt.Errorf("unsupported database driver %q", config.Driver)
+	}
+
+	if config.DSN == "" {
+		return fmt.Errorf("database DSN is required for driver %q", config.Driver)
+	}
+	if config.MaxOpenConns < 0 {
+		return fmt.Errorf("maxOpenConns must not be negative")
+	}
+	if config.MaxIdleConns < 0 {
+		return fmt.Errorf("maxIdleConns must not be negative")
+	}
+	if config.ConnMaxLifetimeSeconds < 0 {
+		return fmt.Errorf("connMaxLifetimeSeconds must not be negative")
+	}
+	if config.ConnMaxIdleSeconds < 0 {
+		return fmt.Errorf("connMaxIdleSeconds must not be negative")
+	}
+	if config.MaxOpenConns > 0 && config.MaxIdleConns > config.MaxOpenConns {
+		return fmt.Errorf("maxIdleConns must not exceed maxOpenConns")
+	}
+	if config.Migrate && config.SQLPath == "" {
+		return fmt.Errorf("sqlPath is required when database migration is enabled")
+	}
+
+	if config.Driver == DriverSQLite {

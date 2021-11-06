@@ -18,3 +18,65 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/encoding/protojson"
+
+	"github.com/matrixhub-ai/matrixhub/api/go/v1alpha1"
+	"github.com/matrixhub-ai/matrixhub/internal/domain/system"
+	"github.com/matrixhub-ai/matrixhub/internal/infra/config"
+	"github.com/matrixhub-ai/matrixhub/internal/repo"
+)
+
+type systemHandlerTestService struct {
+	cfg *system.PublicConfig
+	err error
+}
+
+func (s systemHandlerTestService) GetPublicConfig(context.Context) (*system.PublicConfig, error) {
+	return s.cfg, s.err
+}
+
+func TestSystemHandler_GetSystemConfig(t *testing.T) {
+	cases := []struct {
+		name        string
+		externalURL string
+		want        string
+	}{
+		{"plain", "https://matrixhub.example.com", "https://matrixhub.example.com"},
+		{"trailing slash trimmed", "https://matrixhub.example.com/", "https://matrixhub.example.com"},
+		{"empty when not configured", "", ""},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			svc := repo.NewSystemProvider(&config.Config{
+				APIServer: &config.APIServerConfig{ExternalURL: tc.externalURL},
+			})
+			h := NewSystemHandler(svc).(*SystemHandler)
+			resp, err := h.GetSystemConfig(context.Background(), &v1alpha1.GetSystemConfigRequest{})
+			if err != nil {
+				t.Fatalf("unexpected err: %v", err)
+			}
+			if resp.GetEndpoints().GetHfBase() != tc.want {
+				t.Fatalf("hf_base = %q, want %q", resp.GetEndpoints().GetHfBase(), tc.want)
+			}
+		})
+	}
+}
+
+func TestSystemHandler_GetSystemConfigServiceError(t *testing.T) {
+	h := NewSystemHandler(systemHandlerTestService{err: errors.New("config store unavailable")}).(*SystemHandler)
+
+	resp, err := h.GetSystemConfig(context.Background(), &v1alpha1.GetSystemConfigRequest{})
+	require.Nil(t, resp)
+	requireHandlerTestStatus(t, err, codes.Internal, "")
+}
+
+func TestSystemHandler_RegisterToServer(t *testing.T) {
+	h := NewSystemHandler(systemHandlerTestService{cfg: &system.PublicConfig{
+		Endpoints: system.Endpoints{HfBase: "https://hub.example.com"},
+	}})
+
+	t.Run("serves the config over gRPC and the HTTP gateway", func(t *testing.T) {
