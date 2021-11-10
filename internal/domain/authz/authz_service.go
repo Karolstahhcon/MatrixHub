@@ -34,3 +34,111 @@ import (
 type IAuthzService interface {
 	// GetUserPermissions gets user's permission list in a project
 	GetUserPermissions(ctx context.Context, userID int, projectID int) ([]role.Permission, error)
+
+	// VerifyPlatformPermission verifies platform-level permission (gets user/robot info from ctx)
+	VerifyPlatformPermission(ctx context.Context, perm role.Permission) (bool, error)
+
+	VerifyProjectPermission(ctx context.Context, projectID int, perm role.Permission) (bool, error)
+
+	// VerifyProjectPermissionByName resolves project name to ID, then verifies permission
+	VerifyProjectPermissionByName(ctx context.Context, projectName string, perm role.Permission) (bool, error)
+
+	// GetUserAccessibleProjectIDs gets all project IDs accessible to a user
+	GetUserAccessibleProjectIDs(ctx context.Context, userID int) ([]int, error)
+}
+
+// AuthzService permission verification service
+type AuthzService struct {
+	authzRepo   IAuthzProjectRepo
+	projectRepo project.IProjectRepo
+	robotRepo   robot.IRobotRepo
+}
+
+// NewAuthzService creates permission verification service
+func NewAuthzService(authzRepo IAuthzProjectRepo, projectRepo project.IProjectRepo, robotRepo robot.IRobotRepo) IAuthzService {
+	return &AuthzService{
+		authzRepo:   authzRepo,
+		projectRepo: projectRepo,
+		robotRepo:   robotRepo,
+	}
+}
+
+// GetUserPermissions gets user's permission list in a project
+func (s *AuthzService) GetUserPermissions(ctx context.Context, userID int, projectID int) ([]role.Permission, error) {
+	platformPerms, err := s.authzRepo.GetUserPlatformPermissions(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	projectPerms, err := s.authzRepo.GetUserProjectPermissions(ctx, userID, projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Merge platform and project permissions
+	return append(platformPerms, projectPerms...), nil
+}
+
+// VerifyPlatformPermission verifies platform-level permission (gets user info from ctx)
+func (s *AuthzService) VerifyPlatformPermission(ctx context.Context, perm role.Permission) (bool, error) {
+	identity, ok := auth.IdentityFromContext(ctx)
+	if !ok {
+		return false, nil
+	}
+	permissions, err := s.getPermissions(ctx, identity, 0)
+	if err != nil {
+		return false, err
+	}
+
+	return role.MatchPermissions(permissions, perm), nil
+}
+
+// getPermissions dispatches permission resolution based on the concrete identity type.
+// Users derive permissions from their assigned roles,
+// while robots have permissions bound directly at creation time.
+func (s *AuthzService) getPermissions(ctx context.Context, identity auth.Identity, projectId int) ([]role.Permission, error) {
+	switch id := identity.(type) {
+	case *user.Identity:
+		return s.getUserPermissions(ctx, id, projectId)
+	case *robot.Identity:
+		return s.getRobotPermissions(ctx, id, projectId)
+	default:
+		return nil, errors.New("unknown identity type")
+	}
+}
+
+func (s *AuthzService) getUserPermissions(ctx context.Context, id *user.Identity, projectId int) ([]role.Permission, error) {
+	platformPerms, err := s.authzRepo.GetUserPlatformPermissions(ctx, id.GetID())
+	if err != nil {
+		return nil, err
+	}
+	if projectId == 0 {
+		return platformPerms, nil
+	}
+
+	projectPerms, err := s.authzRepo.GetUserProjectPermissions(ctx, id.GetID(), projectId)
+	if err != nil {
+		return nil, err
+	}
+	return append(platformPerms, projectPerms...), nil
+}
+
+// getRobotPermissions resolves permissions for a robot account.
+func (s *AuthzService) getRobotPermissions(ctx context.Context, id *robot.Identity, projectId int) ([]role.Permission, error) {
+	rb, err := s.robotRepo.GetRobot(ctx, id.GetID())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get robot: %w", err)
+	}
+	if projectId == 0 {
+		return rb.PlatformPermissions, nil
+	}
+
+	return s.authzRepo.GetRobotProjectPermissions(ctx, id.GetID(), projectId)
+}
+
+// VerifyProjectPermissionByName resolves project name to ID, then verifies permission
+func (s *AuthzService) VerifyProjectPermissionByName(ctx context.Context, projectName string, perm role.Permission) (bool, error) {
+	prj, err := s.projectRepo.GetProjectByName(ctx, projectName)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, nil
