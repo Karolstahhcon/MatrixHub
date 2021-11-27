@@ -1,7 +1,3 @@
 {
   "uploadFiles": "Upload Dataset Files",
   "downloadDataset": "Download Dataset",
-  "detail": {
-    "desc": "Dataset Introduction",
-    "tree": "Dataset Files",
-    "setting": "Settings"
