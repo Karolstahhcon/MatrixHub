@@ -48,20 +48,3 @@ export function ResourceDetailHeader({
           <Text c="dimmed" size="lg" w={24} h={24} fw={600} lh="24px" ta="center" inline>/</Text>
           <Text size="lg" c="gray.9" lh="28px">{name}</Text>
           <CopyValueButton value={fullName} iconSize={15} />
-        </Group>
-        {actions && <Group gap="sm">{actions}</Group>}
-      </Group>
-
-      {badges && badges?.length > 0 && (
-        <Group gap={8} mb="sm" wrap="wrap">
-          {badges.map(badge => (
-            <Fragment key={badge.key}>
-              {badge.content ?? (
-                <BaseBadge
-                  icon={badge.icon}
-                  label={badge.label}
-                  maw={132}
-                />
-              )}
-            </Fragment>
-          ))}
