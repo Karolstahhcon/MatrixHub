@@ -118,3 +118,124 @@ func (g *gitRepo) FindOrphanedLFS(ctx context.Context) ([]*git.OrphanedLFS, erro
 			})
 		}
 	}
+
+	return orphaned, nil
+}
+
+// DeleteRepositoryAtRelPath deletes an orphaned repository by relative path.
+func (g *gitRepo) DeleteRepositoryAtRelPath(ctx context.Context, path string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	fullPath, err := confinedPath(g.storage.RepositoriesDir(), path)
+	if err != nil {
+		return err
+	}
+	return os.RemoveAll(fullPath)
+}
+
+// DeleteLFSObject deletes an orphaned LFS object.
+func (g *gitRepo) DeleteLFSObject(ctx context.Context, object *git.OrphanedLFS) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	fullPath, err := confinedPath(g.storage.LFSDir(), object.Path)
+	if err != nil {
+		return err
+	}
+	return os.Remove(fullPath)
+}
+
+// RepositoriesSize returns the size of all repositories on disk.
+func (g *gitRepo) RepositoriesSize(ctx context.Context) int64 {
+	if ctx.Err() != nil {
+		return 0
+	}
+	return calculateDirSize(g.storage.RepositoriesDir())
+}
+
+// LFSSize returns the size of all LFS objects on disk.
+func (g *gitRepo) LFSSize(ctx context.Context) int64 {
+	if ctx.Err() != nil {
+		return 0
+	}
+	return calculateDirSize(g.storage.LFSDir())
+}
+
+func (g *gitRepo) scanLFSObjects(ctx context.Context) (map[string]*lfsObjectInfo, error) {
+	objects := make(map[string]*lfsObjectInfo)
+	lfsDir, err := filepath.Abs(g.storage.LFSDir())
+	if err != nil {
+		return nil, err
+	}
+	if _, err := os.Stat(lfsDir); os.IsNotExist(err) {
+		return objects, nil
+	}
+
+	err = filepath.Walk(lfsDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() {
+			return nil
+		}
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+
+		rel, err := filepath.Rel(lfsDir, path)
+		if err != nil {
+			return err
+		}
+		oid := strings.ReplaceAll(rel, string(filepath.Separator), "")
+		if lfsOIDPattern.MatchString(oid) {
+			objects[oid] = &lfsObjectInfo{
+				size: info.Size(),
+				path: path,
+			}
+		}
+		return nil
+	})
+
+	return objects, err
+}
+
+func (g *gitRepo) collectReferencedOIDs(ctx context.Context) (map[string]bool, error) {
+	referencedOIDs := make(map[string]bool)
+
+	reposDir := g.storage.RepositoriesDir()
+	if _, err := os.Stat(reposDir); os.IsNotExist(err) {
+		return referencedOIDs, nil
+	}
+
+	repoPaths := g.listAllRepoPaths(ctx, reposDir)
+
+	group, _ := errgroup.WithContext(ctx)
+	group.SetLimit(10)
+
+	var mu sync.Mutex
+
+	for _, repoPath := range repoPaths {
+		group.Go(func() error {
+			oids, err := g.collectRepoLFSOIDs(repoPath)
+			if err != nil {
+				return nil
+			}
+			mu.Lock()
+			for oid := range oids {
+				referencedOIDs[oid] = true
+			}
+			mu.Unlock()
+			return nil
+		})
+	}
+
+	if err := group.Wait(); err != nil {
+		return nil, err
+	}
+
+	return referencedOIDs, nil
+}
+
+func (g *gitRepo) listAllRepoPaths(ctx context.Context, reposDir string) []string {
+	repoPaths := []string{}
+	err := filepath.Walk(reposDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil || !info.IsDir() {
+			return nil
