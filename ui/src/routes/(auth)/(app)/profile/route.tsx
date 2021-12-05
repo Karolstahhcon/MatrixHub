@@ -38,3 +38,23 @@ function Profile() {
       value: 'ssh-keys',
       to: SshKeysRoute.to,
     },
+  ])
+
+  const matchRoute = useMatchRoute()
+  const activeTab = profileTabs.find(tab => matchRoute({ to: tab.to }))?.value || profileTabs[0].value
+
+  return (
+    <Stack gap="lg" pt="lg">
+      <Group gap="xs">
+        <IconUser size={32} />
+        <Text
+          size="lg"
+          fw={600}
+        >
+          { t('profile.personalCenter') }
+        </Text>
+      </Group>
+
+      <Group
+        gap="md"
+        h={80}
