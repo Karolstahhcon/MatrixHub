@@ -377,3 +377,129 @@ export function ReplicationFormModal({
                     <FieldHintLabel
                       label={t('routes.admin.replications.form.push')}
                       hint={t('routes.admin.replications.form.pushHint')}
+                      tooltipProps={{ w: 280 }}
+                    />
+                  )}
+                  disabled={mode === 'edit'}
+                />
+              </Group>
+            </RadioGroup>
+          )}
+        </form.Field>
+
+        {!isPushMode && (
+          <form.Field name="sourceRegistryId">
+            {field => (
+              <Select
+                label={(
+                  <FieldHintLabel
+                    label={t('routes.admin.replications.form.sourceRegistry')}
+                    hint={t('routes.admin.replications.form.sourceRegistryHint')}
+                  />
+                )}
+                withAsterisk
+                data={registryOptions}
+                value={field.state.value ? String(field.state.value) : null}
+                onChange={value => field.handleChange(value ? Number(value) : 0)}
+                onBlur={field.handleBlur}
+                error={fieldError(field)}
+                searchable
+                allowDeselect={false}
+                disabled={registriesQuery.isLoading}
+              />
+            )}
+          </form.Field>
+        )}
+
+        <Input.Wrapper
+          label={(
+            <FieldHintLabel
+              label={t('routes.admin.replications.form.resourceFilter')}
+              hint={t('routes.admin.replications.form.resourceFilterHint')}
+              tooltipProps={{ w: 320 }}
+            />
+          )}
+          labelElement="div"
+        >
+          <Stack gap="xs">
+            <form.Field name="resourceName">
+              {field => (
+                <TextInput
+                  {...inlineFieldProps}
+                  withAsterisk
+                  aria-label={t('routes.admin.replications.form.resourceName')}
+                  leftSection={renderInlineFieldSection(
+                    t('routes.admin.replications.form.resourceName'),
+                  )}
+                  value={field.state.value}
+                  onChange={event => field.handleChange(event.currentTarget.value)}
+                  onBlur={field.handleBlur}
+                  error={fieldError(field)}
+                />
+              )}
+            </form.Field>
+
+            <form.Field name="resourceTypes">
+              {field => (
+                <MultiSelect
+                  {...inlineFieldProps}
+                  aria-label={t('routes.admin.replications.form.resourceTypes.label')}
+                  leftSection={renderInlineFieldSection(
+                    t('routes.admin.replications.form.resourceTypes.label'),
+                  )}
+                  data={resourceTypeOptions}
+                  value={field.state.value}
+                  onChange={value => field.handleChange(value as ReplicationFormValues['resourceTypes'])}
+                  onBlur={field.handleBlur}
+                  error={fieldError(field)}
+                />
+              )}
+            </form.Field>
+          </Stack>
+        </Input.Wrapper>
+
+        {isPushMode && (
+          <form.Field name="targetRegistryId">
+            {field => (
+              <Select
+                label={t('routes.admin.replications.form.targetRegistry')}
+                withAsterisk
+                data={registryOptions}
+                value={field.state.value ? String(field.state.value) : null}
+                onChange={value => field.handleChange(value ? Number(value) : 0)}
+                onBlur={field.handleBlur}
+                error={fieldError(field)}
+                searchable
+                allowDeselect={false}
+                disabled={registriesQuery.isLoading}
+              />
+            )}
+          </form.Field>
+        )}
+
+        <Input.Wrapper
+          label={(
+            <FieldHintLabel
+              label={t('routes.admin.replications.form.target')}
+              hint={t('routes.admin.replications.form.targetHint')}
+              tooltipProps={{ w: 280 }}
+            />
+          )}
+          labelElement="div"
+        >
+          <form.Field name="targetProjectName">
+            {field => (
+              <TextInput
+                {...inlineFieldProps}
+                aria-label={t('routes.admin.replications.form.targetProjectName')}
+                leftSection={renderInlineFieldSection(
+                  t('routes.admin.replications.form.targetProjectName'),
+                )}
+                placeholder={t('routes.admin.replications.form.targetProjectNamePlaceholder')}
+                value={field.state.value}
+                onChange={event => field.handleChange(event.currentTarget.value)}
+                onBlur={field.handleBlur}
+                error={fieldError(field)}
+              />
+            )}
+          </form.Field>
