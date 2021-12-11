@@ -26,3 +26,31 @@ type ProjectFixture struct {
 	Name    string
 	cleanup func(context.Context)
 }
+
+func (f ProjectFixture) Cleanup(ctx context.Context) {
+	if f.cleanup != nil {
+		f.cleanup(ctx)
+	}
+}
+
+func CreateProjectFixture(ctx context.Context, prefix string) (ProjectFixture, error) {
+	return CreateProjectFixtureWithType(ctx, prefix, v1alpha1project.PRIVATE_V1alpha1ProjectType)
+}
+
+// CreatePublicProjectFixture creates a public project, for tests that need the
+// project to be readable without credentials.
+func CreatePublicProjectFixture(ctx context.Context, prefix string) (ProjectFixture, error) {
+	return CreateProjectFixtureWithType(ctx, prefix, v1alpha1project.PUBLIC_V1alpha1ProjectType)
+}
+
+func CreateProjectFixtureWithType(ctx context.Context, prefix string, projectType v1alpha1project.V1alpha1ProjectType) (ProjectFixture, error) {
+	projectsApi := GetV1alpha1ProjectsApi()
+	name := GenerateTestProjectName(prefix)
+	// projects.name is varchar(64) in DB; keep room for suffixes.
+	if len(name) > 60 {
+		name = name[:60]
+	}
+
+	_, _, err := projectsApi.ProjectsCreateProject(ctx, v1alpha1project.V1alpha1CreateProjectRequest{
+		Name:  name,
+		Type_: &projectType,
