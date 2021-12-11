@@ -31,36 +31,3 @@ import (
 
 const datasetReadme = `---
 license: apache-2.0
-task_categories:
-- text-classification
----
-
-# Demo dataset
-`
-
-func TestDatasetService_SyncMetadata(t *testing.T) {
-	ctx := context.Background()
-	ctrl := gomock.NewController(t)
-
-	datasetRepo := datasetmocks.NewMockIDatasetRepo(ctrl)
-	labelRepo := modelmocks.NewMockILabelRepo(ctrl)
-	gitRepo := gitmocks.NewMockIGitRepo(ctrl)
-
-	datasetRepo.EXPECT().GetByProjectAndName(gomock.Any(), "proj", "ds").
-		Return(&dataset.Dataset{ID: 5, Name: "ds", ProjectName: "proj"}, nil)
-	gitRepo.EXPECT().ExtractMetadata(gomock.Any(), "datasets", "proj", "ds").
-		Return(&gitdomain.RepoMetadataFiles{
-			ReadmeContent: []byte(datasetReadme),
-			Size:          1234,
-		}, nil)
-
-	datasetRepo.EXPECT().UpdateMetadata(gomock.Any(), int64(5), gomock.Any()).
-		DoAndReturn(func(_ context.Context, _ int64, update *dataset.MetadataUpdate) error {
-			require.NotNil(t, update.ReadmeContent)
-			require.Contains(t, *update.ReadmeContent, "# Demo dataset")
-			require.NotNil(t, update.Size)
-			require.EqualValues(t, 1234, *update.Size)
-			return nil
-		})
-
-	// Labels parsed from the dataset card are stored under the dataset scope.
