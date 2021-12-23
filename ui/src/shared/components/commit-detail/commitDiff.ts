@@ -26,3 +26,17 @@ export function renderCommitDiff(
     // Parsing is cheap; rendering (especially side-by-side line matching) is what
     // blows up on large files. Keep the parser's line counts, drop the blocks so
     // the renderer only emits the placeholder message.
+    if (textEncoder.encode(fileDiff).byteLength > MAX_FILE_DIFF_BYTES) {
+      const message = `${diffTooBigMessage} <a href="#" class="commit-detail-raw-diff-link" data-commit-raw-diff-link="${fileIndex}">${rawDiffLinkText}</a>`
+
+      for (const file of parsedDiff) {
+        file.isTooBig = true
+        file.blocks = [{
+          header: message,
+          lines: [],
+          newStartLine: 0,
+          oldStartLine: 0,
+        }]
+      }
+    }
+
