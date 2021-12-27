@@ -162,3 +162,168 @@ export function RegistryFormModal({
   const handleTestConnection = async () => {
     await pingMutation.mutateAsync(buildPingRegistryRequest(form.state.values))
   }
+
+  return (
+    <ModalWrapper
+      opened={opened}
+      onClose={onClose}
+      size="sm"
+      closeOnClickOutside={false}
+      title={mode === 'create'
+        ? t('routes.admin.registries.createModal.title')
+        : t('routes.admin.registries.editModal.title')}
+      footer={(
+        <Group justify="flex-end" gap="md">
+          <Button
+            variant="white"
+            color="gray"
+            onClick={onClose}
+          >
+            {t('common.cancel')}
+          </Button>
+          <form.Subscribe
+            selector={state => [
+              state.values.url.trim().length > 0,
+              state.fieldMeta.url?.isValid ?? false,
+            ]}
+          >
+            {([hasRegistryUrl, isRegistryUrlValid]) => (
+              <Button
+                variant="outline"
+                loading={pingMutation.isPending}
+                disabled={
+                  !hasRegistryUrl
+                  || !isRegistryUrlValid
+                  || submitMutation.isPending
+                  || isSubmitting
+                }
+                onClick={() => {
+                  void handleTestConnection()
+                }}
+              >
+                {t('routes.admin.registries.form.testConnection')}
+              </Button>
+            )}
+          </form.Subscribe>
+          <Button
+            loading={submitMutation.isPending || isSubmitting}
+            disabled={pingMutation.isPending}
+            onClick={() => {
+              void form.handleSubmit()
+            }}
+          >
+            {t('common.confirm')}
+          </Button>
+        </Group>
+      )}
+    >
+      <Stack gap="md">
+        <form.Field name="type">
+          {field => (
+            <Select
+              label={t('routes.admin.registries.form.provider')}
+              withAsterisk
+              data={providerOptions}
+              value={field.state.value}
+              onChange={value => handleProviderChange(
+                (value as RegistryType | null) ?? RegistryType.REGISTRY_TYPE_HUGGINGFACE,
+              )}
+              onBlur={field.handleBlur}
+              disabled={mode === 'edit'}
+              allowDeselect={false}
+            />
+          )}
+        </form.Field>
+
+        <form.Field
+          name="name"
+          validators={{ onChange: registryNameSchema }}
+        >
+          {field => (
+            <TextInput
+              label={t('routes.admin.registries.form.name')}
+              withAsterisk
+              // The provider select above it already has a usable default,
+              // so focus starts on the first field that needs input.
+              data-autofocus
+              value={field.state.value}
+              onChange={event => field.handleChange(
+                sanitizeRegistryName(event.currentTarget.value),
+              )}
+              onBlur={field.handleBlur}
+              error={fieldError(field)}
+            />
+          )}
+        </form.Field>
+
+        <form.Field
+          name="description"
+          validators={{ onChange: registryDescriptionSchema }}
+        >
+          {field => (
+            <Textarea
+              label={t('routes.admin.registries.form.description')}
+              autosize
+              minRows={3}
+              maxLength={REGISTRY_DESCRIPTION_MAX_LENGTH}
+              value={field.state.value}
+              onChange={event => field.handleChange(event.currentTarget.value)}
+              onBlur={field.handleBlur}
+              error={fieldError(field)}
+              description={`${field.state.value.length}/${REGISTRY_DESCRIPTION_MAX_LENGTH}`}
+            />
+          )}
+        </form.Field>
+
+        <form.Subscribe selector={state => state.values.type}>
+          {(type) => {
+            const urlCopyKeys = getRegistryUrlCopyKeys(type)
+
+            return (
+              <form.Field
+                name="url"
+                validators={{ onChange: registryUrlSchema }}
+              >
+                {field => (
+                  <TextInput
+                    label={(
+                      <FieldHintLabel
+                        label={t('routes.admin.registries.form.url')}
+                        hint={t(urlCopyKeys.hint)}
+                        tooltipProps={{ style: { whiteSpace: 'pre-line' } }}
+                      />
+                    )}
+                    withAsterisk
+                    placeholder={t(urlCopyKeys.placeholder)}
+                    description={(
+                      <>
+                        {t(urlCopyKeys.description)}
+                        {isLikelyRepositoryUrl(field.state.value) && (
+                          <Text
+                            component="span"
+                            display="block"
+                            inherit
+                            c="yellow.7"
+                            mt={4}
+                          >
+                            {t(urlCopyKeys.repositoryUrlWarning)}
+                          </Text>
+                        )}
+                      </>
+                    )}
+                    inputWrapperOrder={['label', 'input', 'description', 'error']}
+                    styles={{ error: { marginTop: 4 } }}
+                    value={field.state.value}
+                    onChange={event => field.handleChange(event.currentTarget.value)}
+                    onBlur={field.handleBlur}
+                    error={fieldError(field)}
+                  />
+                )}
+              </form.Field>
+            )
+          }}
+        </form.Subscribe>
+
+        <form.Field name="username">
+          {field => (
+            <TextInput

@@ -9,27 +9,3 @@ interface ResourceFilterPanelProps {
 }
 
 export function ResourceFilterPanels({
-  tabs,
-  activeTab,
-  onTabChange,
-}: ResourceFilterPanelProps) {
-  const currentTab = tabs.find(tab => tab.value === activeTab)
-    ? activeTab
-    : tabs[0]?.value
-
-  return (
-    <Tabs
-      value={currentTab}
-      onChange={value => value && onTabChange(value)}
-    >
-      <Tabs.List>
-        {
-          tabs.map(tab => (
-            <Tabs.Tab
-              key={tab.value}
-              value={tab.value}
-            >
-              {tab.label}
-            </Tabs.Tab>
-          ))
-        }
