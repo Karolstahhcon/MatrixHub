@@ -12,18 +12,3 @@ export const projectNameSchema = z
   .string()
   .trim()
   .superRefine((val, ctx) => {
-    if (!val) {
-      ctx.addIssue({
-        code: 'custom',
-        message: i18n.t('projects.validation.nameRequired'),
-      })
-
-      return
-    }
-
-    if (val.length < 2) {
-      ctx.addIssue({
-        code: 'custom',
-        message: i18n.t('projects.validation.nameMinLength'),
-      })
-
