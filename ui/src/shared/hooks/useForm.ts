@@ -18,3 +18,10 @@ export const useForm = ((...args: any[]) => {
     if (prevLangRef.current === i18n.language) {
       return
     }
+
+    prevLangRef.current = i18n.language
+
+    const meta = form.state.fieldMeta as Record<string, { errors?: unknown[] }>
+
+    for (const name of Object.keys(meta)) {
+      if (meta[name]?.errors?.length) {
