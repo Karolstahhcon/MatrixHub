@@ -24,3 +24,29 @@ const LANG_LOADERS: Record<string, () => Promise<unknown>> = {
   diff: () => import('@shikijs/langs/diff'),
   docker: () => import('@shikijs/langs/docker'),
   toml: () => import('@shikijs/langs/toml'),
+  ini: () => import('@shikijs/langs/ini'),
+}
+
+/** Map language aliases to the canonical grammar name Shiki registers. */
+const LANG_ALIASES: Record<string, string> = {
+  'c++': 'cpp',
+  sh: 'bash',
+  zsh: 'bash',
+  py: 'python',
+  js: 'javascript',
+  ts: 'typescript',
+  yml: 'yaml',
+  md: 'markdown',
+  dockerfile: 'docker',
+}
+
+let highlighterPromise: Promise<HighlighterCore> | null = null
+
+export async function getHighlighter(): Promise<HighlighterCore> {
+  highlighterPromise ??= (async () => {
+    const [{ createHighlighterCore }, { createJavaScriptRegexEngine }] = await Promise.all([
+      import('shiki/core'),
+      import('shiki/engine/javascript'),
+    ])
+
+    return createHighlighterCore({
