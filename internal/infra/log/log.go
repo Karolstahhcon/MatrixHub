@@ -101,3 +101,54 @@ func openSinks(config Config) (zapcore.WriteSyncer, error) {
 	sink, _, err := zap.Open("stderr")
 	if err != nil {
 		return nil, err
+	}
+
+	if config.FilePath == nil {
+		return sink, nil
+	}
+
+	lumberJackLogger := &lumberjack.Logger{
+		Filename:   *config.FilePath,
+		MaxSize:    config.FileMaxSize,
+		MaxBackups: config.FileMaxBackups,
+		MaxAge:     config.FileMaxAges,
+		Compress:   config.Compress,
+	}
+	return zap.CombineWriteSyncers(sink, zapcore.AddSync(lumberJackLogger)), nil
+}
+
+func Debug(args ...any) {
+	logger.Debug(args...)
+}
+
+func Debugw(msg string, keysAndValues ...any) {
+	logger.Debugw(msg, keysAndValues...)
+}
+
+func Debugf(template string, args ...any) {
+	logger.Debugf(template, args...)
+}
+
+func DebugWithPayload(msg string, payload LoggerPayload, keysAndValues ...any) {
+	logger.DebugWithPayload(msg, payload, keysAndValues)
+}
+
+func Info(args ...any) {
+	logger.Info(args...)
+}
+
+func Infow(msg string, keysAndValues ...any) {
+	logger.Infow(msg, keysAndValues...)
+}
+
+func Infof(template string, args ...any) {
+	logger.Infof(template, args...)
+}
+
+func InfoWithPayload(msg string, payload LoggerPayload, keysAndValues ...any) {
+	logger.InfoWithPayload(msg, payload, keysAndValues)
+}
+
+func Warn(args ...any) {
+	logger.Warn(args...)
+}
