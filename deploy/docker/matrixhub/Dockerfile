@@ -41,3 +41,17 @@ FROM ${BASE_IMAGE_PREFIX}/node:${NODE_IMAGE_VERSION} AS ui
 ENV CI=true
 WORKDIR /app/ui
 ARG HTTP_PROXY
+ARG HTTPS_PROXY
+COPY ui /app/ui/
+COPY api /app/api/
+RUN corepack enable
+RUN pnpm install --frozen-lockfile
+RUN pnpm build
+
+##########################################
+FROM ${BASE_IMAGE_PREFIX}/library/alpine:${ALPINE_VERSION} AS matrixhub
+
+# Proxy args are declared (but not ENV'd) so networked steps below can use
+# them without persisting proxy settings into the runtime image.
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
