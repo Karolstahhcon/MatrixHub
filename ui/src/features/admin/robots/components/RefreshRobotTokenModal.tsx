@@ -80,3 +80,86 @@ export function RefreshRobotTokenModal({
       form.reset()
       mutation.reset()
     }
+  })
+
+  useEffect(() => {
+    resetForm()
+  }, [opened])
+
+  const handleAutoGenerateChange = (
+    autoGenerate: boolean,
+    onChange: (value: boolean) => void,
+  ) => {
+    onChange(autoGenerate)
+
+    if (autoGenerate) {
+      form.setFieldValue('token', refreshRobotTokenFormDefaults.token)
+      form.setFieldValue('confirmToken', refreshRobotTokenFormDefaults.confirmToken)
+    }
+  }
+
+  return (
+    <ModalWrapper
+      size="md"
+      title={t('routes.admin.robots.refreshTokenModal.title', {
+        name: robot.name,
+      })}
+      closeOnClickOutside={false}
+      opened={opened}
+      onClose={onClose}
+      confirmLoading={mutation.isPending || form.state.isSubmitting}
+      onConfirm={form.handleSubmit}
+    >
+      <Stack gap="md">
+        <Alert
+          lh={rem(20)}
+          icon={<IconInfoCircle size={20} />}
+        >
+          {t('routes.admin.robots.refreshTokenModal.description')}
+        </Alert>
+
+        <form.Field name="autoGenerate">
+          {field => (
+            <Switch
+              size="sm"
+              py={rem(6)}
+              label={t('routes.admin.robots.refreshTokenModal.manualSwitch')}
+              checked={!field.state.value}
+              onChange={event => handleAutoGenerateChange(
+                !event.currentTarget.checked,
+                field.handleChange,
+              )}
+            />
+          )}
+        </form.Field>
+
+        <form.Subscribe selector={state => state.values.autoGenerate}>
+          {autoGenerate => !autoGenerate && (
+            <>
+              <form.Field
+                name="token"
+                validators={{
+                  onChange: ({
+                    value,
+                    fieldApi,
+                  }) => getRefreshRobotTokenFieldIssues(
+                    'token',
+                    {
+                      ...fieldApi.form.state.values,
+                      token: value,
+                    },
+                  ),
+                }}
+              >
+                {field => (
+                  <PasswordInput
+                    required
+                    autoComplete="new-password"
+                    maxLength={ROBOT_TOKEN_MAX_LENGTH}
+                    label={t('routes.admin.robots.refreshTokenModal.token')}
+                    description={t('routes.admin.robots.refreshTokenModal.tokenHint', {
+                      min: ROBOT_TOKEN_MIN_LENGTH,
+                      max: ROBOT_TOKEN_MAX_LENGTH,
+                    })}
+                    value={field.state.value ?? ''}
+                    onChange={event => field.handleChange(event.currentTarget.value)}

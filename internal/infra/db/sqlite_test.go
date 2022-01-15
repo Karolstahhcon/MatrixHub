@@ -177,3 +177,92 @@ func TestNewSQLiteKeepsInMemoryDatabaseAcrossConfiguredConnectionRecycling(t *te
 		Driver:                 DriverSQLite,
 		DSN:                    ":memory:",
 		ConnMaxLifetimeSeconds: 1,
+		ConnMaxIdleSeconds:     1,
+		SQLPath:                migrationSQLPath(t),
+		Migrate:                true,
+	})
+	require.NoError(t, err)
+	sqlDB, err := database.DB()
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		require.NoError(t, sqlDB.Close())
+	})
+
+	time.Sleep(1100 * time.Millisecond)
+	var userCount int64
+	require.NoError(t, database.Table("users").Count(&userCount).Error)
+	require.Equal(t, int64(1), userCount)
+}
+
+func TestSQLiteFilePathPreservesDSNModes(t *testing.T) {
+	for _, dsn := range []string{
+		":memory:",
+		":memory:?cache=shared",
+		"file::memory:?cache=shared",
+		"file:matrixhub-memory?mode=memory&cache=shared",
+	} {
+		path, fileBacked, createAllowed, err := sqliteFilePath(dsn)
+		require.NoError(t, err)
+		require.Empty(t, path)
+		require.False(t, fileBacked)
+		require.False(t, createAllowed)
+	}
+
+	databasePath := filepath.Join(t.TempDir(), "missing.db")
+	for _, query := range []string{"mode=ro", "mode=rw", "immutable=1"} {
+		dsn := (&url.URL{Scheme: "file", Path: databasePath, RawQuery: query}).String()
+		path, fileBacked, createAllowed, err := sqliteFilePath(dsn)
+		require.NoError(t, err)
+		require.Equal(t, databasePath, path)
+		require.True(t, fileBacked)
+		require.False(t, createAllowed)
+
+		_, created, err := prepareSQLiteFile(dsn)
+		require.NoError(t, err)
+		require.False(t, created)
+		require.NoFileExists(t, databasePath)
+	}
+
+	dsn := (&url.URL{Scheme: "file", Path: databasePath, RawQuery: "mode=rwc"}).String()
+	path, fileBacked, createAllowed, err := sqliteFilePath(dsn)
+	require.NoError(t, err)
+	require.Equal(t, databasePath, path)
+	require.True(t, fileBacked)
+	require.True(t, createAllowed)
+	_, created, err := prepareSQLiteFile(dsn)
+	require.NoError(t, err)
+	require.True(t, created)
+	requirePrivateSQLiteFile(t, databasePath)
+}
+
+func TestSQLiteURIPathToNativeWindows(t *testing.T) {
+	require.Equal(t, `C:\data\matrixhub.db`, sqliteURIPathToNative("/C:/data/matrixhub.db", "windows"))
+	require.Equal(t, `C:\data\matrixhub.db`, sqliteURIPathToNative("C:/data/matrixhub.db", "windows"))
+}
+
+func TestSQLiteMigrationsDown(t *testing.T) {
+	dsn, err := DefaultSQLiteDSN(t.TempDir())
+	require.NoError(t, err)
+
+	database, err := New(Config{
+		Driver:  DriverSQLite,
+		DSN:     dsn,
+		SQLPath: migrationSQLPath(t),
+		Migrate: true,
+	})
+	require.NoError(t, err)
+
+	sqlDB, err := database.DB()
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		require.NoError(t, sqlDB.Close())
+	})
+
+	sourceURL := fmt.Sprintf("file://%s", filepath.Join(migrationSQLPath(t), DriverSQLite))
+	session, err := newSQLiteMigrateSession(sqlDB, sourceURL, "")
+	require.NoError(t, err)
+	require.NoError(t, session.Down())
+
+	var tableCount int64
+	require.NoError(t, database.Raw(
+		"SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'users'",
