@@ -32,37 +32,3 @@ type MockIUserServiceMockRecorder struct {
 // NewMockIUserService creates a new mock instance.
 func NewMockIUserService(ctrl *gomock.Controller) *MockIUserService {
 	mock := &MockIUserService{ctrl: ctrl}
-	mock.recorder = &MockIUserServiceMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockIUserService) EXPECT() *MockIUserServiceMockRecorder {
-	return m.recorder
-}
-
-// GetCurrentUser mocks base method.
-func (m *MockIUserService) GetCurrentUser(ctx context.Context) (*user.User, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCurrentUser", ctx)
-	ret0, _ := ret[0].(*user.User)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetCurrentUser indicates an expected call of GetCurrentUser.
-func (mr *MockIUserServiceMockRecorder) GetCurrentUser(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentUser", reflect.TypeOf((*MockIUserService)(nil).GetCurrentUser), ctx)
-}
-
-// LoginUser mocks base method.
-func (m *MockIUserService) LoginUser(ctx context.Context, username, password string, rememberMe bool) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "LoginUser", ctx, username, password, rememberMe)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// LoginUser indicates an expected call of LoginUser.
-func (mr *MockIUserServiceMockRecorder) LoginUser(ctx, username, password, rememberMe any) *gomock.Call {
