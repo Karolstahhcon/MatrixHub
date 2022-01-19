@@ -20,10 +20,3 @@ export default function Changelog(): React.ReactElement {
             </h1>
             <p className="text-lg text-slate-400 max-w-2xl mx-auto">
               <Translate id="changelog.subtitle">
-                Release history and version notes for MatrixHub.
-              </Translate>
-            </p>
-          </div>
-        </section>
-
-        <section className="py-16 max-w-4xl mx-auto px-6">
