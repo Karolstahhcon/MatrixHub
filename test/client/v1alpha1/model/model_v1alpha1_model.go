@@ -11,3 +11,9 @@ package v1alpha1
 
 type V1alpha1Model struct {
 	Id int32 `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
+	Nickname string `json:"nickname,omitempty"`
+	DefaultBranch string `json:"defaultBranch,omitempty"`
+	CreatedAt string `json:"createdAt,omitempty"`
+	UpdatedAt string `json:"updatedAt,omitempty"`
+	CloneUrls *V1alpha1CloneUrls `json:"cloneUrls,omitempty"`

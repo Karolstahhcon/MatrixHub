@@ -7,13 +7,3 @@ import { switchReplicationMutationOptions } from '../replications.mutation'
 import type { SyncPolicyItem } from '@matrixhub/api-ts/v1alpha1/sync_policy.pb'
 
 interface ToggleReplicationActionProps {
-  syncPolicy: SyncPolicyItem
-  disabled?: boolean
-}
-
-export function ToggleReplicationAction({
-  syncPolicy,
-  disabled,
-}: ToggleReplicationActionProps) {
-  const { t } = useTranslation()
-  const mutation = useMutation(switchReplicationMutationOptions())
