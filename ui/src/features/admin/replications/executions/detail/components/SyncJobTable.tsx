@@ -72,3 +72,78 @@ function JobStatusCell({ row }: JobCellProps) {
 
   if (status === SyncJobStatus.SYNC_JOB_STATUS_FAILED) {
     return (
+      <StatusIndicator
+        type="danger"
+        label={t('routes.admin.replications.executions.detail.status.failed')}
+      />
+    )
+  }
+
+  return (
+    <StatusIndicator
+      label={t('routes.admin.replications.executions.detail.status.unknown')}
+    />
+  )
+}
+
+function JobActionsCell({
+  row,
+  syncPolicyId,
+  syncTaskId,
+  logsLabel,
+}: Pick<DataTableRowActionsProps<SyncJob>, 'row'> & {
+  syncPolicyId: number
+  syncTaskId: number
+  logsLabel: string
+}) {
+  const syncJobId = row.original.id
+
+  if (syncPolicyId == null || syncTaskId == null || syncJobId == null) {
+    return null
+  }
+
+  return (
+    <Tooltip label={logsLabel}>
+      <ActionIcon
+        variant="subtle"
+        component="a"
+        href={getSyncJobLogUrl(syncPolicyId, syncTaskId, syncJobId)}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={logsLabel}
+      >
+        <IconFileText size={18} />
+      </ActionIcon>
+    </Tooltip>
+  )
+}
+
+export function SyncJobTable({
+  syncPolicyId,
+  syncTaskId,
+  onRefresh,
+  fetching = false,
+  tableOptions,
+  ...props
+}: SyncJobTableProps) {
+  const { t } = useTranslation()
+  const logsLabel = t('routes.admin.replications.executions.detail.table.logs')
+
+  const columns: MRT_ColumnDef<SyncJob>[] = [
+    {
+      accessorKey: 'id',
+      header: t('routes.admin.replications.executions.detail.table.id'),
+    },
+    {
+      accessorKey: 'resourceType',
+      header: t('routes.admin.replications.executions.detail.table.resourceType'),
+      accessorFn: (row) => {
+        if (row.resourceType === ResourceType.RESOURCE_TYPE_MODEL) {
+          return t('routes.admin.replications.executions.detail.resourceType.model')
+        }
+        if (row.resourceType === ResourceType.RESOURCE_TYPE_DATASET) {
+          return t('routes.admin.replications.executions.detail.resourceType.dataset')
+        }
+
+        return row.resourceType
+      },

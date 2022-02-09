@@ -17,12 +17,3 @@ package project_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
-	"github.com/matrixhub-ai/matrixhub/internal/domain/project"
-	"github.com/matrixhub-ai/matrixhub/internal/domain/role"
-)
-
-func TestProjectDomainRules(t *testing.T) {
-	registryID := 7
-	proxied := &project.Project{Type: project.ProjectTypePublic, RegistryID: &registryID}

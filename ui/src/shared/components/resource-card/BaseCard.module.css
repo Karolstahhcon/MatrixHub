@@ -5,10 +5,3 @@
 }
 
 .title {
-  color: var(--mantine-color-gray-8);
-  transition: color 150ms ease;
-}
-
-.card[data-interactive]:hover {
-  border-color: var(--mantine-color-cyan-6);
-  cursor: pointer;
