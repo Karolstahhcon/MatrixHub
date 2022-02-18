@@ -12,3 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+package git_ssh_test
+
+import (
+	"os/exec"
+	"testing"
+
+	testenv "github.com/matrixhub-ai/matrixhub/test/e2e_apiserver/init"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+)
+
+func TestGitSSH(t *testing.T) {
+	RegisterFailHandler(Fail)
