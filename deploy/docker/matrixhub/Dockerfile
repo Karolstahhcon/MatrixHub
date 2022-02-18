@@ -26,32 +26,3 @@ RUN --mount=type=cache,target=/var/cache/apk \
     apk add gcc musl-dev
 
 COPY . .
-
-RUN --mount=type=cache,target=/go/pkg/mod \
-    go mod download
-
-ARG LD_FLAGS
-ENV LD_FLAGS=${LD_FLAGS}
-ENV CGO_ENABLED=1
-RUN --mount=type=cache,target=/go/pkg/mod \
-    go build -ldflags="${LD_FLAGS}" -o /matrixhub ./cmd/matrixhub
-
-##########################################
-FROM ${BASE_IMAGE_PREFIX}/node:${NODE_IMAGE_VERSION} AS ui
-ENV CI=true
-WORKDIR /app/ui
-ARG HTTP_PROXY
-ARG HTTPS_PROXY
-COPY ui /app/ui/
-COPY api /app/api/
-RUN corepack enable
-RUN pnpm install --frozen-lockfile
-RUN pnpm build
-
-##########################################
-FROM ${BASE_IMAGE_PREFIX}/library/alpine:${ALPINE_VERSION} AS matrixhub
-
-# Proxy args are declared (but not ENV'd) so networked steps below can use
-# them without persisting proxy settings into the runtime image.
-ARG HTTP_PROXY
-ARG HTTPS_PROXY
