@@ -18,14 +18,3 @@ export function LanguageSwitcher() {
   }, [i18n.language])
 
   const handleChange = (value: string | null) => {
-    if (!value) {
-      return
-    }
-
-    const normalized = normalizeLanguage(value) ?? DEFAULT_LANGUAGE
-
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(LANGUAGE_STORAGE_KEY, normalized)
-    }
-
-    i18n.changeLanguage(normalized)
