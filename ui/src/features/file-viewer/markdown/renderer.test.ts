@@ -31,37 +31,3 @@ describe('stripFrontmatter', () => {
   it('leaves content without frontmatter untouched', () => {
     expect(stripFrontmatter('# Title\n')).toBe('# Title\n')
   })
-})
-
-describe('renderMarkdown', () => {
-  it('opens markdown links in a new tab', async () => {
-    const html = await renderMarkdown('[blog](https://example.com)')
-
-    expect(html).toContain('target="_blank"')
-    expect(html).toContain('rel="noopener noreferrer"')
-  })
-
-  it('opens raw HTML anchors in a new tab', async () => {
-    const html = await renderMarkdown('<a href="https://example.com"><img src="badge.svg"></a>')
-
-    expect(html).toContain('target="_blank"')
-    expect(html).toContain('rel="noopener noreferrer"')
-  })
-
-  it('does not force in-page anchors into a new tab', async () => {
-    const html = await renderMarkdown('[Best Practices](#best-practices)')
-
-    expect(html).not.toContain('target=')
-  })
-
-  it('gives headings GitHub-style ids so in-page anchors resolve', async () => {
-    const html = await renderMarkdown('## Best Practices\n\n## Best Practices\n\n[go](#best-practices)')
-
-    expect(html).toContain('<h2 id="best-practices">')
-    expect(html).toContain('<h2 id="best-practices-1">')
-    expect(html).not.toContain('tabindex')
-  })
-
-  it('links each heading to its own anchor without opening a new tab', async () => {
-    const html = await renderMarkdown('## Best Practices')
-
