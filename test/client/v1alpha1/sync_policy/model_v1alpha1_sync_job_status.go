@@ -11,7 +11,3 @@ package v1alpha1
 
 type V1alpha1SyncJobStatus string
 
-// List of v1alpha1SyncJobStatus
-const (
-	UNSPECIFIED_V1alpha1SyncJobStatus V1alpha1SyncJobStatus = "SYNC_JOB_STATUS_UNSPECIFIED"
-	RUNNING_V1alpha1SyncJobStatus V1alpha1SyncJobStatus = "SYNC_JOB_STATUS_RUNNING"

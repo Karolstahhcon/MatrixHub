@@ -14,20 +14,3 @@ import type { ResourceBadge, ResourceMetaItem } from '@/shared/components/resour
 
 interface ResourceDetailHeaderProps {
   projectId: string
-  name: string
-  actions?: ReactNode
-  badges?: ResourceBadge[]
-  metaItems?: ResourceMetaItem[]
-}
-
-export function ResourceDetailHeader({
-  projectId,
-  name,
-  badges,
-  actions,
-  metaItems,
-}: ResourceDetailHeaderProps) {
-  const { t } = useTranslation()
-  const fullName = `${projectId}/${name}`
-
-  return (
