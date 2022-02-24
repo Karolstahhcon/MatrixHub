@@ -15,3 +15,11 @@ import (
 
 type APIResponse struct {
 	*http.Response `json:"-"`
+	Message        string `json:"message,omitempty"`
+	// Operation is the name of the swagger operation.
+	Operation string `json:"operation,omitempty"`
+	// RequestURL is the request URL. This value is always available, even if the
+	// embedded *http.Response is nil.
+	RequestURL string `json:"url,omitempty"`
+	// Method is the HTTP method used for the request.  This value is always
+	// available, even if the embedded *http.Response is nil.

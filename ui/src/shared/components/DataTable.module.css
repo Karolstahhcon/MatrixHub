@@ -14,3 +14,19 @@
     &::before {
       box-shadow: none;
     }
+  }
+}
+
+.container:not([data-scrollable-right]) {
+  & [data-column-pinned='right'][data-column-pinned][data-first-right-pinned] {
+    box-shadow: none;
+
+    &::before {
+      box-shadow: none;
+    }
+  }
+}
+
+/* MRT gives pinned cells `opacity: 0.97`, so the columns scrolling underneath
+   bleed through them. Keep them fully opaque — the pinned column has to read as
+   a solid layer above the scrolling content, not a translucent one. The `tr td`
