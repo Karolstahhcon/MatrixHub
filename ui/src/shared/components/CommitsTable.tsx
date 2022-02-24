@@ -49,3 +49,54 @@ function CommitHashCell({ row }: CommitCellProps) {
       <CopyValueButton
         value={commitId}
         iconSize={12}
+        color="var(--mantine-color-gray-9)"
+      />
+    </Group>
+  )
+}
+
+function CommitAuthorDateCell({ row }: CommitCellProps) {
+  const author = row.original.authorName || '-'
+  const authorDate = formatDateTime(row.original.authorDate, 'YYYY-MM-DD HH:mm:ss')
+
+  return (
+    <Text size="sm" truncate>
+      {`${author} ${authorDate}`}
+    </Text>
+  )
+}
+
+function CommitDetailCell({
+  row,
+  table,
+}: DataTableRowActionsProps<Commit>) {
+  const { t } = useTranslation()
+  const {
+    getDetailLinkProps,
+  } = table.options.meta as Pick<CommitsTableProps, 'getDetailLinkProps'>
+  const commitId = row.original.id
+
+  if (!commitId) {
+    return <Text size="sm">-</Text>
+  }
+
+  const detailLinkProps = getDetailLinkProps(row.original)
+
+  return (
+    <AnchorLink
+      size="sm"
+      underline="never"
+      {...detailLinkProps}
+    >
+      {t('shared.commitsTable.actions.detail')}
+    </AnchorLink>
+  )
+}
+
+export function CommitsTable({
+  commits,
+  pagination,
+  page,
+  loading,
+  onPageChange,
+  getDetailLinkProps,
