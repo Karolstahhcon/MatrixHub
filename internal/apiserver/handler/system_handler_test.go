@@ -59,24 +59,3 @@ func TestSystemHandler_GetSystemConfig(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected err: %v", err)
 			}
-			if resp.GetEndpoints().GetHfBase() != tc.want {
-				t.Fatalf("hf_base = %q, want %q", resp.GetEndpoints().GetHfBase(), tc.want)
-			}
-		})
-	}
-}
-
-func TestSystemHandler_GetSystemConfigServiceError(t *testing.T) {
-	h := NewSystemHandler(systemHandlerTestService{err: errors.New("config store unavailable")}).(*SystemHandler)
-
-	resp, err := h.GetSystemConfig(context.Background(), &v1alpha1.GetSystemConfigRequest{})
-	require.Nil(t, resp)
-	requireHandlerTestStatus(t, err, codes.Internal, "")
-}
-
-func TestSystemHandler_RegisterToServer(t *testing.T) {
-	h := NewSystemHandler(systemHandlerTestService{cfg: &system.PublicConfig{
-		Endpoints: system.Endpoints{HfBase: "https://hub.example.com"},
-	}})
-
-	t.Run("serves the config over gRPC and the HTTP gateway", func(t *testing.T) {
