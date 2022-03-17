@@ -91,3 +91,34 @@ enum AccessTokenStatus {
 }
 
 message CreateAccessTokenRequest {
+  string name = 1 [(validate.rules).string = {min_len: 1, max_len: 125}];
+  string expire_at = 2;
+}
+
+message CreateAccessTokenResponse {
+  string token = 2;
+}
+
+message DeleteAccessTokenRequest {
+  uint32 id = 1;
+}
+
+message DeleteAccessTokenResponse {}
+
+message GetProjectRolesRequest {}
+
+message GetProjectRolesResponse {
+  map<string, ProjectRoleType> project_roles = 1;
+}
+
+message GetCurrentUserRequest{
+}
+
+message GetCurrentUserResponse{
+  uint32 id = 1;
+  string username = 2;
+  bool is_admin = 3;
+}
+
+message CreateSSHKeyRequest {
+  string name = 1 [(validate.rules).string.min_len = 1];
