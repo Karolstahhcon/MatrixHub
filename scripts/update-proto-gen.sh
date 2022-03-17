@@ -57,23 +57,3 @@ install_protoc() {
   echo "${download_url}"
 
   wget -O "${protoc_zip}" "${download_url}"
-  unzip -o "${protoc_zip}" -d "${ROOT_DIR}" -x "readme.txt"
-  rm -f "${protoc_zip}"
-}
-
-install_protoc
-
-go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.11
-go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.6.0
-go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@v2.27.7
-go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2@v2.27.7
-go install github.com/grpc-ecosystem/protoc-gen-grpc-gateway-ts@v1.1.2
-go install github.com/envoyproxy/protoc-gen-validate@v1.3.0
-
-VERSIONS=(
-  "v1alpha1"
-)
-
-rm -rf "${GO_DIR}" "${SWAGGER_DIR}" "${TS_DIR}"
-
-mkdir -p "${GO_DIR}" "${SWAGGER_DIR}" "${TS_DIR}"
