@@ -29,3 +29,13 @@ func TestBuildUserListQueryExcludesProjectMembers(t *testing.T) {
 	db, err := gorm.Open(mysql.New(mysql.Config{
 		DSN:                       "",
 		SkipInitializeWithVersion: true,
+	}), &gorm.Config{DryRun: true, DisableAutomaticPing: true})
+	require.NoError(t, err)
+
+	query := buildUserListQuery(db, "", "demo")
+	var total int64
+	require.NoError(t, query.Count(&total).Error)
+	countSQL := strings.ToLower(query.Statement.SQL.String())
+
+	query = buildUserListQuery(db, "", "demo")
+	var users []*user.User
