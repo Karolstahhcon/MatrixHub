@@ -35,3 +35,22 @@ export function ModelCommitsPage() {
     void navigate({
       search: prev => ({
         ...prev,
+        page,
+      }),
+    })
+  }
+
+  return (
+    <Stack pt="sm" gap="sm">
+      <Flex justify="space-between" align="center" wrap="nowrap">
+        <Group gap="md" wrap="nowrap">
+          <ModelRevisionSelect
+            projectId={projectId}
+            modelId={modelId}
+            revision={ref}
+          />
+
+          <PathBreadcrumbs
+            name={modelId}
+            getPathLinkProps={() => linkOptions({
+              to: '/projects/$projectId/models/$modelId/tree/$ref/$',
