@@ -20,3 +20,25 @@ import (
 
 	"github.com/matrixhub-ai/matrixhub/internal/domain/model"
 )
+
+// Dataset represents a dataset in the system.
+type Dataset struct {
+	ID            int64         `json:"id" db:"id"`
+	Name          string        `json:"name" db:"name"`
+	ProjectID     int           `json:"projectId" db:"project_id"`
+	ProjectName   string        `json:"projectName" db:"project_name" gorm:"<-:false"`
+	DefaultBranch string        `json:"defaultBranch" db:"default_branch"`
+	NumRows       string        `json:"numRows" db:"num_rows"`
+	Size          int64         `json:"size" db:"size"`
+	ReadmeContent string        `json:"readmeContent" db:"readme_content"`
+	IsPopular     bool          `json:"isPopular" db:"is_popular"`
+	Labels        []model.Label `json:"labels" db:"-" gorm:"-"`
+	CreatedAt     time.Time     `json:"createdAt" db:"created_at"`
+	UpdatedAt     time.Time     `json:"updatedAt" db:"updated_at"`
+}
+
+// MetadataUpdate contains optional fields for updating dataset metadata.
+type MetadataUpdate struct {
+	ReadmeContent *string
+	Size          *int64
+}
