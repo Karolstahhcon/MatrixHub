@@ -15,12 +15,3 @@ const TableCellAnchor = ({
       ref={ref}
       size="sm"
       fw={600}
-      underline="never"
-      {...props}
-    />
-  )
-}
-
-const TableCellLinkComponent = createLink(TableCellAnchor)
-
-/**
