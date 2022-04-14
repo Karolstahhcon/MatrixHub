@@ -56,3 +56,62 @@ function RobotNameCell({ row }: RobotCellProps) {
 }
 
 function RobotPlatformPermissionsCell({ row }: RobotCellProps) {
+  const { t } = useTranslation()
+  const count = row.original.platformPermissions?.length ?? 0
+
+  return (
+    <Text size="sm">
+      {count > 0
+        ? t('routes.admin.robots.permissionCount', { count })
+        : t('routes.admin.robots.noPermissions')}
+    </Text>
+  )
+}
+
+function RobotProjectCoverageCell({ row }: RobotCellProps) {
+  const { t } = useTranslation()
+  const {
+    projects, projectScope, projectPermissions,
+  } = row.original
+  const projectCount = projects?.length ?? 0
+  const permissionCount = projectPermissions?.length ?? 0
+  const hasAllProjects = projectScope === RobotAccountProjectScope.ROBOT_ACCOUNT_PROJECT_SCOPE_ALL
+
+  if (!hasAllProjects && projectCount === 0 && permissionCount === 0) {
+    return <Text size="sm">{t('routes.admin.robots.noPermissions')}</Text>
+  }
+
+  const projectLabel = hasAllProjects
+    ? t('routes.admin.robots.projectScope.all')
+    : t('routes.admin.robots.projectScope.selectedCount', { count: projectCount })
+  const permissionLabel = permissionCount > 0
+    ? t('routes.admin.robots.permissionCount', { count: permissionCount })
+    : t('routes.admin.robots.noPermissions')
+
+  return (
+    <Group gap={8} wrap="nowrap">
+      <Text size="sm">{projectLabel}</Text>
+      <Text size="sm">{permissionLabel}</Text>
+    </Group>
+  )
+}
+
+function RobotExpireCell({ row }: RobotCellProps) {
+  const { t } = useTranslation()
+  const {
+    expireStatus, remainPeriod,
+  } = row.original
+
+  if (expireStatus === RobotAccountExpireStatus.ROBOT_ACCOUNT_EXPIRE_STATUS_NEVER) {
+    return <Text size="sm">{t('routes.admin.robots.expireStatus.never')}</Text>
+  }
+
+  if (expireStatus === RobotAccountExpireStatus.ROBOT_ACCOUNT_EXPIRE_STATUS_EXPIRED) {
+    return <Text size="sm">{t('routes.admin.robots.expireStatus.expired')}</Text>
+  }
+
+  if (expireStatus === RobotAccountExpireStatus.ROBOT_ACCOUNT_EXPIRE_STATUS_VALID && remainPeriod) {
+    return <Text size="sm">{remainPeriod}</Text>
+  }
+
+  return <Text size="sm">-</Text>
