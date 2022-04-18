@@ -20,25 +20,3 @@ export const Route = createFileRoute(
 )({
   validateSearch: replicationExecutionsSearchSchema,
   search: {
-    middlewares: [stripSearchParams(replicationExecutionsSearchDefaults)],
-  },
-  loaderDeps: ({ search }) => ({ search }),
-  loader: async ({
-    context,
-    deps: { search },
-    params: { replicationId },
-  }) => {
-    const syncPolicyId = parseReplicationId(replicationId)
-
-    await context.queryClient.ensureQueryData(replicationDetailQueryOptions(syncPolicyId))
-    context.queryClient.prefetchQuery(replicationExecutionsQueryOptions(syncPolicyId, search))
-  },
-  component: RouteComponent,
-})
-
-function RouteComponent() {
-  const { t } = useTranslation()
-  const { replicationId } = Route.useParams()
-  const syncPolicyId = parseReplicationId(replicationId)
-  const { data: syncPolicy } = useSuspenseQuery(replicationDetailQueryOptions(syncPolicyId))
-
