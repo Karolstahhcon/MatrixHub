@@ -24,16 +24,3 @@ var (
 	ErrSSHKeyAlreadyExists = errors.New("ssh key already exists")
 	ErrSSHKeyExpired       = errors.New("ssh key has expired and cannot be reused")
 )
-
-type SSHKey struct {
-	Id          int `gorm:"primary_key"`
-	Name        string
-	UserId      int
-	PublicKey   string
-	Fingerprint string
-	ExpireAt    *time.Time
-	CreatedAt   time.Time
-}
-
-func (s SSHKey) IsExpired(t time.Time) bool {
-	return s.ExpireAt != nil && !s.ExpireAt.After(t)

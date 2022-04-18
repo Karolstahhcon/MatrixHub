@@ -169,3 +169,174 @@ test_pull_validation_and_rendering() {
   process_pull "$label_only_none" "$work" || return 1
   process_pull "$empty_none" "$work" || return 1
   process_pull "$content_with_none" "$work" || return 1
+  errors=$(cat "$work/errors")
+  assert_equal '' "$errors" || return 1
+  assert_equal $'22\n23\n24' "$(cat "$work/excluded")" || return 1
+
+  block=$(render_generated_block "$work" matrixhub-ai/matrixhub v0.1.0 v0.2.0) || return 1
+  assert_contains "$block" '#### Feature' || return 1
+  assert_contains "$block" $'- Added a capability.\n  More detail. ([#21]' || return 1
+  assert_contains "$block" '- Block content wins. ([#25]' || return 1
+  assert_contains "$block" '[@alice](https://github.com/alice)' || return 1
+  assert_contains "$block" '/compare/v0.1.0...v0.2.0' || return 1
+  assert_not_contains "$block" 'NONE' || return 1
+}
+
+test_invalid_metadata_is_reported() {
+  local work missing_kind missing_block blocked empty_block unusable unsupported multiple
+  local deprecated_none unsupported_none multiple_none
+  local errors warnings
+  work=$(new_work_dir) || return 1
+  missing_kind=$(pull_json 30 $'```release-note\nVisible change.\n```' '["release-note"]') || return 1
+  missing_block=$(pull_json 31 '' '["kind/cleanup", "release-note"]') || return 1
+  blocked=$(pull_json 32 $'```release-note\nFix.\n```' \
+    '["kind/bug", "release-note", "do-not-merge/needs-kind", "do-not-merge/needs-release-note", "do-not-merge/release-note-label-needed"]') || return 1
+  empty_block=$(pull_json 33 $'```release-note\n\n```' '["kind/feature"]') || return 1
+  unusable=$(pull_json 35 $'```release-note\nNONE\n```' \
+    '["kind/bug", "release-note"]') || return 1
+  unsupported=$(pull_json 36 $'```release-note\nChange.\n```' \
+    '["kind/unknown", "release-note"]') || return 1
+  multiple=$(pull_json 37 $'```release-note\nAPI change.\n```' \
+    '["kind/feature", "kind/api-change", "release-note"]') || return 1
+  deprecated_none=$(pull_json 38 '' \
+    '["kind/deprecation", "release-note-none"]') || return 1
+  unsupported_none=$(pull_json 39 '' \
+    '["kind/unknown", "release-note-none"]') || return 1
+  multiple_none=$(pull_json 41 '' \
+    '["kind/cleanup", "kind/dependency", "release-note-none"]') || return 1
+
+  process_pull "$missing_kind" "$work" || return 1
+  process_pull "$missing_block" "$work" || return 1
+  process_pull "$blocked" "$work" || return 1
+  process_pull "$empty_block" "$work" || return 1
+  process_pull "$unusable" "$work" || return 1
+  process_pull "$unsupported" "$work" || return 1
+  process_pull "$multiple" "$work" || return 1
+  process_pull "$deprecated_none" "$work" || return 1
+  process_pull "$unsupported_none" "$work" || return 1
+  process_pull "$multiple_none" "$work" || return 1
+  errors=$(cat "$work/errors")
+  warnings=$(cat "$work/warnings")
+  assert_contains "$errors" '#30 has no kind/* label' || return 1
+  assert_not_contains "$errors" '#30 has unsupported kind labels' || return 1
+  assert_contains "$errors" '#31 has no usable release-note content and no release-note-none label' || return 1
+  assert_contains "$errors" '#32 is still labeled do-not-merge/needs-kind' || return 1
+  assert_contains "$errors" '#32 is still labeled do-not-merge/needs-release-note' || return 1
+  assert_contains "$errors" '#32 is still labeled do-not-merge/release-note-label-needed' || return 1
+  assert_contains "$errors" '#33 has no usable release-note content and no release-note-none label' || return 1
+  assert_contains "$errors" '#35 has no usable release-note content and no release-note-none label' || return 1
+  assert_contains "$errors" '#36 has unsupported kind labels: kind/unknown' || return 1
+  assert_contains "$errors" '#38 has kind/deprecation and release-note-none' || return 1
+  assert_contains "$errors" '#39 has unsupported kind labels: kind/unknown' || return 1
+  assert_contains "$warnings" '#37 has multiple kind labels (kind/feature, kind/api-change); classified as api-change' || return 1
+  assert_contains "$warnings" '#41 has multiple kind labels (kind/cleanup, kind/dependency); classified as other' || return 1
+}
+
+test_release_note_is_not_executed() {
+  local work sentinel body pull output
+  work=$(new_work_dir) || return 1
+  sentinel="$work/should-not-exist"
+  body="\`\`\`release-note
+\$(touch $sentinel)
+\`\`\`"
+  pull=$(pull_json 40 "$body" '["kind/feature", "release-note"]') || return 1
+  process_pull "$pull" "$work" || return 1
+  [ ! -e "$sentinel" ] || fail 'release-note content was executed' || return 1
+  output=$(cat "$work/entries/feature/000000000040.md")
+  assert_contains "$output" "\$(touch $sentinel)" || return 1
+}
+
+test_pull_discovery_filters_and_deduplicates() (
+  local work pulls warnings
+  work=$(new_work_dir) || return 1
+
+  git_cmd() {
+    case "$1" in
+      rev-list)
+        [ "$2" = --first-parent ] || return 89
+        [ "$3" = --reverse ] || return 89
+        [ "$4" = v0.1.0..HEAD ] || return 89
+        printf '%s\n' aaaaaaaaaaaa1111 bbbbbbbbbbbb2222 cccccccccccc3333
+        ;;
+      show) printf 'direct commit\n' ;;
+      *) return 90 ;;
+    esac
+  }
+  github_api() {
+    case "$1" in
+      *aaaaaaaaaaaa1111*)
+        [ "${2:-}" = --paginate ] || return 92
+        [ "${3:-}" = --slurp ] || return 92
+        printf '%s\n' '[[{"number":5,"merged_at":"2026-01-01","merge_commit_sha":"aaaaaaaaaaaa1111","base":{"ref":"main"}}],[{"number":7,"merged_at":"2026-01-01","base":{"ref":"main"}}]]'
+        ;;
+      *bbbbbbbbbbbb2222*)
+        printf '%s\n' '[[{"number":5,"merged_at":"2026-01-01","base":{"ref":"main"}},{"number":6,"merged_at":"2026-01-01","base":{"ref":"release"}}]]'
+        ;;
+      *cccccccccccc3333*) printf '%s\n' '[[]]' ;;
+      *) return 91 ;;
+    esac
+  }
+
+  collect_pull_numbers v0.1.0 HEAD main matrixhub-ai/matrixhub "$work" || return 1
+  pulls=$(cat "$work/pull_numbers.sorted")
+  warnings=$(cat "$work/warnings")
+  assert_equal 5 "$pulls" || return 1
+  assert_contains "$warnings" 'no merged PR found for cccccccccccc direct commit' || return 1
+  assert_contains "$(cat "$work/pulls/5.json")" '"number":5' || return 1
+)
+
+test_ambiguous_pull_discovery() (
+  local work errors
+  work=$(new_work_dir) || return 1
+
+  git_cmd() {
+    case "$1" in
+      rev-list) printf '%s\n' aaaaaaaaaaaa1111 ;;
+      show) printf 'ambiguous commit\n' ;;
+      *) return 90 ;;
+    esac
+  }
+  github_api() {
+    printf '%s\n' '[[{"number":5,"merged_at":"2026-01-01","base":{"ref":"main"}},{"number":7,"merged_at":"2026-01-01","base":{"ref":"main"}}]]'
+  }
+
+  collect_pull_numbers v0.1.0 HEAD main matrixhub-ai/matrixhub "$work" || return 1
+  errors=$(cat "$work/errors")
+  assert_contains "$errors" 'aaaaaaaaaaaa has ambiguous merged PRs: #5, #7' || return 1
+  assert_equal '' "$(cat "$work/pull_numbers.sorted")" || return 1
+)
+
+test_pull_discovery_propagates_errors() (
+  local work
+  work=$(new_work_dir) || return 1
+
+  git_cmd() { return 90; }
+  if collect_pull_numbers v0.1.0 HEAD main matrixhub-ai/matrixhub "$work"; then
+    fail 'git rev-list failure should stop collection'
+    return 1
+  fi
+
+  work=$(new_work_dir) || return 1
+  git_cmd() {
+    case "$1" in
+      rev-list) printf '%s\n' aaaaaaaaaaaa1111 ;;
+      show) printf 'direct commit\n' ;;
+      *) return 91 ;;
+    esac
+  }
+  github_api() { printf '%s\n' 'not-json'; }
+  if collect_pull_numbers v0.1.0 HEAD main matrixhub-ai/matrixhub "$work" 2>/dev/null; then
+    fail 'invalid GitHub response should stop collection'
+    return 1
+  fi
+)
+
+test_commit_message_pull_discovery() (
+  local work pulls warnings commit_sha
+  work=$(new_work_dir) || return 1
+  commit_sha=aaaaaaaaaaaa1111
+
+  assert_equal 123 "$(printf 'Merge pull request #123 from topic\n\nTitle\n' | parse_pull_number_from_commit_message)" || return 1
+  assert_equal 123 "$({
+    printf 'Merge pull request #123 from topic\n'
+    awk 'BEGIN { for (i = 0; i < 20000; i++) print "commit body" }'
