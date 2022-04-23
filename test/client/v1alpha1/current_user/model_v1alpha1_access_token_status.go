@@ -9,3 +9,7 @@
 
 package v1alpha1
 
+type V1alpha1AccessTokenStatus string
+
+// List of v1alpha1AccessTokenStatus
+const (
