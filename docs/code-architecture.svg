@@ -47,3 +47,52 @@
     x="50"
     y="310"
     width="1040"
+    height="440"
+    rx="10"
+    fill="#f1f4fc"
+    stroke="#111827"
+    stroke-width="4"
+  />
+  <rect
+    x="1270"
+    y="50"
+    width="290"
+    height="900"
+    rx="12"
+    fill="#f1f4fc"
+    stroke="#111827"
+    stroke-width="4"
+  />
+
+  <!-- Dependencies between top-level packages. -->
+  <g
+    fill="none"
+    stroke="#111827"
+    stroke-width="4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    marker-end="url(#arrow)"
+  >
+    <path d="M 834 115 L 1260 108" />
+    <path d="M 565 190 L 570 300" />
+    <path d="M 1100 530 L 1260 530" />
+    <path d="M 782 902 L 1260 902" />
+    <path d="M 570 846 L 570 760" stroke-dasharray="10 10" />
+  </g>
+
+  <!-- Dependencies inside the domain package. -->
+  <g
+    fill="none"
+    stroke="#111827"
+    stroke-width="4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    marker-end="url(#arrow)"
+  >
+    <path d="M 402 473 L 294 505" />
+    <path d="M 560 473 L 824 556" />
+    <path d="M 600 609 L 470 609" />
+  </g>
+
+  <!-- Modules. -->
+  <g fill="#f1f4fc" stroke="#111827" stroke-width="4">
