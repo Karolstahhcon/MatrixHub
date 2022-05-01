@@ -9,3 +9,9 @@ const { useParams } = getRouteApi('/(auth)/(app)/projects_/$projectId/models/$mo
 
 export function ModelCommitDetailPage() {
   const {
+    projectId,
+    modelId,
+    commitId,
+  } = useParams()
+  const { data: commit } = useSuspenseQuery(modelCommitQueryOptions(projectId, modelId, commitId))
+
