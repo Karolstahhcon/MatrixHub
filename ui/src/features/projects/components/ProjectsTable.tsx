@@ -43,3 +43,49 @@ function ProjectNameCell({ row }: ProjectCellProps) {
       params={{ projectId: name }}
     >
       {name}
+    </TableCellLink>
+  )
+}
+
+function ProjectVisibilityCell({ row }: ProjectCellProps) {
+  const { t } = useTranslation()
+  const isPublic = isPublicProject(row.original.type)
+
+  return (
+    <Badge
+      color={isPublic ? 'green' : 'yellow'}
+      variant="light"
+    >
+      {isPublic
+        ? t('projects.visibility.public')
+        : t('projects.visibility.private')}
+    </Badge>
+  )
+}
+
+function ProjectProxyCell({ row }: ProjectCellProps) {
+  const { t } = useTranslation()
+  const enabled = row.original.enabledRegistry
+
+  return (
+    <Badge
+      color={enabled ? 'green' : 'gray'}
+      variant="light"
+    >
+      {enabled
+        ? t('projects.boolean.yes')
+        : t('projects.boolean.no')}
+    </Badge>
+  )
+}
+
+function ProjectActionsCell({
+  row,
+  table,
+}: DataTableRowActionsProps<Project>) {
+  const { t } = useTranslation()
+  const {
+    onDelete,
+  } = (table.options.meta as {
+    onDelete?: (project: Project) => void
+  } | undefined) ?? {}
