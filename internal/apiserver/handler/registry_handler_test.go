@@ -21,15 +21,3 @@ import (
 	"github.com/matrixhub-ai/matrixhub/internal/domain/registry"
 	registrymocks "github.com/matrixhub-ai/matrixhub/internal/domain/registry/mocks"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/mock/gomock"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-)
-
-func TestUpdateRegistryRejectsIncompletePut(t *testing.T) {
-	for _, tc := range []struct {
-		name    string
-		request *v1alpha1.UpdateRegistryRequest
-	}{
-		{name: "missing name", request: &v1alpha1.UpdateRegistryRequest{Id: 7, Url: "https://huggingface.co"}},
-		{name: "missing url", request: &v1alpha1.UpdateRegistryRequest{Id: 7, Name: "upstream-hf"}},

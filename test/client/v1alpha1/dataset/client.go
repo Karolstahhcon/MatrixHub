@@ -282,3 +282,98 @@ func (c *APIClient) prepareRequest(
 
 		// OAuth2 authentication
 		if tok, ok := ctx.Value(ContextOAuth2).(oauth2.TokenSource); ok {
+			// We were able to grab an oauth2 token from the context
+			var latestToken *oauth2.Token
+			if latestToken, err = tok.Token(); err != nil {
+				return nil, err
+			}
+
+			latestToken.SetAuthHeader(localVarRequest)
+		}
+
+		// Basic HTTP Authentication
+		if auth, ok := ctx.Value(ContextBasicAuth).(BasicAuth); ok {
+			localVarRequest.SetBasicAuth(auth.UserName, auth.Password)
+		}
+
+		// AccessToken Authentication
+		if auth, ok := ctx.Value(ContextAccessToken).(string); ok {
+			localVarRequest.Header.Add("Authorization", "Bearer "+auth)
+		}
+	}
+
+	for header, value := range c.cfg.DefaultHeader {
+		localVarRequest.Header.Add(header, value)
+	}
+
+	return localVarRequest, nil
+}
+
+func (c *APIClient) decode(v interface{}, b []byte, contentType string) (err error) {
+		if strings.Contains(contentType, "application/xml") {
+			if err = xml.Unmarshal(b, v); err != nil {
+				return err
+			}
+			return nil
+		} else if strings.Contains(contentType, "application/json") {
+			if err = json.Unmarshal(b, v); err != nil {
+				return err
+			}
+			return nil
+		}
+	return errors.New("undefined response type")
+}
+
+// Add a file to the multipart request
+func addFile(w *multipart.Writer, fieldName, path string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	part, err := w.CreateFormFile(fieldName, filepath.Base(path))
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(part, file)
+
+	return err
+}
+
+// Prevent trying to import "fmt"
+func reportError(format string, a ...interface{}) error {
+	return fmt.Errorf(format, a...)
+}
+
+// Set request body from an interface{}
+func setBody(body interface{}, contentType string) (bodyBuf *bytes.Buffer, err error) {
+	if bodyBuf == nil {
+		bodyBuf = &bytes.Buffer{}
+	}
+
+	if reader, ok := body.(io.Reader); ok {
+		_, err = bodyBuf.ReadFrom(reader)
+	} else if b, ok := body.([]byte); ok {
+		_, err = bodyBuf.Write(b)
+	} else if s, ok := body.(string); ok {
+		_, err = bodyBuf.WriteString(s)
+	} else if s, ok := body.(*string); ok {
+		_, err = bodyBuf.WriteString(*s)
+	} else if jsonCheck.MatchString(contentType) {
+		err = json.NewEncoder(bodyBuf).Encode(body)
+	} else if xmlCheck.MatchString(contentType) {
+		xml.NewEncoder(bodyBuf).Encode(body)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	if bodyBuf.Len() == 0 {
+		err = fmt.Errorf("Invalid body type %s\n", contentType)
+		return nil, err
+	}
+	return bodyBuf, nil
+}
+
