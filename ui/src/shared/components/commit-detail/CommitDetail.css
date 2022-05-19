@@ -6,12 +6,3 @@
 }
 
 .d2h-file-wrapper {
-  border-color: var(--mantine-color-gray-3);
-  border-radius: var(--mantine-radius-md);
-  margin-bottom: 12px;
-}
-
-.d2h-file-list-wrapper a, .d2h-file-list-wrapper a:visited {
-  color: var(--mantine-color-cyan-text);
-}
-

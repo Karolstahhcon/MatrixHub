@@ -18,3 +18,23 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"time"
+
+	v1alpha1project "github.com/matrixhub-ai/matrixhub/test/client/v1alpha1/project"
+	"github.com/matrixhub-ai/matrixhub/test/tools"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+)
+
+var _ = Describe("HF and Git interoperability", Label("protocol-interop"), func() {
+	It("should expose HF uploads to Git and Git pushes to HF", Label("PI00001", "smoke"), func() {
+		ctx := context.Background()
+		root := GinkgoT().TempDir()
+
+		fixture, err := tools.CreateProjectUserFixture(ctx, "interop", v1alpha1project.EDITOR_V1alpha1ProjectRoleType)
+		Expect(err).NotTo(HaveOccurred())
+		DeferCleanup(func() {
+			if err := fixture.Cleanup(context.Background()); err != nil {
+				GinkgoWriter.Printf("protocol fixture cleanup failed: %v\n", err)
+			}
