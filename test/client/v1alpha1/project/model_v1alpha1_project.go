@@ -9,9 +9,3 @@
 
 package v1alpha1
 
-import (
-	"time"
-)
-
-type V1alpha1Project struct {
-	Name string `json:"name,omitempty"`
