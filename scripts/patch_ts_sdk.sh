@@ -8,9 +8,3 @@ DIR="$(dirname "${BASH_SOURCE[0]}")"
 ROOT_DIR="$(realpath "${DIR}/..")"
 FETCH_FILE="${ROOT_DIR}/api/ts/fetch.pb.ts"
 
-if [[ ! -f "${FETCH_FILE}" ]]; then
-  echo "missing ${FETCH_FILE}" >&2
-  exit 1
-fi
-
-if grep -q "export type FetchFn = typeof fetch" "${FETCH_FILE}"; then

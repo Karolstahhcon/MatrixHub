@@ -10,3 +10,16 @@ interface CodeViewerProps {
   language: string
 }
 
+export function CodeViewer({
+  content, language,
+}: CodeViewerProps) {
+  const lineCount = content.split('\n').length
+
+  return (
+    <Box className={classes.codeRoot}>
+      <Editor
+        height={`${Math.min(Math.max(lineCount * 20, 200), 800)}px`}
+        language={language}
+        value={content}
+        loading={(
+          <Center p="xl">
