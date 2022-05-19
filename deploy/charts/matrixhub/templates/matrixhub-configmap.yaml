@@ -15,21 +15,3 @@ data:
       enabled: {{ dig "enabled" true (.Values.presets | default dict) }}
     database:
       driver: {{ .Values.apiserver.database.driver }}
-      accessType: {{ .Values.apiserver.database.accessType }}
-      maxOpenConns: {{ .Values.apiserver.database.maxOpenConns }}
-      maxIdleConns: {{ .Values.apiserver.database.maxIdleConns }}
-      connMaxLifetimeSeconds: {{ .Values.apiserver.database.connMaxLifetimeSeconds }}
-      connMaxIdleSeconds: {{ .Values.apiserver.database.connMaxIdleSeconds }}
-      migrate: {{ .Values.apiserver.database.migrate }}
-    migrationPath: {{ .Values.apiserver.database.migrationPath }}
-    apiServer:
-      port: {{ .Values.apiserver.port }}
-      sshPort: {{ .Values.apiserver.sshPort }}
-      hostURL: {{ .Values.apiserver.hostURL | default "" | quote }}
-      externalURL: {{ .Values.apiserver.externalURL | default "" | quote }}
-    {{- if .Values.jobServer }}
-    jobServer:
-      enabled: {{ .Values.jobServer.enabled }}
-      shutdownGrace: {{ .Values.jobServer.shutdownGrace | default "30s" }}
-      syncPolicy:
-        pollInterval: {{ .Values.jobServer.syncPolicy.pollInterval | default "30s" }}
