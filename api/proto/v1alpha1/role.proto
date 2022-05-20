@@ -18,3 +18,13 @@ service Roles {
     option (google.api.http) = {
       get: "/api/v1alpha1/roles/permissions"
     };
+  }
+}
+
+message ListAllPermissionsRequest {
+}
+
+message ListAllPermissionsResponse {
+  repeated RoleCategory system_categories = 1;
+  repeated RoleCategory project_categories = 2;
+}
