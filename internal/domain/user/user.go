@@ -13,3 +13,34 @@
 // limitations under the License.
 
 package user
+
+import (
+	"context"
+	"time"
+
+	"github.com/matrixhub-ai/matrixhub/internal/infra/crypto"
+)
+
+type User struct {
+	ID             int `gorm:"primary_key"`
+	Username       string
+	Password       string
+	Email          string
+	IsAdmin        bool `gorm:"-"` // Platform admin flag (not read from DB directly, determined via members_roles_projects table)
+	SessionVersion int
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
+
+func (u User) CheckPassword(password string) bool {
+	return crypto.CheckPasswordHash(password, u.Password)
+}
+
+func (User) TableName() string {
+	return "users"
+}
+
+//go:generate go tool mockgen -source=user.go -destination=mocks/user_repo_mock.go -package=mocks
+type IUserRepo interface {
+	CreateUser(ctx context.Context, user *User) error
+	GetUser(ctx context.Context, id int) (*User, error)
