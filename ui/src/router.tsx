@@ -9,8 +9,3 @@ const rawBasePath = import.meta.env.VITE_UI_BASE_PATH ?? '/'
 
 export const router = createRouter({
   routeTree,
-  scrollRestoration: true,
-  scrollToTopSelectors: [
-    contentViewportSelector,
-    adminContentViewportSelector,
-  ],
