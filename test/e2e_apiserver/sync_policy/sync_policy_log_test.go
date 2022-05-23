@@ -64,25 +64,3 @@ var _ = Describe("SyncPolicy Job Log", Label("sync-policy"), func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(resp.SyncPolicy).NotTo(BeNil())
 		pid := resp.SyncPolicy.Id
-		Expect(pid).To(BeNumerically(">", 0))
-		defer func() {
-			_, _, _ = api.SyncPolicyDeleteSyncPolicy(ctx, pid)
-		}()
-
-		// 3. Manually create SyncTask
-		taskResp, _, err := api.SyncPolicyCreateSyncTask(ctx, pid)
-		Expect(err).NotTo(HaveOccurred())
-		tid := taskResp.Id
-		Expect(tid).To(BeNumerically(">", 0))
-
-		// 4. Wait for task completion
-		task, err := waitForTaskCompletion(ctx, api, pid, tid, 3*time.Minute)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(task).NotTo(BeNil())
-
-		// 5. Get job list
-		jobsResp, _, err := api.SyncPolicyListSyncJobs(ctx, pid, tid, &v1alpha1.SyncPolicyApiSyncPolicyListSyncJobsOpts{
-			Page:     optional.NewInt32(1),
-			PageSize: optional.NewInt32(20),
-		})
-		Expect(err).NotTo(HaveOccurred())
