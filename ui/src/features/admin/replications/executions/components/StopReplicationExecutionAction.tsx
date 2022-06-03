@@ -17,3 +17,12 @@ interface StopReplicationExecutionActionProps {
 export function StopReplicationExecutionAction({
   syncPolicyId,
   task,
+  disabled,
+}: StopReplicationExecutionActionProps) {
+  const { t } = useTranslation()
+  const mutation = useMutation(stopReplicationExecutionMutationOptions(syncPolicyId))
+  const canStop = task.status === SyncTaskStatus.SYNC_TASK_STATUS_RUNNING
+
+  const handleStop = async () => {
+    if (task.id == null) {
+      return

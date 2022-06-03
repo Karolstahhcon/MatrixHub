@@ -8,3 +8,8 @@
  */
 
 package v1alpha1
+
+type V1alpha1CreateRobotAccountRequest struct {
+	Name string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
+	ExpireDays int32 `json:"expireDays,omitempty"`
