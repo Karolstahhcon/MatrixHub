@@ -45,3 +45,26 @@ var methodPermissions = map[string]role.Permission{
 	// Sync policy management
 	"/matrixhub.v1alpha1.SyncPolicy/ListSyncPolicies": role.SyncGet,
 	"/matrixhub.v1alpha1.SyncPolicy/GetSyncPolicy":    role.SyncGet,
+	"/matrixhub.v1alpha1.SyncPolicy/ListSyncTasks":    role.SyncGet,
+	"/matrixhub.v1alpha1.SyncPolicy/CreateSyncPolicy": role.SyncCreate,
+	"/matrixhub.v1alpha1.SyncPolicy/CreateSyncTask":   role.SyncCreate,
+	"/matrixhub.v1alpha1.SyncPolicy/UpdateSyncPolicy": role.SyncUpdate,
+	"/matrixhub.v1alpha1.SyncPolicy/StopSyncTask":     role.SyncUpdate,
+	"/matrixhub.v1alpha1.SyncPolicy/DeleteSyncPolicy": role.SyncDelete,
+
+	// Robot management
+	"/matrixhub.v1alpha1.Robots/CreateRobotAccount":       role.RobotCreate,
+	"/matrixhub.v1alpha1.Robots/ListRobotAccounts":        role.RobotGet,
+	"/matrixhub.v1alpha1.Robots/GetRobotAccount":          role.RobotGet,
+	"/matrixhub.v1alpha1.Robots/DeleteRobotAccount":       role.RobotDelete,
+	"/matrixhub.v1alpha1.Robots/UpdateRobotAccount":       role.RobotUpdate,
+	"/matrixhub.v1alpha1.Robots/RefreshRobotAccountToken": role.RobotUpdate,
+
+	// Cleanup management
+	"/matrixhub.v1alpha1.Cleanup/PreviewCleanup":  role.CleanupGet,
+	"/matrixhub.v1alpha1.Cleanup/GetStorageStats": role.CleanupGet,
+	"/matrixhub.v1alpha1.Cleanup/ExecuteCleanup":  role.CleanupExecute,
+}
+
+// AuthzInterceptor returns a GRPC interceptor that checks platform-level permissions
+func AuthzInterceptor(verifyFunc func(ctx context.Context, perm role.Permission) (bool, error)) grpc.UnaryServerInterceptor {

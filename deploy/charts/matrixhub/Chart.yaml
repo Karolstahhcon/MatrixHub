@@ -1,0 +1,8 @@
+apiVersion: v2
+name: matrixhub
+description: A Helm chart for MatrixHub API Server
+
+# A chart can be either a 'library' or an 'application' chart
+type: application
+
+# This is the chart version and is used as a label by the Helm UI. You can use semver or an arbitrary string.
