@@ -69,3 +69,38 @@ kind: Kustomization
 resources:
   - ../../../../overlays/${mode}
 patches:
+  - path: node-selector.yaml
+EOF
+  cat >"${node_selector_overlay_dir}/node-selector.yaml" <<EOF
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${MODEL_DEPLOYMENT}
+spec:
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${MODEL_NODE_SELECTOR}
+EOF
+  kubectl kustomize "$node_selector_overlay_dir" >"$rendered_manifest"
+else
+  kubectl kustomize "$overlay" >"$rendered_manifest"
+fi
+
+cat >"${run_dir}/run-metadata.md" <<EOF
+| Field | Value |
+|---|---|
+| Mode | ${mode} |
+| Namespace | ${namespace} |
+| Model | ${MODEL_ID} |
+| llm-d router service | ${ROUTER_SERVICE} |
+| llm-d router chart | ${LLMD_ROUTER_CHART}@${LLMD_ROUTER_CHART_VERSION} |
+| Model node selector | ${MODEL_NODE_SELECTOR:-not set} |
+| Model source endpoint | $([[ "$mode" == matrixhub ]] && printf '%s' "$MATRIXHUB_ENDPOINT" || printf '%s' 'https://hf.m.daocloud.io') |
+| MatrixHub endpoint | $([[ "$mode" == matrixhub ]] && printf '%s' "$MATRIXHUB_ENDPOINT" || printf 'not used') |
+EOF
+
+started_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+started_epoch="$(date +%s)"
+printf '%s\n' "$started_at" >"${run_dir}/started-at.txt"
+
