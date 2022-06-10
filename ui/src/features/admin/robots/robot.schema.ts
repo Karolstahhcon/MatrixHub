@@ -81,3 +81,31 @@ export const refreshRobotTokenSchema = z.object({
   token: z.string().trim(),
   confirmToken: z.string().trim(),
 }).superRefine((value, ctx) => {
+  if (value.autoGenerate) {
+    return
+  }
+
+  if (!value.token) {
+    ctx.addIssue({
+      code: 'custom',
+      message: t('routes.admin.robots.refreshTokenModal.validation.tokenRequired'),
+      path: ['token'],
+    })
+  } else {
+    const result = robotTokenSchema.safeParse(value.token)
+
+    if (!result.success) {
+      result.error.issues.forEach(issue => ctx.addIssue({
+        code: 'custom',
+        message: issue.message,
+        path: ['token'],
+      }))
+    }
+  }
+
+  if (!value.confirmToken) {
+    ctx.addIssue({
+      code: 'custom',
+      message: t('routes.admin.robots.refreshTokenModal.validation.confirmTokenRequired'),
+      path: ['confirmToken'],
+    })

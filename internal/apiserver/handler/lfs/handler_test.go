@@ -88,3 +88,48 @@ func TestLFSObjectLifecycle(t *testing.T) {
 
 	put := httptest.NewRequest(http.MethodPut, "/objects/"+oid, bytes.NewReader(content))
 	put.ContentLength = int64(len(content))
+	response = httptest.NewRecorder()
+	handler.ServeHTTP(response, put)
+	require.Equal(t, http.StatusOK, response.Code)
+
+	verifyBody := fmt.Sprintf(`{"oid":%q,"size":%d}`, oid, len(content))
+	response = lfsRequest(t, handler, http.MethodPost, "/objects/"+oid+"/verify", verifyBody, "")
+	require.Equal(t, http.StatusOK, response.Code)
+
+	response = lfsRequest(t, handler, http.MethodGet, "/objects/"+oid, "", "")
+	require.Equal(t, http.StatusOK, response.Code)
+	require.Equal(t, content, response.Body.Bytes())
+	require.Equal(t, `"`+oid+`"`, response.Header().Get("ETag"))
+
+	batchBody = fmt.Sprintf(`{"operation":"download","objects":[{"oid":%q,"size":%d}]}`, oid, len(content))
+	response = lfsRequest(t, handler, http.MethodPost, "https://example.com/org/repo.git/info/lfs/objects/batch", batchBody, "")
+	require.Equal(t, http.StatusOK, response.Code)
+	require.NoError(t, json.Unmarshal(response.Body.Bytes(), &batch))
+	require.Equal(t, "https://example.com/objects/"+oid, batch.Objects[0].Actions["download"].Href)
+}
+
+func TestLFSObjectErrorsAndSignedActions(t *testing.T) {
+	signer := authenticate.NewTokenSignValidator([]byte("unit-test-key"))
+	next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusTeapot)
+	})
+	middleware := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("X-Test-Middleware", "true")
+			next.ServeHTTP(w, r)
+		})
+	}
+	handler := newLFSHandler(t,
+		backend.WithMiddlewares(middleware),
+		backend.WithNext(next),
+		backend.WithTokenSignValidator(signer),
+		backend.WithMirror(nil),
+	)
+
+	response := lfsRequest(t, handler, http.MethodGet, "/not-lfs", "", "")
+	require.Equal(t, http.StatusTeapot, response.Code)
+
+	missingOID := strings.Repeat("a", 64)
+	response = lfsRequest(t, handler, http.MethodGet, "/objects/"+missingOID, "", "")
+	require.Equal(t, http.StatusNotFound, response.Code)
+	require.Equal(t, "true", response.Header().Get("X-Test-Middleware"))
