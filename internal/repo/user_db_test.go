@@ -8,34 +8,3 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-package repo
-
-import (
-	"strings"
-	"testing"
-
-	"github.com/stretchr/testify/require"
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
-
-	"github.com/matrixhub-ai/matrixhub/internal/domain/user"
-)
-
-func TestBuildUserListQueryExcludesProjectMembers(t *testing.T) {
-	db, err := gorm.Open(mysql.New(mysql.Config{
-		DSN:                       "",
-		SkipInitializeWithVersion: true,
-	}), &gorm.Config{DryRun: true, DisableAutomaticPing: true})
-	require.NoError(t, err)
-
-	query := buildUserListQuery(db, "", "demo")
-	var total int64
-	require.NoError(t, query.Count(&total).Error)
-	countSQL := strings.ToLower(query.Statement.SQL.String())
-
-	query = buildUserListQuery(db, "", "demo")
-	var users []*user.User
