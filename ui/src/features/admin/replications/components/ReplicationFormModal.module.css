@@ -9,14 +9,3 @@
      this variable, so overriding it here keeps the two in step. */
   --input-left-section-width: var(--inline-field-label-width);
 
-  border: 1px solid var(--mantine-color-default-border);
-  border-radius: var(--app-size-radius-mmd);
-  overflow: hidden;
-}
-
-:global(html[lang^='zh']) .inlineFieldWrapper {
-  --inline-field-label-width: 90px;
-}
-
-.inlineFieldInput {
-  border: 0;
