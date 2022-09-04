@@ -9,36 +9,3 @@
 // Package mocks is a generated GoMock package.
 package mocks
 
-import (
-	context "context"
-	reflect "reflect"
-
-	user "github.com/matrixhub-ai/matrixhub/internal/domain/user"
-	gomock "go.uber.org/mock/gomock"
-)
-
-// MockISSHKeyService is a mock of ISSHKeyService interface.
-type MockISSHKeyService struct {
-	ctrl     *gomock.Controller
-	recorder *MockISSHKeyServiceMockRecorder
-	isgomock struct{}
-}
-
-// MockISSHKeyServiceMockRecorder is the mock recorder for MockISSHKeyService.
-type MockISSHKeyServiceMockRecorder struct {
-	mock *MockISSHKeyService
-}
-
-// NewMockISSHKeyService creates a new mock instance.
-func NewMockISSHKeyService(ctrl *gomock.Controller) *MockISSHKeyService {
-	mock := &MockISSHKeyService{ctrl: ctrl}
-	mock.recorder = &MockISSHKeyServiceMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockISSHKeyService) EXPECT() *MockISSHKeyServiceMockRecorder {
-	return m.recorder
-}
-
-// CreateSSHKey mocks base method.
