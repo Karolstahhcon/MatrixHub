@@ -16,22 +16,3 @@ export const usersSearchDefaults = {
 }
 
 export const usersSearchSchema = z.object({
-  page: z.coerce.number().int().positive().default(usersSearchDefaults.page).catch(usersSearchDefaults.page),
-  query: z.string().trim().optional().catch(usersSearchDefaults.query),
-})
-
-export type UsersSearch = z.infer<typeof usersSearchSchema>
-
-function requiredString(message: string) {
-  return z.string().trim().min(1, message)
-}
-
-function refineConfirmPassword<
-  TSchema extends z.ZodType<{
-    password: string
-    confirmPassword: string
-  }, unknown>,
->(schema: TSchema, message: string) {
-  return schema.refine(
-    value => value.password === value.confirmPassword,
-    {
