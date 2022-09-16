@@ -7,23 +7,3 @@ router:
       v: 2
     pluginsConfigFile: default-plugins.yaml
     resources:
-      requests:
-        cpu: "4"
-        memory: 8Gi
-      limits:
-        memory: 16Gi
-
-  inferencePool:
-    failureMode: FailOpen
-
-  modelServers:
-    # Omit appProtocol from InferencePool for compatibility with older GAIE v1 CRDs.
-    # EPP defaults to HTTP when the field is absent.
-    protocol: ""
-
-  proxy:
-    args:
-      - --service-node
-      - envoy-sidecar
-      - --log-level
-      - warn
