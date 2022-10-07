@@ -26,31 +26,3 @@ function sizedFileDiff(filename, byteLength, fill = 'x') {
 
   const fillBytes = Buffer.byteLength(fill)
   const content = fill.repeat(Math.floor(contentLength / fillBytes))
-    + 'x'.repeat(contentLength % fillBytes)
-  const rawDiff = addedFileDiff(filename, content)
-
-  assert.equal(Buffer.byteLength(rawDiff), byteLength)
-
-  return rawDiff
-}
-
-function addedLinesDiff(filename, lines) {
-  return [
-    `diff --git a/${filename} b/${filename}`,
-    'new file mode 100644',
-    '--- /dev/null',
-    `+++ b/${filename}`,
-    `@@ -0,0 +1,${lines.length} @@`,
-    ...lines.map(line => `+${line}`),
-    '',
-  ].join('\n')
-}
-
-test('commit diffs follow the Hugging Face file size and file count limits', async () => {
-  const server = await createServer({
-    appType: 'custom',
-    configFile: false,
-    optimizeDeps: { noDiscovery: true },
-    root,
-    server: { middlewareMode: true },
-  })
