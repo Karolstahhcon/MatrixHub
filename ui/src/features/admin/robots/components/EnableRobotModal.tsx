@@ -13,19 +13,3 @@ interface EnableRobotModalProps {
   opened: boolean
   onClose: () => void
 }
-
-export function EnableRobotModal({
-  opened,
-  robot,
-  onClose,
-}: EnableRobotModalProps) {
-  const { t } = useTranslation()
-  const mutation = useMutation(enableRobotAccountMutationOptions())
-
-  const handleConfirm = async () => {
-    await mutation.mutateAsync(robot)
-    onClose()
-  }
-
-  return (
-    <ModalWrapper

@@ -25,30 +25,3 @@ import (
 	"github.com/matrixhub-ai/matrixhub/internal/domain/dataset"
 	datasetmocks "github.com/matrixhub-ai/matrixhub/internal/domain/dataset/mocks"
 	gitdomain "github.com/matrixhub-ai/matrixhub/internal/domain/git"
-	gitmocks "github.com/matrixhub-ai/matrixhub/internal/domain/git/mocks"
-	"github.com/matrixhub-ai/matrixhub/internal/domain/model"
-	modelmocks "github.com/matrixhub-ai/matrixhub/internal/domain/model/mocks"
-)
-
-func TestDatasetServiceCreateGetListAndDelete(t *testing.T) {
-	ctx := context.Background()
-	ctrl := gomock.NewController(t)
-	datasetRepo := datasetmocks.NewMockIDatasetRepo(ctrl)
-	labelRepo := modelmocks.NewMockILabelRepo(ctrl)
-	gitRepo := gitmocks.NewMockIGitRepo(ctrl)
-	service := dataset.NewDatasetService(datasetRepo, labelRepo, gitRepo)
-
-	require.Error(t, createDataset(service, ctx, "", "dataset"))
-	require.Error(t, createDataset(service, ctx, "project", ""))
-	datasetRepo.EXPECT().GetByProjectAndName(ctx, "project", "dataset").Return(nil, errors.New("not found"))
-	gitRepo.EXPECT().CreateRepository(ctx, "datasets", "project", "dataset").Return(nil)
-	datasetRepo.EXPECT().Create(ctx, gomock.Any()).DoAndReturn(func(_ context.Context, value *dataset.Dataset) (*dataset.Dataset, error) {
-		require.Equal(t, "project", value.ProjectName)
-		require.Equal(t, "dataset", value.Name)
-		value.ID = 7
-		return value, nil
-	})
-	created, err := service.CreateDataset(ctx, "project", "dataset")
-	require.NoError(t, err)
-	require.EqualValues(t, 7, created.ID)
-
