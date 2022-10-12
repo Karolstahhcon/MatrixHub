@@ -19,24 +19,3 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"testing"
-
-	"github.com/stretchr/testify/require"
-
-	"github.com/matrixhub-ai/matrixhub/internal/infra/db"
-)
-
-func TestInitDerivesSQLiteDSNFromDataDir(t *testing.T) {
-	t.Setenv(db.MATRIXHUB_DSN_ENV, "")
-	migrationDir := t.TempDir()
-	dataDir := filepath.Join(t.TempDir(), "data")
-	configPath := filepath.Join(t.TempDir(), "config.yaml")
-	configYAML := fmt.Sprintf(`
-migrationPath: %q
-dataDir: %q
-database:
-  driver: sqlite
-  migrate: true
-apiServer:
-  port: 3001
-`, migrationDir, dataDir)
