@@ -12,17 +12,3 @@ export function getReplicationExecutionRowId(task: SyncTask) {
 }
 
 export function parseReplicationId(replicationId: string) {
-  const value = Number(replicationId)
-
-  if (!Number.isInteger(value) || value < 1) {
-    throw new Error(i18n.t('routes.admin.replications.executions.errors.invalidSyncPolicyId'))
-  }
-
-  return value
-}
-
-export function formatReplicationExecutionDuration(task: SyncTask) {
-  const startedAt = task.startedTimestamp == null
-    ? undefined
-    : toMilliseconds(task.startedTimestamp)
-  const completedAt = task.completedTimestamp == null
