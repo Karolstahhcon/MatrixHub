@@ -15,20 +15,3 @@ import (
 
 	user "github.com/matrixhub-ai/matrixhub/internal/domain/user"
 	gomock "go.uber.org/mock/gomock"
-)
-
-// MockIUserService is a mock of IUserService interface.
-type MockIUserService struct {
-	ctrl     *gomock.Controller
-	recorder *MockIUserServiceMockRecorder
-	isgomock struct{}
-}
-
-// MockIUserServiceMockRecorder is the mock recorder for MockIUserService.
-type MockIUserServiceMockRecorder struct {
-	mock *MockIUserService
-}
-
-// NewMockIUserService creates a new mock instance.
-func NewMockIUserService(ctrl *gomock.Controller) *MockIUserService {
-	mock := &MockIUserService{ctrl: ctrl}
