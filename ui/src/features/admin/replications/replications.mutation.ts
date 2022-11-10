@@ -28,34 +28,3 @@ export function createReplicationMutationOptions() {
     mutationFn: (input: CreateSyncPolicyRequest) => SyncPolicy.CreateSyncPolicy(input),
     meta: {
       successMessage: i18n.t('routes.admin.replications.notifications.createSuccess'),
-      errorMessage: i18n.t('routes.admin.replications.notifications.createError'),
-      invalidates: [adminReplicationKeys.lists()],
-    } satisfies NotificationMeta,
-  })
-}
-
-export function updateReplicationMutationOptions() {
-  return mutationOptions({
-    mutationFn: (input: UpdateSyncPolicyRequest) =>
-      SyncPolicy.UpdateSyncPolicy({
-        ...input,
-        syncPolicyId: requireSyncPolicyId(input.syncPolicyId),
-      }),
-    meta: {
-      successMessage: i18n.t('routes.admin.replications.notifications.updateSuccess'),
-      errorMessage: i18n.t('routes.admin.replications.notifications.updateError'),
-      invalidates: [adminReplicationKeys.lists()],
-    } satisfies NotificationMeta,
-  })
-}
-
-export function deleteReplicationMutationOptions() {
-  return mutationOptions({
-    mutationFn: ({ syncPolicyId }: DeleteSyncPolicyRequest) => SyncPolicy.DeleteSyncPolicy({
-      syncPolicyId: requireSyncPolicyId(syncPolicyId),
-    }),
-    meta: {
-      successMessage: i18n.t('routes.admin.replications.notifications.deleteSuccess'),
-      errorMessage: i18n.t('routes.admin.replications.notifications.deleteError'),
-      invalidates: [adminReplicationKeys.lists()],
-    } satisfies NotificationMeta,
