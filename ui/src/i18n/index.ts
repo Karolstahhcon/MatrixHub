@@ -18,24 +18,3 @@ export function normalizeLanguage(
   if (!value) {
     return null
   }
-
-  const normalized = value.toLowerCase().split('-')[0]
-
-  if (SUPPORTED_LANGUAGES.includes(normalized as SupportedLanguage)) {
-    return normalized as SupportedLanguage
-  }
-
-  return null
-}
-
-i18n
-  .use(LanguageDetector)
-  .use(initReactI18next)
-  .init({
-    fallbackLng: DEFAULT_LANGUAGE,
-    supportedLngs: [...SUPPORTED_LANGUAGES],
-    load: 'languageOnly',
-    interpolation: {
-      escapeValue: false,
-    },
-    detection: {
