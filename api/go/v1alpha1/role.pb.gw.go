@@ -28,33 +28,3 @@ import (
 var (
 	_ codes.Code
 	_ io.Reader
-	_ status.Status
-	_ = errors.New
-	_ = runtime.String
-	_ = utilities.NewDoubleArray
-	_ = metadata.Join
-)
-
-func request_Roles_ListAllPermissions_0(ctx context.Context, marshaler runtime.Marshaler, client RolesClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var (
-		protoReq ListAllPermissionsRequest
-		metadata runtime.ServerMetadata
-	)
-	if req.Body != nil {
-		_, _ = io.Copy(io.Discard, req.Body)
-	}
-	msg, err := client.ListAllPermissions(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
-	return msg, metadata, err
-}
-
-func local_request_Roles_ListAllPermissions_0(ctx context.Context, marshaler runtime.Marshaler, server RolesServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var (
-		protoReq ListAllPermissionsRequest
-		metadata runtime.ServerMetadata
-	)
-	msg, err := server.ListAllPermissions(ctx, &protoReq)
-	return msg, metadata, err
-}
-
-// RegisterRolesHandlerServer registers the http handlers for service Roles to "mux".
-// UnaryRPC     :call RolesServer directly.
