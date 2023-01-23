@@ -12,17 +12,3 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package testenv
-
-import (
-	"log"
-	"sync"
-	"sync/atomic"
-
-	"github.com/matrixhub-ai/matrixhub/test/tools"
-)
-
-var (
-	once        sync.Once
-	initialized int32
-	refCount    int32
