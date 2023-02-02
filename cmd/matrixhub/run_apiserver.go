@@ -26,31 +26,3 @@ import (
 	"github.com/matrixhub-ai/matrixhub/internal/apiserver"
 	"github.com/matrixhub-ai/matrixhub/internal/infra/config"
 	"github.com/matrixhub-ai/matrixhub/internal/infra/log"
-)
-
-func runAPIServer(configPath string) error {
-	cfg, deferFunc, err := runInit(configPath, "sql")
-	if err != nil {
-		return err
-	}
-	defer deferFunc()
-
-	if !cfg.Debug {
-		gin.SetMode(gin.ReleaseMode)
-	}
-
-	apiServer := apiserver.NewAPIServer(cfg)
-	errorCh := apiServer.Start()
-
-	sign := make(chan os.Signal, 1)
-	signal.Notify(sign, syscall.SIGINT, syscall.SIGTERM)
-	select {
-	case <-sign:
-	case <-errorCh:
-	}
-
-	apiServer.Shutdown()
-	return nil
-}
-
-var apiserverCmd = &cobra.Command{
