@@ -12,17 +12,3 @@ services:
       - "127.0.0.1:3306:3306"
     volumes:
       - ./data/mysql:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-password}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
-  matrixhub:
-    image: ghcr.io/Karolstahhcon/matrixhub:${MATRIXHUB_IMAGE_TAG:-latest}
-    container_name: matrixhub-apiserver
-    working_dir: /workspace
-    command:
-      - /usr/local/bin/matrixhub
-      - apiserver
