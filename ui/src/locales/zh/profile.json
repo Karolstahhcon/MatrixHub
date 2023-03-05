@@ -14,20 +14,3 @@
     "create": {
       "button": "导入 SSH 公钥",
       "title": "导入 SSH 公钥",
-      "name": "SSH 公钥名称",
-      "publicKey": "导入公钥",
-      "success": "SSH 公钥导入成功"
-    },
-    "delete": {
-      "action": "删除",
-      "title": "删除",
-      "confirm": "确认删除 SSH 公钥 {{name}} 吗？删除此公钥后，此公钥立即失效。",
-      "success": "SSH 公钥删除成功"
-    },
-    "status": {
-      "SSH_KEY_STATUS_VALID": "有效",
-      "SSH_KEY_STATUS_EXPIRED": "已过期",
-      "SSH_KEY_STATUS_UNKNOWN": "未知"
-    }
-  },
-  "password": "密码",
