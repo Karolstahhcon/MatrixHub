@@ -23,28 +23,3 @@ type MockISSHKeyRepo struct {
 	recorder *MockISSHKeyRepoMockRecorder
 	isgomock struct{}
 }
-
-// MockISSHKeyRepoMockRecorder is the mock recorder for MockISSHKeyRepo.
-type MockISSHKeyRepoMockRecorder struct {
-	mock *MockISSHKeyRepo
-}
-
-// NewMockISSHKeyRepo creates a new mock instance.
-func NewMockISSHKeyRepo(ctrl *gomock.Controller) *MockISSHKeyRepo {
-	mock := &MockISSHKeyRepo{ctrl: ctrl}
-	mock.recorder = &MockISSHKeyRepoMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockISSHKeyRepo) EXPECT() *MockISSHKeyRepoMockRecorder {
-	return m.recorder
-}
-
-// CreateSSHKey mocks base method.
-func (m *MockISSHKeyRepo) CreateSSHKey(ctx context.Context, key user.SSHKey) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateSSHKey", ctx, key)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
