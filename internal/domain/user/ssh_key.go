@@ -11,16 +11,3 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-package user
-
-import (
-	"context"
-	"errors"
-	"time"
-)
-
-var (
-	ErrSSHKeyAlreadyExists = errors.New("ssh key already exists")
-	ErrSSHKeyExpired       = errors.New("ssh key has expired and cannot be reused")
-)
