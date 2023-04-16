@@ -4,9 +4,3 @@ services:
   matrixhub:
     image: ghcr.io/Karolstahhcon/matrixhub:${MATRIXHUB_IMAGE_TAG:-latest}
     container_name: matrixhub-apiserver
-    working_dir: /workspace
-    command:
-      - /usr/local/bin/matrixhub
-      - apiserver
-      - -c
-      - /etc/matrixhub/config.yaml
