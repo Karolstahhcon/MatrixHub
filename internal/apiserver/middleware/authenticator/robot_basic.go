@@ -10,15 +10,3 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
-
-package authenticator
-
-import (
-	"context"
-	"net/http"
-	"strings"
-	"time"
-
-	"github.com/matrixhub-ai/matrixhub/internal/domain/auth"
-	"github.com/matrixhub-ai/matrixhub/internal/domain/robot"

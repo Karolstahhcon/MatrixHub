@@ -19,24 +19,3 @@ spec:
       {{- with .Values.apiserver.podAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
-      {{- end }}
-      labels:
-        {{- include "matrixhub.apiserver.labels" . | nindent 8 }}
-        {{- include "matrixhub.apiserver.podLabels" . | nindent 8 }}
-    spec:
-      {{- if and .Values.global.storage.apiserver.builtIn (eq .Values.apiserver.database.driver "mysql") (not .Values.apiserver.database.dsn) }}
-      initContainers:
-        - name: check-db-ready
-          image: {{ .Values.global.busybox.image.repository }}:{{ .Values.global.busybox.image.tag }}
-          imagePullPolicy: {{ .Values.global.busybox.image.pullPolicy }}
-          command:
-            - sh
-            - -c
-            - |
-              echo 'Waiting for DataBase to become ready...'
-              until printf "." && nc -z -w 2 {{ include "matrixhub.fullname" . }}-mysql 3306; do
-                sleep 2;
-              done;
-              echo 'database OK ✓'
-      {{- end }}
-      {{- include "matrixhub.imagePullSecrets" . | nindent 6 }}
