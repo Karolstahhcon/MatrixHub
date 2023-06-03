@@ -22,28 +22,3 @@ import (
 	"github.com/matrixhub-ai/matrixhub/internal/domain/robot"
 	"github.com/matrixhub-ai/matrixhub/internal/domain/user"
 )
-
-type typedIdentity struct {
-	Type    string          `json:"type"`
-	Payload json.RawMessage `json:"payload"`
-}
-
-func Marshal(id auth.Identity) (string, error) {
-	payload, err := json.Marshal(id)
-	if err != nil {
-		return "", fmt.Errorf("marshal payload: %w", err)
-	}
-
-	env := typedIdentity{
-		Type:    id.TypeName(),
-		Payload: payload,
-	}
-
-	b, err := json.Marshal(env)
-	if err != nil {
-		return "", fmt.Errorf("marshal envelope: %w", err)
-	}
-
-	return string(b), nil
-}
-
