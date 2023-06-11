@@ -9,15 +9,3 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-package handler
-
-import (
-	"testing"
-
-	v1alpha1 "github.com/matrixhub-ai/matrixhub/api/go/v1alpha1"
-	"github.com/matrixhub-ai/matrixhub/internal/domain/registry"
-	registrymocks "github.com/matrixhub-ai/matrixhub/internal/domain/registry/mocks"
-	"github.com/stretchr/testify/require"
