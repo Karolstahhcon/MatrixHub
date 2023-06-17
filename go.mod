@@ -28,34 +28,3 @@ require (
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
 	go.uber.org/mock v0.6.0
-	go.uber.org/zap v1.28.0
-	golang.org/x/crypto v0.57.0
-	golang.org/x/oauth2 v0.36.0
-	golang.org/x/sync v0.23.0
-	google.golang.org/genproto/googleapis/api v0.0.0-20260526163538-3dc84a4a5aaa
-	google.golang.org/grpc v1.83.2
-	google.golang.org/protobuf v1.36.11
-	gopkg.in/natefinch/lumberjack.v2 v2.2.1
-	gorm.io/datatypes v1.2.7
-	gorm.io/driver/mysql v1.6.0
-	gorm.io/driver/postgres v1.6.0
-	gorm.io/driver/sqlite v1.6.0
-	gorm.io/gorm v1.31.2
-	k8s.io/klog/v2 v2.140.0
-)
-
-require (
-	dario.cat/mergo v1.0.0 // indirect
-	filippo.io/edwards25519 v1.2.0 // indirect
-	github.com/Masterminds/semver/v3 v3.4.0 // indirect
-	github.com/Microsoft/go-winio v0.6.2 // indirect
-	github.com/ProtonMail/go-crypto v1.1.6 // indirect
-	github.com/alexbrainman/sspi v0.0.0-20210105120005-909beea2cc74 // indirect
-	github.com/avast/retry-go v2.4.2+incompatible // indirect
-	github.com/aws/aws-sdk-go v1.55.8 // indirect
-	github.com/bytedance/gopkg v0.1.3 // indirect
-	github.com/bytedance/sonic v1.15.0 // indirect
-	github.com/bytedance/sonic/loader v0.5.0 // indirect
-	github.com/cloudflare/circl v1.6.3 // indirect
-	github.com/cloudwego/base64x v0.1.6 // indirect
-	github.com/cyphar/filepath-securejoin v0.6.1 // indirect
