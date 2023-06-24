@@ -9,15 +9,3 @@ import {
   adminReplicationKeys,
   useReplications,
 } from '../replications.query'
-import { DEFAULT_REPLICATIONS_PAGE } from '../replications.schema'
-import { getReplicationRowId } from '../replications.utils'
-
-const replicationsRouteApi = getRouteApi('/(auth)/admin/replications')
-
-export function ReplicationsPage() {
-  const queryClient = useQueryClient()
-  const navigate = replicationsRouteApi.useNavigate()
-  const search = replicationsRouteApi.useSearch()
-  const {
-    data,
-    isLoading,
