@@ -16,21 +16,3 @@ package authenticator
 
 import (
 	"context"
-	"net/http"
-	"strings"
-	"time"
-
-	"github.com/matrixhub-ai/matrixhub/internal/domain/auth"
-	"github.com/matrixhub-ai/matrixhub/internal/domain/robot"
-	"github.com/matrixhub-ai/matrixhub/internal/infra/utils"
-)
-
-type RobotTokenAuthenticator struct {
-	robotRepo robot.IRobotRepo
-}
-
-func NewRobotTokenAuthenticator(robotRepo robot.IRobotRepo) *RobotTokenAuthenticator {
-	return &RobotTokenAuthenticator{robotRepo: robotRepo}
-}
-
-func (a *RobotTokenAuthenticator) Authenticate(ctx context.Context, r *http.Request) (auth.Identity, bool, bool, error) {
