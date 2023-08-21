@@ -15,39 +15,3 @@
 package syncpolicy
 
 import (
-	"context"
-	"database/sql/driver"
-	"fmt"
-	"time"
-)
-
-type SyncTaskStatus int
-
-const (
-	SyncTaskStatusUnspecified SyncTaskStatus = iota
-	SyncTaskStatusRunning
-	SyncTaskStatusSucceeded
-	SyncTaskStatusFailed
-	SyncTaskStatusStopped
-	SyncTaskStatusPending
-)
-
-func (t SyncTaskStatus) Value() (driver.Value, error) {
-	return int64(t), nil
-}
-
-func (t *SyncTaskStatus) Scan(value any) error {
-	if value == nil {
-		*t = SyncTaskStatusUnspecified
-		return nil
-	}
-	switch v := value.(type) {
-	case int64:
-		*t = SyncTaskStatus(v)
-	case int:
-		*t = SyncTaskStatus(v)
-	case int32:
-		*t = SyncTaskStatus(v)
-	case uint8:
-		*t = SyncTaskStatus(v)
-	default:

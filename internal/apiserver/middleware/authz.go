@@ -26,31 +26,3 @@ import (
 	"github.com/matrixhub-ai/matrixhub/internal/domain/role"
 	"github.com/matrixhub-ai/matrixhub/internal/infra/authcodec"
 	"github.com/matrixhub-ai/matrixhub/internal/infra/log"
-)
-
-const (
-	resourceDataset = "datasets"
-	resourceModel   = "models"
-)
-
-var (
-	resourcePermissions = map[string]map[bool]role.Permission{
-		resourceDataset: {
-			true:  role.DatasetPull,
-			false: role.DatasetPush,
-		},
-		resourceModel: {
-			true:  role.ModelPull,
-			false: role.ModelPush,
-		},
-	}
-)
-
-func NewRepoEnforcer(authzSvc authz.IAuthzService) func(ctx context.Context, op permission.Operation, repoName string, opCtx permission.Context) (bool, error) {
-	return func(ctx context.Context, op permission.Operation, repoName string, opCtx permission.Context) (passed bool, err error) {
-		userinfo, ok := authenticate.GetUserInfo(ctx)
-		if ok && userinfo.User != authenticate.Anonymous {
-			identity, err := authcodec.Unmarshal(userinfo.User)
-			if err != nil {
-				return false, err
-			}
