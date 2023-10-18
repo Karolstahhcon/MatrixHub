@@ -9,15 +9,3 @@ router:
 
   epp:
     pluginsConfigFile: optimized-baseline-plugins.yaml
-    pluginsCustomConfig:
-      optimized-baseline-plugins.yaml: |
-        apiVersion: llm-d.ai/v1alpha1
-        kind: EndpointPickerConfig
-        plugins:
-          - type: queue-scorer
-          - type: kv-cache-utilization-scorer
-          - type: prefix-cache-scorer
-          - type: no-hit-lru-scorer
-        schedulingProfiles:
-          - name: default
-            plugins:
