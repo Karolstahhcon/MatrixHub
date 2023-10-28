@@ -32,38 +32,3 @@ LABEL_FILTER=${1:-}
 MATRIXHUB_BASE_URL="${MATRIXHUB_BASE_URL:-http://localhost:3001}"
 
 # URL by which MatrixHub reaches itself, resolved inside the deployment rather
-# than by the test process. No default: tests that need it skip when it is
-# empty, which is safer than guessing an address the server cannot route to.
-MATRIXHUB_SELF_URL="${MATRIXHUB_SELF_URL:-}"
-
-# SSH endpoint reached by Git CLI tests. This is deliberately separate from
-# MATRIXHUB_BASE_URL because HTTP and SSH commonly use different NodePorts.
-MATRIXHUB_SSH_HOST="${MATRIXHUB_SSH_HOST:-127.0.0.1}"
-MATRIXHUB_SSH_PORT="${MATRIXHUB_SSH_PORT:-2222}"
-
-echo "================================================"
-echo "MatrixHub E2E Test Runner"
-echo "================================================"
-echo "Label filter: ${LABEL_FILTER:-<all>}"
-echo "Base URL:   ${MATRIXHUB_BASE_URL}"
-echo "Self URL:   ${MATRIXHUB_SELF_URL:-<unset, self-registry tests skipped>}"
-echo "SSH:        ${MATRIXHUB_SSH_HOST}:${MATRIXHUB_SSH_PORT}"
-echo "================================================"
-
-# Step 1: Wait for service to be ready
-echo ""
-echo "Waiting for MatrixHub service to be ready..."
-TIMEOUT=60
-ELAPSED=0
-INTERVAL=5
-
-while [ $ELAPSED -lt $TIMEOUT ]; do
-    echo "[$(($ELAPSED))s] Checking service health..."
-
-    if curl -s -o /dev/null "${MATRIXHUB_BASE_URL}" 2>&1; then
-        echo ""
-        echo "✓ MatrixHub service is ready!"
-        break
-    fi
-
-    echo "  → Waiting for service to be ready..."
