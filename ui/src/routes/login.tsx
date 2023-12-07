@@ -5,10 +5,3 @@ import { LoginPage } from '@/features/login/pages/LoginPage'
 import { getErrorMessage, queryClient } from '@/queryClient'
 
 const ALREADY_LOGGED_IN_ERROR_MESSAGE = 'ALREADY_LOGGED_IN'
-
-export const Route = createFileRoute('/login')({
-  component: LoginPage,
-  beforeLoad: async () => {
-    try {
-      await queryClient.ensureQueryData(currentUserQueryOptions())
-
