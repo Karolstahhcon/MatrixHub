@@ -8,14 +8,3 @@ import { UsersPage } from '@/features/admin/users/pages/UsersPage'
 import { usersQueryOptions } from '@/features/admin/users/users.query'
 import { usersSearchDefaults, usersSearchSchema } from '@/features/admin/users/users.schema'
 
-export const Route = createFileRoute('/(auth)/admin/users')({
-  validateSearch: usersSearchSchema,
-  search: {
-    middlewares: [stripSearchParams(usersSearchDefaults)],
-  },
-  loaderDeps: ({ search }) => ({ search }),
-  loader: ({
-    context: { queryClient },
-    deps: { search },
-  }) => {
-    queryClient.prefetchQuery(usersQueryOptions(search))
