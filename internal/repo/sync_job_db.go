@@ -28,33 +28,3 @@ type syncJobDB struct {
 
 // NewSyncJobDB creates a new syncJobDB instance
 func NewSyncJobDB(db *gorm.DB) syncjob.ISyncJobRepo {
-	return &syncJobDB{db: db}
-}
-
-// CreateSyncJob creates a new sync job
-func (r *syncJobDB) CreateSyncJob(ctx context.Context, job *syncjob.SyncJob) error {
-	return r.db.WithContext(ctx).Create(job).Error
-}
-
-// CreateSyncJobs creates a batch atomically so processors never observe a partially-created task.
-func (r *syncJobDB) CreateSyncJobs(ctx context.Context, jobs []*syncjob.SyncJob) error {
-	if len(jobs) == 0 {
-		return nil
-	}
-	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		return tx.Create(&jobs).Error
-	})
-}
-
-// GetSyncJob gets a sync job by ID
-func (r *syncJobDB) GetSyncJob(ctx context.Context, id int) (*syncjob.SyncJob, error) {
-	var job syncjob.SyncJob
-	err := r.db.WithContext(ctx).First(&job, id).Error
-	if err != nil {
-		return nil, err
-	}
-	return &job, nil
-}
-
-// UpdateSyncJob updates a sync job
-func (r *syncJobDB) UpdateSyncJob(ctx context.Context, job *syncjob.SyncJob) error {
