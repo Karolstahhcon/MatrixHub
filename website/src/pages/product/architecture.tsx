@@ -16,21 +16,3 @@ export default function Architecture(): React.ReactElement {
         <section className="py-20 relative overflow-hidden">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-green-500/10 blur-[120px] rounded-full pointer-events-none"></div>
           <div className="max-w-4xl mx-auto px-6 relative z-10 text-center">
-            <h1 className="text-4xl sm:text-5xl font-extrabold text-white mb-6">
-              <Translate id="architecture.heading">Architecture</Translate>
-            </h1>
-            <p className="text-lg text-slate-400 max-w-2xl mx-auto">
-              <Translate id="architecture.subtitle">
-                Technical architecture of MatrixHub — proxy layer, caching engine, storage backends,
-                and API surface.
-              </Translate>
-            </p>
-          </div>
-        </section>
-
-        <section className="py-16 max-w-5xl mx-auto px-6 space-y-12">
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="bg-slate-800/30 p-8 rounded-3xl border border-slate-700/50 hover:border-slate-600/50 transition-colors">
-              <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-                <span className="text-3xl">🎛️</span>
-                <Translate id="architecture.controlPlane.title">Control Plane</Translate>
