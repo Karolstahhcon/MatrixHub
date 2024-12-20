@@ -9,25 +9,3 @@ import { DEFAULT_PROJECTS_PAGE_SIZE } from '@/utils/constants'
 
 export interface ProjectsSearch {
   query: string
-  page: number
-}
-
-// -- Query key factory --
-export const projectKeys = {
-  all: ['projects'] as const,
-  lists: () => [...projectKeys.all, 'list'] as const,
-  list: (params: { query: string
-    page: number }) =>
-    [...projectKeys.lists(), params] as const,
-  detail: (projectId: string) => ['projects', projectId] as const,
-}
-
-// -- Query options factory --
-
-// list owned projects, support pagination and name filter
-export function projectsQueryOptions(search: ProjectsSearch) {
-  return queryOptions({
-    queryKey: projectKeys.list({
-      query: search.query,
-      page: search.page,
-    }),
