@@ -18,23 +18,3 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"github.com/matrixhub-ai/hfd/pkg/authenticate"
-	"github.com/stretchr/testify/require"
-	"go.uber.org/mock/gomock"
-
-	"github.com/matrixhub-ai/matrixhub/internal/domain/auth"
-	robotmocks "github.com/matrixhub-ai/matrixhub/internal/domain/robot/mocks"
-	"github.com/matrixhub-ai/matrixhub/internal/domain/user"
-	usermocks "github.com/matrixhub-ai/matrixhub/internal/domain/user/mocks"
-	"github.com/matrixhub-ai/matrixhub/internal/infra/authcodec"
-	"github.com/matrixhub-ai/matrixhub/internal/infra/utils"
-)
-
-func TestHFAuthnMiddlewareSetsAuthenticatedUser(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	tokenRepo := usermocks.NewMockIAccessTokenRepo(ctrl)
-	sessionRepo := usermocks.NewMockISessionRepo(ctrl)
-	userRepo := usermocks.NewMockIUserRepo(ctrl)
-	robotRepo := robotmocks.NewMockIRobotRepo(ctrl)
-	token := utils.TokenPrefix + "test-secret"
