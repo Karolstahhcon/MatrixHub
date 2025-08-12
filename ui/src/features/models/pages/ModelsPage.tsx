@@ -20,25 +20,3 @@ export function ModelsPage() {
 
   return (
     <Flex mih="100%" justify="center" pt="lg" pb="xl">
-      <Group
-        w="100%"
-        gap="xl"
-        align="stretch"
-        wrap="nowrap"
-      >
-        <Flex
-          flex="0 0 24%"
-          wrap="nowrap"
-          pos="relative"
-          pe="xl"
-          miw={0}
-        >
-          <Box
-            flex={1}
-            miw={0}
-          >
-            <ModelsFilterPanel />
-          </Box>
-
-          <Box
-            pos="absolute"
