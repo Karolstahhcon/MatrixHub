@@ -6,11 +6,3 @@ import { RevisionSelect } from '@/shared/components/RevisionSelect.tsx'
 
 interface ModelRevisionSelectProps {
   projectId: string
-  modelId: string
-  revision: string
-}
-
-export function ModelRevisionSelect({
-  projectId,
-  modelId,
-  revision,
