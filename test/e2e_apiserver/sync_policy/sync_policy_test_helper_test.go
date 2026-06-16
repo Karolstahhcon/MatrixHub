@@ -22,27 +22,3 @@ import (
 	"github.com/antihax/optional"
 
 	v1alpha1 "github.com/matrixhub-ai/matrixhub/test/client/v1alpha1/sync_policy"
-)
-
-func ptrPolicyType(t v1alpha1.V1alpha1SyncPolicyType) *v1alpha1.V1alpha1SyncPolicyType {
-	return &t
-}
-
-func ptrTriggerType(t v1alpha1.V1alpha1TriggerType) *v1alpha1.V1alpha1TriggerType {
-	return &t
-}
-
-func ptrResourceType(t v1alpha1.V1alpha1ResourceType) *v1alpha1.V1alpha1ResourceType {
-	return &t
-}
-
-// pollUntilTaskStatus polls the sync task status until it reaches the target status or timeout.
-func pollUntilTaskStatus(ctx context.Context, api *v1alpha1.SyncPolicyApiService, policyID int32, taskID int32, targetStatus v1alpha1.V1alpha1SyncTaskStatus, timeout time.Duration) (*v1alpha1.V1alpha1SyncTask, error) {
-	deadline := time.Now().Add(timeout)
-	for {
-		if time.Now().After(deadline) {
-			return nil, fmt.Errorf("timeout waiting for task %d to reach status %s", taskID, targetStatus)
-		}
-
-		resp, _, err := api.SyncPolicyGetSyncTask(ctx, policyID, taskID)
-		if err != nil {
