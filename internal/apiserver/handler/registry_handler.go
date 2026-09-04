@@ -163,3 +163,59 @@ func (rh *RegistryHandler) PingRegistry(ctx context.Context, request *registryv1
 	if err := request.ValidateAll(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
+	url := strings.TrimSpace(request.Url)
+	if url == "" {
+		return nil, status.Error(codes.InvalidArgument, "url is required")
+	}
+
+	domainRegistry := registry.Registry{
+		URL:      url,
+		Insecure: request.Insecure,
+	}
+	if b := request.GetBasic(); b != nil && (b.Username != "" || b.Password != "") {
+		domainRegistry.SetCredential(registry.NewBasicCredential(b.Username, b.Password))
+	}
+
+	statusCode, statusText, err := rh.registryRepo.PingRegistry(ctx, domainRegistry)
+	if err != nil {
+		return nil, status.Error(codes.Unavailable, "connectivity check failed")
+	}
+	if statusCode < 200 || statusCode >= 300 {
+		return nil, status.Errorf(codes.Unavailable, "registry connectivity check failed with status code %d: %s", statusCode, statusText)
+	}
+	return &registryv1alpha1.PingRegistryResponse{}, nil
+}
+
+func convertDomainRegistryToAPIRegistry(d *registry.Registry) *registryv1alpha1.Registry {
+	if d == nil {
+		return nil
+	}
+
+	r := &registryv1alpha1.Registry{
+		Id:          int32(d.ID),
+		Name:        d.Name,
+		Description: d.Description,
+		Url:         d.URL,
+		Insecure:    d.Insecure,
+		Status:      registryv1alpha1.RegistryStatus(d.Status),
+		CreatedAt:   timestamppb.New(d.CreatedAt),
+		UpdatedAt:   timestamppb.New(d.UpdatedAt),
+	}
+
+	if basic := registry.AsBasic(d.GetCredential()); basic != nil {
+		r.Credential = &registryv1alpha1.Registry_Basic{
+			Basic: &registryv1alpha1.RegistryBasicCredential{
+				Username: basic.Username,
+				Password: basic.Password,
+			},
+		}
+	}
+
+	if v, ok := registryv1alpha1.RegistryType_value[d.Type]; ok {
+		r.Type = registryv1alpha1.RegistryType(v)
+	} else {
+		r.Type = registryv1alpha1.RegistryType_REGISTRY_TYPE_UNSPECIFIED
+	}
+
+	return r
+}
