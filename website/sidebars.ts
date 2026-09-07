@@ -37,3 +37,43 @@ const sidebars: SidebarsConfig = {
           label: 'Model Repository',
           items: [
             'operations/model-repo/upload-download',
+            'operations/model-repo/project-setting',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Project Management',
+          items: [
+            'operations/project-management/create-delete',
+            'operations/project-management/members',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Profile',
+          items: [
+            'operations/profile/access-token',
+            'operations/profile/ssh-key',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Platform Settings',
+          items: [
+            'operations/platform-settings/user-management',
+            'operations/platform-settings/robot-accounts',
+            'operations/platform-settings/registry-management',
+            'operations/platform-settings/remote-sync',
+          ],
+        },
+      ],
+    },
+    'security/index',
+    'reference/index',
+    'troubleshooting/index',
+    'adoption/index',
+    'development/index',
+  ],
+};
+
+export default sidebars;

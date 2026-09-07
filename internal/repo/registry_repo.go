@@ -40,3 +40,88 @@ func (r *RegistryRepo) ListRegistries(ctx context.Context, page, pageSize int, s
 		baseQuery = baseQuery.Where("name LIKE ?", "%"+search+"%")
 	}
 	if err = baseQuery.Count(&total).Error; err != nil {
+		return
+	}
+	pagedQuery := baseQuery.Order("id ASC").Limit(pageSize).Offset((page - 1) * pageSize)
+	err = pagedQuery.Find(&rs).Error
+	return
+}
+
+func (r *RegistryRepo) GetRegistry(ctx context.Context, id int) (*registry.Registry, error) {
+	var registry registry.Registry
+	err := r.db.WithContext(ctx).Where("id = ?", id).First(&registry).Error
+	if err != nil {
+		return nil, err
+	}
+	return &registry, nil
+}
+
+func (r *RegistryRepo) CreateRegistry(ctx context.Context, reg registry.Registry) (*registry.Registry, error) {
+	if err := r.db.WithContext(ctx).Create(&reg).Error; err != nil {
+		return nil, err
+	}
+	return &reg, nil
+}
+
+func (r *RegistryRepo) UpdateRegistry(ctx context.Context, reg registry.Registry) error {
+	updates := map[string]any{
+		"name":            reg.Name,
+		"description":     reg.Description,
+		"url":             reg.URL,
+		"insecure":        reg.Insecure,
+		"credential_type": reg.CredentialType,
+		"auth_info":       reg.AuthInfo,
+	}
+	return r.db.WithContext(ctx).Model(&registry.Registry{}).Where("id = ?", reg.ID).Updates(updates).Error
+}
+
+func (r *RegistryRepo) DeleteRegistry(ctx context.Context, id int) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var projectCount int64
+		if err := tx.Table("projects").Where("registry_id = ?", id).Count(&projectCount).Error; err != nil {
+			return err
+		}
+
+		var syncPolicyCount int64
+		if err := tx.Table("sync_policies").Where("registry_id = ?", id).Count(&syncPolicyCount).Error; err != nil {
+			return err
+		}
+
+		if projectCount > 0 || syncPolicyCount > 0 {
+			return registry.ErrInUse
+		}
+
+		err := tx.Where("id = ?", id).Delete(&registry.Registry{}).Error
+		if errors.Is(err, gorm.ErrForeignKeyViolated) {
+			return registry.ErrInUse
+		}
+		return err
+	})
+}
+
+func (r *RegistryRepo) PingRegistry(ctx context.Context, reg registry.Registry) (int, string, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reg.URL, nil)
+	if err != nil {
+		return 0, "", err
+	}
+
+	if basic := registry.AsBasic(reg.GetCredential()); basic != nil {
+		req.SetBasicAuth(basic.Username, basic.Password)
+	}
+
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: reg.Insecure},
+		},
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return 0, "", err
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	return resp.StatusCode, resp.Status, nil
+}
