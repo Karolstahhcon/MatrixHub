@@ -10,3 +10,8 @@ export function AdminPageLayout({
   children,
 }: AdminPageLayoutProps) {
   return (
+    <Box component="section" px="xl">
+      {children}
+    </Box>
+  )
+}
