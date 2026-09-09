@@ -26,3 +26,32 @@ type Canceller interface {
 	Cancel(jobID int) bool
 }
 
+type memCanceller struct {
+	m sync.Map // jobID int -> context.CancelFunc
+}
+
+// NewMemCanceller returns an in-process Canceller.
+func NewMemCanceller() Canceller {
+	return &memCanceller{}
+}
+
+func (c *memCanceller) Register(jobID int, cancel context.CancelFunc) {
+	c.m.Store(jobID, cancel)
+}
+
+func (c *memCanceller) Unregister(jobID int) {
+	c.m.Delete(jobID)
+}
+
+func (c *memCanceller) Cancel(jobID int) bool {
+	v, ok := c.m.Load(jobID)
+	if !ok {
+		return false
+	}
+	cancel, ok := v.(context.CancelFunc)
+	if !ok {
+		return false
+	}
+	cancel()
+	return true
+}
