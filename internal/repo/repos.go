@@ -54,3 +54,60 @@ type Repos struct {
 	SyncJob     syncjob.ISyncJobRepo
 	Authz       authz.IAuthzProjectRepo
 	Robot       robot.IRobotRepo
+	Preset      preset.IPresetRepo
+}
+
+func NewRepos(conf *config.Config, gitStorage *gitstorage.Storage, gitMirror *mirror.Mirror) *Repos {
+	log.Debug("init database")
+	database, err := db.New(conf.Database)
+	if err != nil {
+		log.Fatalw("create database failed", "error", err)
+	}
+
+	repos := &Repos{
+		DB:         database,
+		GitStorage: gitStorage,
+		GitMirror:  gitMirror,
+	}
+
+	repos.Project = NewProjectDBRepo(repos.DB)
+	repos.User = NewUserRepo(repos.DB)
+	repos.Session, err = NewSessionRepository(repos.DB, conf)
+	if err != nil {
+		if sqlDB, closeErr := repos.DB.DB(); closeErr == nil {
+			_ = sqlDB.Close()
+		}
+		log.Fatalw("create session repository failed", "error", err)
+	}
+	repos.AccessToken = NewAccessTokenRepo(repos.DB)
+	repos.SSHKey = NewSSHKeyRepo(repos.DB)
+	repos.Model = NewModelDB(repos.DB)
+	repos.Label = NewLabelDB(repos.DB)
+	repos.Git = NewGitDB(repos.GitStorage, repos.GitMirror)
+	repos.Dataset = NewDatasetDB(repos.DB)
+	repos.Registry = NewRegistryRepo(repos.DB)
+	repos.SyncPolicy = NewSyncPolicyDB(repos.DB)
+	repos.SyncTask = NewSyncTaskDB(repos.DB)
+	repos.SyncJob = NewSyncJobDB(repos.DB)
+	repos.Authz = NewAuthzDBRepo(repos.DB)
+	repos.Robot = NewRobotRepo(repos.DB)
+	repos.Preset = NewPresetDB(repos.DB)
+
+	return repos
+}
+
+func (r *Repos) Close() error {
+	if session, ok := r.Session.(interface{ Close() }); ok {
+		session.Close()
+	}
+
+	dbConn, err := r.DB.DB()
+	if err != nil {
+		return err
+	}
+	if err = dbConn.Close(); err != nil {
+		return err
+	}
+
+	return nil
+}
