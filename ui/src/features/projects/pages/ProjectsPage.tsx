@@ -38,3 +38,85 @@ export function ProjectsPage() {
   })
 
   const projects = data?.projects ?? []
+  const pagination = data?.pagination
+
+  const [createOpened, createHandlers] = useDisclosure(false)
+  const [deleteOpened, deleteHandlers] = useDisclosure(false)
+  const [deleteTarget, setDeleteTarget] = useState<Project | null>(null)
+
+  const handleSearchChange = (value: string) => {
+    if (value === (search.query ?? '')) {
+      return
+    }
+
+    void navigate({
+      replace: true,
+      search: prev => ({
+        ...prev,
+        page: 1,
+        query: value,
+      }),
+    })
+  }
+
+  const handleDelete = (project: Project) => {
+    setDeleteTarget(project)
+    deleteHandlers.open()
+  }
+
+  const handleRefresh = () => {
+    void queryClient.invalidateQueries({ queryKey: projectKeys.all })
+  }
+
+  const handlePageChange = (page: number) => {
+    void navigate({
+      search: prev => ({
+        ...prev,
+        page,
+      }),
+    })
+  }
+
+  return (
+    <Stack gap="lg" pt="lg">
+      <Group gap="sm">
+        <ProjectIcon size={32} />
+        <Title order={4}>{t('projects.title')}</Title>
+      </Group>
+
+      <Paper>
+        <ProjectsTable
+          data={projects}
+          pagination={pagination}
+          loading={isLoading}
+          page={search.page ?? 1}
+          searchValue={search.query ?? ''}
+          onSearchChange={handleSearchChange}
+          onDelete={handleDelete}
+          onPageChange={handlePageChange}
+          onRefresh={handleRefresh}
+          fetching={isFetching}
+          toolbarExtra={(
+            <Button
+              onClick={createHandlers.open}
+              leftSection={<IconHomePlus size={16} />}
+            >
+              {t('projects.create')}
+            </Button>
+          )}
+        />
+      </Paper>
+
+      <CreateProjectModal
+        opened={createOpened}
+        onClose={createHandlers.close}
+      />
+
+      <DeleteProjectModal
+        project={deleteTarget}
+        opened={deleteOpened}
+        onClose={deleteHandlers.close}
+      />
+    </Stack>
+  )
+}
