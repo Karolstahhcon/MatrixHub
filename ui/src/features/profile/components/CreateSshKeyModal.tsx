@@ -52,3 +52,57 @@ export function CreateSshKeyModal({
       title={t('profile.sshKey.create.title')}
       opened={opened}
       onClose={handleClose}
+      onConfirm={() => form.handleSubmit()}
+      confirmLoading={mutation.isPending}
+      closeOnClickOutside={false}
+      size="lg"
+    >
+      <form.Field
+        name="name"
+        validators={{ onChange: sshKeySchema.shape.name }}
+      >
+        {field => (
+          <TextInput
+            label={t('profile.sshKey.create.name')}
+            value={field.state.value}
+            required
+            onChange={e => field.handleChange(e.currentTarget.value)}
+            onBlur={field.handleBlur}
+            error={fieldError(field)}
+          />
+        )}
+      </form.Field>
+
+      <form.Field
+        name="publicKey"
+        validators={{ onChange: sshKeySchema.shape.publicKey }}
+      >
+        {field => (
+          <Textarea
+            label={t('profile.sshKey.create.publicKey')}
+            minRows={4}
+            value={field.state.value}
+            autosize
+            required
+            onChange={e => field.handleChange(e.currentTarget.value)}
+            onBlur={field.handleBlur}
+            error={fieldError(field)}
+          />
+        )}
+      </form.Field>
+
+      <form.Field
+        name="expireAt"
+        validators={{ onChange: sshKeySchema.shape.expireAt }}
+      >
+        {field => (
+          <ExpireAtField
+            value={field.state.value}
+            onChange={field.handleChange}
+            error={fieldError(field)}
+          />
+        )}
+      </form.Field>
+    </ModalWrapper>
+  )
+}
