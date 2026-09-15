@@ -56,3 +56,61 @@ function RouteComponent() {
   const { t } = useTranslation()
   const {
     replicationId, executionId,
+  } = Route.useParams()
+  const syncPolicyId = parseReplicationId(replicationId)
+  const syncTaskId = parseExecutionId(executionId)
+  const { data: syncPolicy } = useSuspenseQuery(replicationDetailQueryOptions(syncPolicyId))
+  const { data: task } = useSuspenseQuery(executionDetailQueryOptions(syncPolicyId, syncTaskId))
+
+  const {
+    mutate: stopTask, isPending,
+  } = useMutation({
+    ...stopReplicationExecutionMutationOptions(syncPolicyId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: adminReplicationExecutionDetailKeys.item(syncPolicyId, syncTaskId),
+      })
+    },
+  })
+
+  return (
+    <>
+      <AdminPageHeader
+        icon={IconAffiliate}
+        items={[
+          {
+            label: t('admin.replications'),
+            linkProps: { to: '/admin/replications' },
+          },
+          {
+            label: t('routes.admin.replications.executions.breadcrumb', {
+              name: getReplicationDisplayName(syncPolicy),
+            }),
+            linkProps: {
+              to: '/admin/replications/$replicationId/executions',
+              params: { replicationId },
+            },
+          },
+          {
+            label: t('routes.admin.replications.executions.detail.breadcrumb', {
+              id: executionId,
+            }),
+          },
+        ]}
+        actions={(
+          <Button
+            color="cyan"
+            onClick={() => stopTask({ syncTaskId })}
+            loading={isPending}
+            disabled={task?.status !== SyncTaskStatus.SYNC_TASK_STATUS_RUNNING}
+          >
+            {t('routes.admin.replications.executions.actions.stop')}
+          </Button>
+        )}
+      />
+      <AdminPageLayout>
+        <ExecutionDetailPage />
+      </AdminPageLayout>
+    </>
+  )
+}
