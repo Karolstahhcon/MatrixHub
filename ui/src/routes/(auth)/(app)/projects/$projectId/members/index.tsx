@@ -18,3 +18,13 @@ export const Route = createFileRoute(
   },
   loaderDeps: ({ search }) => search,
   loader: ({
+    context,
+    params,
+    deps,
+  }) => {
+    context.queryClient.prefetchQuery(
+      membersQueryOptions(params.projectId, deps),
+    )
+  },
+  component: ProjectMembersPage,
+})
