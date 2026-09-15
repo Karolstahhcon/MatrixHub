@@ -32,3 +32,37 @@ export function FieldHintLabel({
       align="center"
       wrap="nowrap"
       style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+      }}
+    >
+      <Text component="span" inherit>
+        {label}
+      </Text>
+      <Tooltip
+        label={hint}
+        multiline
+        withArrow
+        w={DEFAULT_TOOLTIP_WIDTH}
+        events={{
+          hover: true,
+          focus: true,
+          touch: true,
+        }}
+        {...tooltipProps}
+      >
+        <IconQuestion
+          width={18}
+          height={18}
+          role="button"
+          tabIndex={0}
+          aria-label={t('common.moreInfo')}
+          style={{
+            cursor: 'help',
+            flex: 'none',
+          }}
+        />
+      </Tooltip>
+    </Group>
+  )
+}
