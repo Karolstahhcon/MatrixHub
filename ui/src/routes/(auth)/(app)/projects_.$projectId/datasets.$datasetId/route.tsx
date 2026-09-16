@@ -82,3 +82,88 @@ function DatasetLayout() {
         projectId,
         datasetId,
         ref: 'testDsd',
+        _splat: 'test/data',
+      },
+    },
+    ...(hasProjectRole
+      ? [{
+          id: 'settings',
+          label: t('dataset.detail.setting'),
+          to: DatasetSettingsRoute.to,
+          params: {
+            projectId,
+            datasetId,
+          },
+        }]
+      : []),
+  ])
+
+  const matchRoute = useMatchRoute()
+
+  const activeTab = tabRoutes.find(tab => matchRoute({
+    to: tab.to,
+  }))?.id || 'desc'
+
+  return (
+    <Box py={20}>
+      <Box mb={24}>
+        <ResourceDetailHeader
+          projectId={projectId}
+          name={datasetId}
+          actions={(
+            <>
+              <Button
+                size="xs"
+                color="cyan"
+                variant="light"
+                leftSection={<UploadIcon size={16} />}
+              >
+                {t('dataset.uploadFiles')}
+              </Button>
+              <Button
+                size="xs"
+                color="cyan"
+                variant="light"
+                leftSection={<DownloadIcon size={16} />}
+              >
+                {t('dataset.downloadDataset')}
+              </Button>
+            </>
+          )}
+        />
+      </Box>
+
+      <Tabs value={activeTab}>
+        <Tabs.List style={{ gap: 'var(--mantine-spacing-md)' }}>
+          {
+            tabRoutes.map(({
+              id,
+              label,
+              ...linkProps
+            }) => (
+              <Tabs.Tab
+                key={label}
+                value={id}
+                component={Link}
+                fw={600}
+                fz="sm"
+                lh="xs"
+                px={12}
+                py={8}
+                c={id === activeTab ? 'gray.9' : 'gray.6'}
+                {...linkProps}
+              >
+                {label}
+              </Tabs.Tab>
+            ))
+          }
+        </Tabs.List>
+      </Tabs>
+      <Space h="md" />
+      <div>
+        {activeTab === 'desc' && <div>Description Page</div>}
+        <Outlet />
+      </div>
+    </Box>
+  )
+}
