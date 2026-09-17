@@ -115,3 +115,121 @@ func (mr *MockIProjectRepoMockRecorder) GetProjectByName(ctx, name any) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProjectByName", reflect.TypeOf((*MockIProjectRepo)(nil).GetProjectByName), ctx, name)
 }
 
+// GetProjectIDByName mocks base method.
+func (m *MockIProjectRepo) GetProjectIDByName(ctx context.Context, name string) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProjectIDByName", ctx, name)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetProjectIDByName indicates an expected call of GetProjectIDByName.
+func (mr *MockIProjectRepoMockRecorder) GetProjectIDByName(ctx, name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProjectIDByName", reflect.TypeOf((*MockIProjectRepo)(nil).GetProjectIDByName), ctx, name)
+}
+
+// GetUserProjectRole mocks base method.
+func (m *MockIProjectRepo) GetUserProjectRole(ctx context.Context, userID, projectID int) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserProjectRole", ctx, userID, projectID)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserProjectRole indicates an expected call of GetUserProjectRole.
+func (mr *MockIProjectRepoMockRecorder) GetUserProjectRole(ctx, userID, projectID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserProjectRole", reflect.TypeOf((*MockIProjectRepo)(nil).GetUserProjectRole), ctx, userID, projectID)
+}
+
+// ListProjectInfoByNames mocks base method.
+func (m *MockIProjectRepo) ListProjectInfoByNames(ctx context.Context, names []string) ([]*project.Project, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListProjectInfoByNames", ctx, names)
+	ret0, _ := ret[0].([]*project.Project)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListProjectInfoByNames indicates an expected call of ListProjectInfoByNames.
+func (mr *MockIProjectRepoMockRecorder) ListProjectInfoByNames(ctx, names any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListProjectInfoByNames", reflect.TypeOf((*MockIProjectRepo)(nil).ListProjectInfoByNames), ctx, names)
+}
+
+// ListProjectMembers mocks base method.
+func (m *MockIProjectRepo) ListProjectMembers(ctx context.Context, projectID int, memberName string, page, pageSize int) ([]*project.ProjectMember, int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListProjectMembers", ctx, projectID, memberName, page, pageSize)
+	ret0, _ := ret[0].([]*project.ProjectMember)
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// ListProjectMembers indicates an expected call of ListProjectMembers.
+func (mr *MockIProjectRepoMockRecorder) ListProjectMembers(ctx, projectID, memberName, page, pageSize any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListProjectMembers", reflect.TypeOf((*MockIProjectRepo)(nil).ListProjectMembers), ctx, projectID, memberName, page, pageSize)
+}
+
+// ListProjects mocks base method.
+func (m *MockIProjectRepo) ListProjects(ctx context.Context, name string, projectType project.ProjectType, permFilter project.PermissionFilter, hasPlatformPermission bool, page, pageSize int) ([]*project.Project, int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListProjects", ctx, name, projectType, permFilter, hasPlatformPermission, page, pageSize)
+	ret0, _ := ret[0].([]*project.Project)
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// ListProjects indicates an expected call of ListProjects.
+func (mr *MockIProjectRepoMockRecorder) ListProjects(ctx, name, projectType, permFilter, hasPlatformPermission, page, pageSize any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListProjects", reflect.TypeOf((*MockIProjectRepo)(nil).ListProjects), ctx, name, projectType, permFilter, hasPlatformPermission, page, pageSize)
+}
+
+// RemoveProjectMembers mocks base method.
+func (m *MockIProjectRepo) RemoveProjectMembers(ctx context.Context, projectID int, members []*project.Member) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveProjectMembers", ctx, projectID, members)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveProjectMembers indicates an expected call of RemoveProjectMembers.
+func (mr *MockIProjectRepoMockRecorder) RemoveProjectMembers(ctx, projectID, members any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveProjectMembers", reflect.TypeOf((*MockIProjectRepo)(nil).RemoveProjectMembers), ctx, projectID, members)
+}
+
+// UpdateProject mocks base method.
+func (m *MockIProjectRepo) UpdateProject(ctx context.Context, arg1 *project.Project) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateProject", ctx, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateProject indicates an expected call of UpdateProject.
+func (mr *MockIProjectRepoMockRecorder) UpdateProject(ctx, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateProject", reflect.TypeOf((*MockIProjectRepo)(nil).UpdateProject), ctx, arg1)
+}
+
+// UpdateProjectMemberRole mocks base method.
+func (m *MockIProjectRepo) UpdateProjectMemberRole(ctx context.Context, projectID int, member project.Member, arg3 role.RoleType) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateProjectMemberRole", ctx, projectID, member, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateProjectMemberRole indicates an expected call of UpdateProjectMemberRole.
+func (mr *MockIProjectRepoMockRecorder) UpdateProjectMemberRole(ctx, projectID, member, arg3 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateProjectMemberRole", reflect.TypeOf((*MockIProjectRepo)(nil).UpdateProjectMemberRole), ctx, projectID, member, arg3)
+}
