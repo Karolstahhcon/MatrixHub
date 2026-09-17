@@ -44,3 +44,95 @@ export function buildModelBadges(
       content: <TaskBadge task={name} maw={132} />,
     })
   }
+
+  if (model.parameterCount) {
+    badges.push({
+      key: 'parameterCount',
+      content: <ParameterCountBadge parameterCount={formatParameterCount(model.parameterCount)} maw={132} />,
+    })
+  }
+
+  for (const name of libraryLabels) {
+    badges.push({
+      key: `library-${name}`,
+      content: <LibraryBadge library={name} maw={132} />,
+    })
+  }
+
+  const handledCategories = new Set([options.taskCategory, options.libraryCategory])
+  const additionalLabels = (model.labels ?? []).filter(
+    l => l.name && !handledCategories.has(l.category as Category),
+  )
+
+  for (const label of additionalLabels) {
+    badges.push({
+      key: `label-${label.category}-${label.name}`,
+      content: <BaseBadge label={label.name} maw={132} />,
+    })
+  }
+
+  return badges
+}
+
+export function buildModelMetaItems(
+  model: Model,
+  projectId: string,
+  t: TFunction = i18n.t.bind(i18n),
+  options?: {
+    projectIcon?: ResourceMetaItem['icon']
+    sizeIcon?: ResourceMetaItem['icon']
+    updatedAtIcon?: ResourceMetaItem['icon']
+  },
+): ResourceMetaItem[] {
+  return [
+    {
+      key: 'project',
+      label: t('common.fromProject'),
+      icon: options?.projectIcon ?? <IconApiApp size={20} />,
+      value: model.project ?? projectId,
+    },
+    {
+      key: 'size',
+      label: t('common.modelSize'),
+      icon: options?.sizeIcon ?? <IconCube size={20} />,
+      value: formatStorageSize(model.size),
+    },
+    {
+      key: 'updatedAt',
+      label: t('common.updatedAt'),
+      icon: options?.updatedAtIcon ?? <IconClock size={20} />,
+      value: formatDateTime(model.updatedAt),
+    },
+  ]
+}
+
+export function getLabelsByCategory(labels: Label[] | undefined, category: Category) {
+  return (labels ?? [])
+    .filter(label => label.category === category && !!label.name)
+    .map(label => label.name as string)
+}
+
+const parameterCountScale = new humanFormat.Scale({
+  '': 1,
+  K: 1_000,
+  M: 1_000_000,
+  B: 1_000_000_000,
+  T: 1_000_000_000_000,
+})
+
+export function formatParameterCount(value: string | undefined) {
+  if (!value) {
+    return '-'
+  }
+
+  const numericValue = Number(value)
+
+  if (!Number.isFinite(numericValue)) {
+    return value
+  }
+
+  return humanFormat(numericValue, {
+    scale: parameterCountScale,
+    decimals: 1,
+  })
+}

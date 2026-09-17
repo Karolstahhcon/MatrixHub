@@ -16,3 +16,40 @@ package authenticator
 
 import (
 	"context"
+	"net/http"
+	"strings"
+	"time"
+
+	"github.com/matrixhub-ai/matrixhub/internal/domain/auth"
+	"github.com/matrixhub-ai/matrixhub/internal/domain/robot"
+	"github.com/matrixhub-ai/matrixhub/internal/infra/utils"
+)
+
+type RobotTokenAuthenticator struct {
+	robotRepo robot.IRobotRepo
+}
+
+func NewRobotTokenAuthenticator(robotRepo robot.IRobotRepo) *RobotTokenAuthenticator {
+	return &RobotTokenAuthenticator{robotRepo: robotRepo}
+}
+
+func (a *RobotTokenAuthenticator) Authenticate(ctx context.Context, r *http.Request) (auth.Identity, bool, bool, error) {
+	token := extractTokenCredential(ctx, r)
+	return a.AuthenticateToken(ctx, "", token)
+}
+
+func (a *RobotTokenAuthenticator) AuthenticateToken(ctx context.Context, _, token string) (auth.Identity, bool, bool, error) {
+	if token == "" || !strings.HasPrefix(token, utils.RobotTokenPrefix) || len(token) == len(utils.RobotTokenPrefix) {
+		return nil, true, false, nil
+	}
+
+	rb, err := a.robotRepo.GetRobotByTokenHash(ctx, utils.Sha256Hex(token))
+	if err != nil {
+		return nil, false, false, err
+	}
+	if rb == nil || !rb.IsValid(time.Now()) {
+		return nil, false, false, nil
+	}
+
+	return robot.NewRobotIdentity(rb.ID, rb.Name), false, true, nil
+}
