@@ -53,3 +53,59 @@ func (r *syncPolicyDB) UpdateSyncPolicy(ctx context.Context, policy *syncpolicy.
 
 // DeleteSyncPolicy deletes a sync policy by ID
 func (r *syncPolicyDB) DeleteSyncPolicy(ctx context.Context, id int) error {
+	return r.db.WithContext(ctx).Delete(&syncpolicy.SyncPolicy{}, id).Error
+}
+
+// ListSyncPolicies lists sync policies with pagination and search
+func (r *syncPolicyDB) ListSyncPolicies(ctx context.Context, page, pageSize int, search string) ([]*syncpolicy.SyncPolicy, int64, error) {
+	var policies []*syncpolicy.SyncPolicy
+	var total int64
+
+	query := r.db.WithContext(ctx).Model(&syncpolicy.SyncPolicy{})
+
+	if search != "" {
+		query = query.Where("name LIKE ?", "%"+search+"%")
+	}
+
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * pageSize
+	if err := query.Offset(offset).Limit(pageSize).Find(&policies).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return policies, total, nil
+}
+
+// SelectDuePolicies returns policies that are due (enabled, next_run_at in (0, now]).
+func (r *syncPolicyDB) SelectDuePolicies(ctx context.Context, nowMs int64, limit int) ([]*syncpolicy.SyncPolicy, error) {
+	var rows []*syncpolicy.SyncPolicy
+	err := r.db.WithContext(ctx).
+		Where("is_disabled = 0 AND next_run_at > 0 AND next_run_at <= ?", nowMs).
+		Order("next_run_at ASC").
+		Limit(limit).
+		Find(&rows).Error
+	return rows, err
+}
+
+// AdvanceNextRunAtCAS atomically claims a due slot by advancing next_run_at from snapshotMs.
+func (r *syncPolicyDB) AdvanceNextRunAtCAS(
+	ctx context.Context, policyID int, snapshotMs, nextNextMs, nowMs int64,
+) (bool, error) {
+	res := r.db.WithContext(ctx).
+		Model(&syncpolicy.SyncPolicy{}).
+		Where("id = ? AND next_run_at = ?", policyID, snapshotMs).
+		Updates(map[string]interface{}{
+			"next_run_at": nextNextMs,
+			"last_run_at": nowMs,
+		})
+	if res.Error != nil {
+		return false, res.Error
+	}
+	return res.RowsAffected == 1, nil
+}
+
+// Ensure syncPolicyDB implements ISyncPolicyRepo
+var _ syncpolicy.ISyncPolicyRepo = (*syncPolicyDB)(nil)
