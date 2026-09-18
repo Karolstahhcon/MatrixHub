@@ -6,3 +6,29 @@ approvers:
   - wzshiming
   - samzong
   - yitingdc
+  - lsq645599166
+  - yankay
+  - setsunakute
+  - scydas
+  - Phil-OSophy-42
+  - CoderTH
+  - lemontrees123
+  - shijinye
+
+# List of usernames who may use /lgtm
+reviewers:
+  - wzshiming
+  - samzong
+  - yitingdc
+  - lsq645599166
+  - yankay
+  - setsunakute
+  - scydas
+  - Phil-OSophy-42
+  - lemontrees123
+  - JaredTan95
+  - Frapschen
+  - fkajerry
+  - CoderTH
+  - shijinye
+  - windsonsea
