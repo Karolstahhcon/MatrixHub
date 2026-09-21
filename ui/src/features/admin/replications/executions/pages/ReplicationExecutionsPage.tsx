@@ -30,3 +30,36 @@ export function ReplicationExecutionsPage() {
   const refreshExecutions = () => queryClient.invalidateQueries({
     queryKey: adminReplicationExecutionKeys.lists(syncPolicyId),
   })
+
+  const {
+    onRefresh,
+    onPageChange,
+    routeColumnFilterTableOptions,
+  } = useRouteListState({
+    search,
+    navigate,
+    records: executions,
+    getRecordId: task => String(task.id ?? '-'),
+    refresh: refreshExecutions,
+    columnFilterSync: [
+      {
+        columnId: 'status',
+        searchKey: 'status',
+      },
+    ],
+  })
+
+  return (
+    <ReplicationExecutionsTable
+      syncPolicyId={syncPolicyId}
+      data={executions}
+      pagination={pagination}
+      loading={isLoading}
+      fetching={isFetching}
+      page={search.page ?? DEFAULT_PAGE}
+      onRefresh={onRefresh}
+      onPageChange={onPageChange}
+      tableOptions={routeColumnFilterTableOptions}
+    />
+  )
+}
