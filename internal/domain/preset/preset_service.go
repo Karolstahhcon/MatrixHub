@@ -57,3 +57,62 @@ func (s *Service) Apply(ctx context.Context) {
 		return
 	}
 	log.Infow("preset initialization completed", "applied", applied)
+}
+
+// Reconcile repairs local repositories in one bounded pass, without upstream
+// requests or writes to model records, metadata, or labels.
+func (s *Service) Reconcile(ctx context.Context) {
+	if !s.enabled {
+		return
+	}
+	jobs := make(chan ModelSpec)
+	var workers sync.WaitGroup
+	for range reconcileConcurrency {
+		workers.Go(func() {
+			for spec := range jobs {
+				if ctx.Err() != nil {
+					return
+				}
+				if err := s.reconcileModel(ctx, spec); err != nil {
+					log.Warnw("preset model reconciliation failed", "project", spec.Project, "model", spec.Name, "error", err)
+				}
+			}
+		})
+	}
+	for _, spec := range s.manifest.Models {
+		select {
+		case jobs <- spec:
+		case <-ctx.Done():
+		}
+	}
+	close(jobs)
+	workers.Wait()
+	log.Info("preset model reconciliation completed")
+}
+
+func (s *Service) reconcileModel(ctx context.Context, spec ModelSpec) error {
+	_, err := s.modelRepo.GetByProjectAndName(ctx, spec.Project, spec.Name)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil
+		}
+		return err
+	}
+	prj, err := s.projectRepo.GetProjectByName(ctx, spec.Project)
+	if err != nil {
+		return err
+	}
+	if !prj.HasProxy() {
+		return nil
+	}
+	exists, err := s.gitRepo.RepositoryExists(ctx, "models", spec.Project, spec.Name)
+	if err != nil {
+		return fmt.Errorf("check preset repository: %w", err)
+	}
+	if !exists {
+		if err := s.gitRepo.CreateRepository(ctx, "models", spec.Project, spec.Name); err != nil {
+			return fmt.Errorf("repair preset repository: %w", err)
+		}
+	}
+	return nil
+}
