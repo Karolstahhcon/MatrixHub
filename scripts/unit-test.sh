@@ -58,3 +58,63 @@ packages=()
 while IFS= read -r pkg; do
 	# Generated mock packages contain test scaffolding rather than production
 	# logic. Tests that use them still compile them as dependencies, while
+	# excluding the packages themselves keeps unit-test coverage meaningful and
+	# consistent with codecov.yml.
+	if [[ "${COVERAGE}" == "true" && "${pkg}" == */mocks ]]; then
+		continue
+	fi
+	packages+=("${pkg}")
+done < <(go list "${package_patterns[@]}")
+
+if [[ -n "${UNIT_TEST_EXCLUDE_PKGS}" ]]; then
+	read -r -a exclude_patterns <<< "${UNIT_TEST_EXCLUDE_PKGS}"
+	excluded_packages=()
+	while IFS= read -r pkg; do
+		excluded_packages+=("${pkg}")
+	done < <(go list "${exclude_patterns[@]}")
+
+	filtered_packages=()
+	for pkg in "${packages[@]}"; do
+		skip=false
+		for excluded_pkg in "${excluded_packages[@]}"; do
+			if [[ "${pkg}" == "${excluded_pkg}" ]]; then
+				skip=true
+				break
+			fi
+		done
+		if [[ "${skip}" == "false" ]]; then
+			filtered_packages+=("${pkg}")
+		fi
+	done
+	packages=("${filtered_packages[@]}")
+fi
+
+if [[ ${#packages[@]} -eq 0 ]]; then
+	echo "No unit-test packages selected" >&2
+	exit 1
+fi
+
+echo "Running unit tests:"
+echo "  packages: ${UNIT_TEST_PKGS}"
+if [[ "${COVERAGE}" == "true" ]]; then
+	echo "  coverage excludes: */mocks"
+fi
+if [[ -n "${UNIT_TEST_EXCLUDE_PKGS}" ]]; then
+	echo "  excludes: ${UNIT_TEST_EXCLUDE_PKGS}"
+fi
+echo "  coverage: ${COVERAGE}"
+echo "  race: ${RACE}"
+echo ""
+
+go test "${args[@]}" "${packages[@]}"
+
+if [[ "${COVERAGE}" == "true" ]]; then
+	echo ""
+	go tool cover -func="${COVERAGE_PROFILE}"
+
+	if [[ "${COVERAGE_HTML}" == "true" ]]; then
+		go tool cover -html="${COVERAGE_PROFILE}" -o "${COVERAGE_HTML_FILE}"
+		echo ""
+		echo "Coverage HTML written to ${COVERAGE_HTML_FILE}"
+	fi
+fi
