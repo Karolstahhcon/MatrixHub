@@ -52,3 +52,57 @@ func NewSyncJobProcessor(cfg config.SyncJobConfig, svc syncjob.ISyncJobService, 
 		return svc.ClaimPendingSyncJobs(ctx, nowMs)
 	}
 	p.processor = newProcessor(ProcessorSyncJob, cfg.PollInterval, cfg.MaxConcurrent, cfg.TaskMaxDuration, execute, pollDueFn)
+	if claimer, ok := svc.(interface {
+		ClaimPendingSyncJob(ctx context.Context, jobID int) (job.DueJob, bool, error)
+	}); ok {
+		p.claimOne = claimer.ClaimPendingSyncJob
+	}
+	if releaser, ok := svc.(interface {
+		ReleaseSyncJobClaim(ctx context.Context, jobID int) error
+	}); ok {
+		p.release = releaser.ReleaseSyncJobClaim
+	}
+	p.runOneFn = p.runOneWithCanceller
+	return p
+}
+
+// runOneWithCanceller overrides the default runOne to register canceller before execution.
+func (p *syncJobProcessor) runOneWithCanceller(ctx context.Context, d job.DueJob) {
+	lockKey := p.Processor().String() + ":" + strconv.Itoa(d.ID)
+
+	qCtx, qCancel := context.WithTimeout(ctx, p.taskMax)
+	defer qCancel()
+	select {
+	case p.sem <- struct{}{}:
+		if err := qCtx.Err(); err != nil {
+			<-p.sem
+			log.Warnw("jobserver: queue expired while acquiring slot",
+				"processor", p.Processor(), "id", d.ID, "error", err)
+			p.releaseClaimForRetry(d)
+			return
+		}
+	case <-qCtx.Done():
+		log.Warnw("jobserver: queue timeout waiting for slot",
+			"processor", p.Processor(), "id", d.ID, "error", qCtx.Err())
+		p.releaseClaimForRetry(d)
+		return
+	}
+	defer func() { <-p.sem }()
+
+	if !p.locker.TryAcquire(lockKey, time.UnixMilli(d.FireAtMs)) {
+		log.Debugw("jobserver: skip, lock not acquired", "processor", p.Processor(), "id", d.ID)
+		return
+	}
+	defer p.locker.Release(lockKey)
+
+	runCtx, cancel := context.WithTimeout(ctx, p.taskMax)
+	defer cancel()
+
+	p.canceller.Register(d.ID, cancel)
+	defer p.canceller.Unregister(d.ID)
+
+	if err := p.execute(runCtx, d.ID, d.TriggerType); err != nil {
+		log.Errorw("jobserver: execute failed", "processor", p.Processor(), "id", d.ID, "error", err)
+		p.releaseClaimForRetry(d)
+	}
+}
