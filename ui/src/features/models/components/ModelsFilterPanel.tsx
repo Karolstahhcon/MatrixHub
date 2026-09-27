@@ -81,3 +81,87 @@ export function ModelsFilterPanel() {
     const newVal = labels.includes(name)
       ? labels.filter(val => val !== name)
       : [...labels, name]
+
+    setSelectedNames(newVal)
+
+    navigate({
+      search: {
+        ...search,
+        task: undefined,
+        library: undefined,
+        project: undefined,
+        page: 1,
+        [activeTab]: newVal.filter(Boolean).length ? newVal.filter(Boolean).join(',') : undefined,
+      },
+    })
+  }
+
+  const handleSelectProject = (name: string) => {
+    const newVal = (queryTab && activeTab === queryTab)
+      ? (selectedNames.includes(name) ? undefined : name)
+      : name
+
+    setSelectedNames(newVal ? [newVal] : [])
+
+    navigate({
+      search: {
+        ...search,
+        task: undefined,
+        library: undefined,
+        project: undefined,
+        page: 1,
+        [activeTab]: newVal,
+      },
+    })
+  }
+
+  const tabs: FilterTabDefinition[] = [
+    {
+      label: t('model.list.task'),
+      value: 'task',
+      panel: (
+        <TaskFilterPanel
+          options={taskLabels}
+          loading={taskLabelsLoading}
+          searchPlaceholder={t('model.list.placeholder.task')}
+          selectedNames={getSelectedNamesForTab('task')}
+          onSelect={handleSelectLabels}
+        />
+      ),
+    },
+    {
+      label: t('model.list.library'),
+      value: 'library',
+      panel: (
+        <LibraryFilterPanel
+          options={libraryLabels}
+          loading={libraryLabelsLoading}
+          searchPlaceholder={t('model.list.placeholder.library')}
+          selectedNames={getSelectedNamesForTab('library')}
+          onSelect={handleSelectLabels}
+        />
+      ),
+    },
+    {
+      label: t('model.list.project'),
+      value: 'project',
+      panel: (
+        <ProjectFilterPanel
+          options={projects}
+          loading={projectsLoading}
+          searchPlaceholder={t('model.list.placeholder.project')}
+          selectedNames={getSelectedNamesForTab('project')}
+          onSelect={handleSelectProject}
+        />
+      ),
+    },
+  ]
+
+  return (
+    <SharedResourceFilterPanel
+      tabs={tabs}
+      activeTab={activeTab}
+      onTabChange={val => setActiveTab(val as ModelFilterTab)}
+    />
+  )
+}
