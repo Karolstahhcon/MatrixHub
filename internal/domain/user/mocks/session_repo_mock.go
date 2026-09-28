@@ -75,3 +75,55 @@ func (mr *MockISessionRepoMockRecorder) GetSessionConfig() *gomock.Call {
 func (m *MockISessionRepo) GetSessionCookie() scs.SessionCookie {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSessionCookie")
+	ret0, _ := ret[0].(scs.SessionCookie)
+	return ret0
+}
+
+// GetSessionCookie indicates an expected call of GetSessionCookie.
+func (mr *MockISessionRepoMockRecorder) GetSessionCookie() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSessionCookie", reflect.TypeOf((*MockISessionRepo)(nil).GetSessionCookie))
+}
+
+// LoadSession mocks base method.
+func (m *MockISessionRepo) LoadSession(ctx context.Context) (context.Context, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LoadSession", ctx)
+	ret0, _ := ret[0].(context.Context)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// LoadSession indicates an expected call of LoadSession.
+func (mr *MockISessionRepoMockRecorder) LoadSession(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadSession", reflect.TypeOf((*MockISessionRepo)(nil).LoadSession), ctx)
+}
+
+// Manager mocks base method.
+func (m *MockISessionRepo) Manager() *scs.SessionManager {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Manager")
+	ret0, _ := ret[0].(*scs.SessionManager)
+	return ret0
+}
+
+// Manager indicates an expected call of Manager.
+func (mr *MockISessionRepoMockRecorder) Manager() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Manager", reflect.TypeOf((*MockISessionRepo)(nil).Manager))
+}
+
+// WriteSessionCookie mocks base method.
+func (m *MockISessionRepo) WriteSessionCookie(ctx context.Context, token string, expiry time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WriteSessionCookie", ctx, token, expiry)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WriteSessionCookie indicates an expected call of WriteSessionCookie.
+func (mr *MockISessionRepoMockRecorder) WriteSessionCookie(ctx, token, expiry any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WriteSessionCookie", reflect.TypeOf((*MockISessionRepo)(nil).WriteSessionCookie), ctx, token, expiry)
+}
