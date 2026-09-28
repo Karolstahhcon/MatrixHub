@@ -26,3 +26,17 @@ export const ParameterCountBadge = polymorphicFactory<ParameterCountBadgeFactory
 
   return (
     <BaseBadge
+      ref={ref}
+      icon={(
+        <IconBinaryTree
+          size={16}
+          color="var(--mantine-color-violet-4)"
+        />
+      )}
+      label={parameterCount}
+      {...badgeProps}
+    />
+  )
+})
+
+ParameterCountBadge.displayName = 'ParameterCountBadge'
