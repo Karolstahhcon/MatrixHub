@@ -12,3 +12,17 @@ package v1alpha1
 import (
 	"time"
 )
+
+type V1alpha1Registry struct {
+	Id int32 `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
+	Type_ *V1alpha1RegistryType `json:"type,omitempty"`
+	Url string `json:"url,omitempty"`
+	// Basic authentication credentials for the registry.
+	Basic *V1alpha1RegistryBasicCredential `json:"basic,omitempty"`
+	Insecure bool `json:"insecure,omitempty"`
+	Status *V1alpha1RegistryStatus `json:"status,omitempty"`
+	CreatedAt time.Time `json:"createdAt,omitempty"`
+	UpdatedAt time.Time `json:"updatedAt,omitempty"`
+}

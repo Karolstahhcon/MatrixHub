@@ -56,3 +56,61 @@ export function LoginPage() {
             <Text
               fw={600}
               size="xl"
+              c="var(--mantine-color-black)"
+            >
+              MatrixHub
+            </Text>
+          </Group>
+
+          <Text fw="600" lh="2" fz="20">{t('login.title')}</Text>
+
+          <form.Field
+            name="username"
+          >
+            {field => (
+              <TextInput
+                label={t('login.username')}
+                required
+                w="100%"
+                size="md"
+                name={field.name}
+                value={field.state.value}
+                onChange={e => field.handleChange(e.target.value)}
+              />
+            )}
+          </form.Field>
+
+          <form.Field
+            name="password"
+          >
+            {field => (
+              <PasswordInput
+                label={t('login.password')}
+                required
+                w="100%"
+                size="md"
+                name={field.name}
+                value={field.state.value}
+                onChange={e => field.handleChange(e.target.value)}
+              />
+            )}
+          </form.Field>
+
+          <form.Field name="rememberMe">
+            {field => (
+              <Checkbox
+                name={field.name}
+                checked={field.state.value}
+                onChange={e => field.handleChange(e.target.checked)}
+                label={t('login.rememberMe')}
+                style={{ alignSelf: 'flex-start' }}
+              />
+            )}
+          </form.Field>
+
+          <Button type="submit" style={{ alignSelf: 'flex-end' }} loading={isLoggingIn}>{t('login.submit')}</Button>
+        </Stack>
+      </form>
+    </ScrollArea>
+  )
+}
