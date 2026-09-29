@@ -19,3 +19,24 @@ export const Route = createFileRoute('/(auth)/admin/replications')({
     deps: { search },
   }) => {
     queryClient.prefetchQuery(replicationsQueryOptions(search))
+  },
+  component: RouteComponent,
+})
+
+export const Icon = IconAffiliate
+
+function RouteComponent() {
+  const { t } = useTranslation()
+
+  return (
+    <>
+      <AdminPageHeader
+        icon={IconAffiliate}
+        items={[{ label: t('admin.replications') }]}
+      />
+      <AdminPageLayout>
+        <ReplicationsPage />
+      </AdminPageLayout>
+    </>
+  )
+}
