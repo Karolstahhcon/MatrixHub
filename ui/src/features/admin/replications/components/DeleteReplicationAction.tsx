@@ -49,3 +49,54 @@ function DeleteReplicationModal({
     >
       <Stack gap="sm">
         <Text size="sm">
+          {t('routes.admin.replications.deleteModal.description', {
+            name: getReplicationDisplayName(syncPolicy),
+          })}
+        </Text>
+      </Stack>
+    </ModalWrapper>
+  )
+}
+
+export function DeleteReplicationAction({
+  syncPolicy,
+  disabled,
+}: DeleteReplicationActionProps) {
+  const { t } = useTranslation()
+  const [opened, {
+    open,
+    close,
+  }] = useDisclosure(false)
+  const mutation = useMutation(deleteReplicationMutationOptions())
+
+  const handleDelete = async () => {
+    await mutation.mutateAsync({ syncPolicyId: syncPolicy.id })
+    close()
+  }
+
+  return (
+    <>
+      <Button
+        variant="transparent"
+        size="compact-sm"
+        color="red"
+        disabled={disabled}
+        onClick={open}
+      >
+        {t('routes.admin.replications.actions.delete')}
+      </Button>
+
+      {opened && (
+        <DeleteReplicationModal
+          opened
+          syncPolicy={syncPolicy}
+          loading={mutation.isPending}
+          onClose={close}
+          onConfirm={() => {
+            void handleDelete()
+          }}
+        />
+      )}
+    </>
+  )
+}
