@@ -31,3 +31,12 @@ services:
       - 9000:9000
       - 9001:9001
     volumes:
+      - s3-data:/data
+    environment:
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - MINIO_ADDRESS=0.0.0.0:9000
+      - MINIO_CONSOLE_ADDRESS=0.0.0.0:9001
+
+volumes:
+  s3-data: {}
