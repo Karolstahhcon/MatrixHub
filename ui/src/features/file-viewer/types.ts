@@ -7,3 +7,13 @@ export type FileCategory = 'markdown' | 'code' | 'binary'
  */
 export interface FileViewerFile {
   name?: string
+  size?: string
+  url?: string
+  sha256?: string
+  commit?: {
+    id?: string
+    authorName?: string
+    message?: string
+    committerDate?: string
+  }
+}
