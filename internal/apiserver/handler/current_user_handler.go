@@ -132,3 +132,138 @@ func (cu *CurrentUserHandler) ResetPassword(ctx context.Context, request *v1alph
 		return nil, status.Errorf(codes.InvalidArgument, "user not found")
 	}
 	if !user.CheckPassword(request.OldPassword) {
+		return nil, status.Error(codes.InvalidArgument, "old password is incorrect")
+	}
+	if user.CheckPassword(request.NewPassword) {
+		return nil, status.Error(codes.InvalidArgument, "new password is same as old password")
+	}
+
+	if err = cu.userRepo.UpdateUserPassword(ctx, user.ID, request.NewPassword); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return &v1alpha1.ResetPasswordResponse{}, nil
+}
+
+func (cu *CurrentUserHandler) ListAccessTokens(ctx context.Context, request *v1alpha1.ListAccessTokensRequest) (*v1alpha1.ListAccessTokensResponse, error) {
+	aks, err := cu.accessTokenRepo.ListUserAccessTokens(ctx, user.GetCurrentUserId(ctx))
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &v1alpha1.ListAccessTokensResponse{
+		Items: lo.Map(aks, func(item *user.AccessToken, _ int) *v1alpha1.AccessToken {
+			expiredAt := ""
+			if item.ExpireAt != nil {
+				expiredAt = strconv.Itoa(int(item.ExpireAt.Unix()))
+			}
+			status := v1alpha1.AccessTokenStatus_ACCESS_TOKEN_STATUS_UNKNOWN
+			if item.ExpireAt == nil || item.ExpireAt.After(time.Now()) {
+				status = v1alpha1.AccessTokenStatus_ACCESS_TOKEN_STATUS_VALID
+			} else if time.Now().After(*item.ExpireAt) {
+				status = v1alpha1.AccessTokenStatus_ACCESS_TOKEN_STATUS_EXPIRED
+			}
+			return &v1alpha1.AccessToken{
+				Id:        uint32(item.Id),
+				Name:      item.Name,
+				Status:    status,
+				CreatedAt: strconv.Itoa(int(item.CreatedAt.Unix())),
+				ExpiredAt: expiredAt,
+			}
+		}),
+	}, nil
+}
+
+func (cu *CurrentUserHandler) CreateAccessToken(ctx context.Context, request *v1alpha1.CreateAccessTokenRequest) (*v1alpha1.CreateAccessTokenResponse, error) {
+	if err := request.ValidateAll(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	expireAt, err := cu.parseExpireAt(request.GetExpireAt())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	for attempt := 1; attempt <= utils.MaxTokenRetries; attempt++ {
+		raw, hash, err := utils.GenerateUserToken()
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+
+		ak := user.AccessToken{
+			Name:      request.GetName(),
+			UserId:    user.GetCurrentUserId(ctx),
+			TokenHash: hash,
+			Enabled:   true,
+			ExpireAt:  expireAt,
+		}
+		err = cu.accessTokenRepo.CreateAccessToken(ctx, ak)
+		if err == nil {
+			return &v1alpha1.CreateAccessTokenResponse{
+				Token: raw,
+			}, nil
+		}
+		if errors.Is(err, gorm.ErrDuplicatedKey) && attempt < utils.MaxTokenRetries {
+			continue
+		}
+		return nil, status.Error(codes.Internal, fmt.Sprintf("token: persist (attempt %d): %s", attempt, err))
+	}
+
+	return nil, status.Error(codes.Internal, "token: exceeded max retries — this should never happen")
+}
+
+func (cu *CurrentUserHandler) DeleteAccessToken(ctx context.Context, request *v1alpha1.DeleteAccessTokenRequest) (*v1alpha1.DeleteAccessTokenResponse, error) {
+	if err := request.ValidateAll(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	if err := cu.accessTokenRepo.DeleteAccessToken(ctx, user.GetCurrentUserId(ctx), int(request.GetId())); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &v1alpha1.DeleteAccessTokenResponse{}, nil
+}
+
+func (cu *CurrentUserHandler) GetProjectRoles(ctx context.Context, request *v1alpha1.GetProjectRolesRequest) (*v1alpha1.GetProjectRolesResponse, error) {
+	userID := user.GetCurrentUserId(ctx)
+	projectRoles, err := cu.userRepo.GetUserAllProjectRoles(ctx, userID)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	result := make(map[string]v1alpha1.ProjectRoleType)
+	for projectName, roleID := range projectRoles {
+		result[projectName] = convertDomainRoleToProto(role.RoleType(roleID))
+	}
+
+	return &v1alpha1.GetProjectRolesResponse{
+		ProjectRoles: result,
+	}, nil
+}
+
+func (cu *CurrentUserHandler) RegisterToServer(options *ServerOptions) {
+	// Register GRPC Handler
+	v1alpha1.RegisterCurrentUserServer(options.GRPCServer, cu)
+	if err := v1alpha1.RegisterCurrentUserHandlerFromEndpoint(context.Background(), options.GatewayMux, options.GRPCAddr, options.GRPCDialOpt); err != nil {
+		log.Errorf("register handler error: %s", err.Error())
+	}
+}
+
+func NewCurrentUserHandler(userRepo user.IUserRepo, akRepo user.IAccessTokenRepo, skRepo user.ISSHKeyRepo) IHandler {
+	handler := &CurrentUserHandler{
+		userRepo:        userRepo,
+		accessTokenRepo: akRepo,
+		sshKeyRepo:      skRepo,
+		sshKeyService:   user.NewSSHKeyService(skRepo),
+	}
+	return handler
+}
+
+func (cu *CurrentUserHandler) parseExpireAt(expireAt string) (*time.Time, error) {
+	if expireAt == "" {
+		return nil, nil
+	}
+	expire, err := strconv.Atoi(expireAt)
+	if err != nil {
+		return nil, err
+	}
+	expTime := time.Unix(int64(expire), 0)
+	return &expTime, nil
+}
