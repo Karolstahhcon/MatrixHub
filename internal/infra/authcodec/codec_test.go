@@ -34,3 +34,40 @@ func (invalidIdentity) TypeName() string { return "invalid" }
 
 func TestIdentityCodecRoundTrip(t *testing.T) {
 	identities := []struct {
+		name string
+		id   interface {
+			GetID() int
+			GetName() string
+			TypeName() string
+		}
+	}{
+		{name: "user", id: user.NewUserIdentity(7, "alice")},
+		{name: "robot", id: robot.NewRobotIdentity(9, "builder")},
+	}
+	for _, tt := range identities {
+		t.Run(tt.name, func(t *testing.T) {
+			encoded, err := authcodec.Marshal(tt.id)
+			require.NoError(t, err)
+			decoded, err := authcodec.Unmarshal(encoded)
+			require.NoError(t, err)
+			require.Equal(t, tt.id.GetID(), decoded.GetID())
+			require.Equal(t, tt.id.GetName(), decoded.GetName())
+			require.Equal(t, tt.id.TypeName(), decoded.TypeName())
+		})
+	}
+}
+
+func TestIdentityCodecErrors(t *testing.T) {
+	_, err := authcodec.Marshal(invalidIdentity{Value: make(chan int)})
+	require.ErrorContains(t, err, "marshal payload")
+
+	for _, encoded := range []string{
+		`{`,
+		`{"type":"unknown","payload":{}}`,
+		`{"type":"user","payload":"invalid"}`,
+		`{"type":"robot","payload":"invalid"}`,
+	} {
+		_, err = authcodec.Unmarshal(encoded)
+		require.Error(t, err)
+	}
+}
