@@ -31,3 +31,36 @@ func TestAccessTokenValidity(t *testing.T) {
 
 	tests := []struct {
 		name  string
+		token user.AccessToken
+		valid bool
+	}{
+		{name: "disabled", token: user.AccessToken{Enabled: false}, valid: false},
+		{name: "enabled without expiration", token: user.AccessToken{Enabled: true}, valid: true},
+		{name: "enabled before expiration", token: user.AccessToken{Enabled: true, ExpireAt: &future}, valid: true},
+		{name: "enabled after expiration", token: user.AccessToken{Enabled: true, ExpireAt: &past}, valid: false},
+		{name: "expiration instant remains valid", token: user.AccessToken{Enabled: true, ExpireAt: &now}, valid: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require.Equal(t, tt.valid, tt.token.IsValid(now))
+		})
+	}
+}
+
+func TestUserCheckPassword(t *testing.T) {
+	hash, err := crypto.HashPassword("correct-password")
+	require.NoError(t, err)
+
+	u := user.User{Password: hash}
+	require.True(t, u.CheckPassword("correct-password"))
+	require.False(t, u.CheckPassword("wrong-password"))
+}
+
+func TestUserIdentity(t *testing.T) {
+	identity := user.NewUserIdentity(42, "alice")
+
+	require.Equal(t, 42, identity.GetID())
+	require.Equal(t, "alice", identity.GetName())
+	require.Equal(t, "user", identity.TypeName())
+}
