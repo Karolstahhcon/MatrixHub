@@ -31,3 +31,70 @@ import (
 
 const datasetReadme = `---
 license: apache-2.0
+task_categories:
+- text-classification
+---
+
+# Demo dataset
+`
+
+func TestDatasetService_SyncMetadata(t *testing.T) {
+	ctx := context.Background()
+	ctrl := gomock.NewController(t)
+
+	datasetRepo := datasetmocks.NewMockIDatasetRepo(ctrl)
+	labelRepo := modelmocks.NewMockILabelRepo(ctrl)
+	gitRepo := gitmocks.NewMockIGitRepo(ctrl)
+
+	datasetRepo.EXPECT().GetByProjectAndName(gomock.Any(), "proj", "ds").
+		Return(&dataset.Dataset{ID: 5, Name: "ds", ProjectName: "proj"}, nil)
+	gitRepo.EXPECT().ExtractMetadata(gomock.Any(), "datasets", "proj", "ds").
+		Return(&gitdomain.RepoMetadataFiles{
+			ReadmeContent: []byte(datasetReadme),
+			Size:          1234,
+		}, nil)
+
+	datasetRepo.EXPECT().UpdateMetadata(gomock.Any(), int64(5), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ int64, update *dataset.MetadataUpdate) error {
+			require.NotNil(t, update.ReadmeContent)
+			require.Contains(t, *update.ReadmeContent, "# Demo dataset")
+			require.NotNil(t, update.Size)
+			require.EqualValues(t, 1234, *update.Size)
+			return nil
+		})
+
+	// Labels parsed from the dataset card are stored under the dataset scope.
+	labelRepo.EXPECT().GetOrCreateByName(gomock.Any(), gomock.Any(), gomock.Any(), "dataset").
+		DoAndReturn(func(_ context.Context, name, category, _ string) (*modeldomain.Label, error) {
+			return &modeldomain.Label{ID: 1, Name: name, Category: category}, nil
+		}).AnyTimes()
+	labelRepo.EXPECT().UpdateDatasetLabels(gomock.Any(), int64(5), gomock.Any()).Return(nil)
+
+	svc := dataset.NewDatasetService(datasetRepo, labelRepo, gitRepo)
+	require.NoError(t, svc.SyncMetadata(ctx, "proj", "ds"))
+}
+
+func TestDatasetService_SyncMetadataPersistsZeroSize(t *testing.T) {
+	ctx := context.Background()
+	ctrl := gomock.NewController(t)
+
+	datasetRepo := datasetmocks.NewMockIDatasetRepo(ctrl)
+	labelRepo := modelmocks.NewMockILabelRepo(ctrl)
+	gitRepo := gitmocks.NewMockIGitRepo(ctrl)
+
+	datasetRepo.EXPECT().GetByProjectAndName(gomock.Any(), "proj", "empty").
+		Return(&dataset.Dataset{ID: 5, Name: "empty", ProjectName: "proj"}, nil)
+	gitRepo.EXPECT().ExtractMetadata(gomock.Any(), "datasets", "proj", "empty").
+		Return(&gitdomain.RepoMetadataFiles{ReadmeContent: []byte("# Empty")}, nil)
+
+	datasetRepo.EXPECT().UpdateMetadata(gomock.Any(), int64(5), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ int64, update *dataset.MetadataUpdate) error {
+			require.NotNil(t, update.Size)
+			require.Zero(t, *update.Size)
+			return nil
+		})
+	labelRepo.EXPECT().UpdateDatasetLabels(gomock.Any(), int64(5), []int(nil)).Return(nil)
+
+	svc := dataset.NewDatasetService(datasetRepo, labelRepo, gitRepo)
+	require.NoError(t, svc.SyncMetadata(ctx, "proj", "empty"))
+}
