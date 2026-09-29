@@ -23,3 +23,42 @@ const TanStackDevtools = import.meta.env.DEV
                 render: <queryDevtools.ReactQueryDevtoolsPanel />,
               },
               {
+                name: 'TanStack Router',
+                render: <routerDevtools.TanStackRouterDevtoolsPanel />,
+              },
+              formDevtools.formDevtoolsPlugin(),
+            ]}
+          />
+        ),
+      })),
+    )
+  : () => null
+
+export const Route = createRootRouteWithContext<{
+  queryClient: QueryClient
+}>()({
+  component: RootComponent,
+  head: () => ({
+    meta: [{
+      title: i18n.t('translation.title'),
+    }],
+    links: [
+      {
+        rel: 'icon',
+        href: '/favicon.ico?',
+      },
+    ],
+  }),
+})
+
+function RootComponent() {
+  return (
+    <>
+      <HeadContent />
+      <Outlet />
+      <Suspense fallback={null}>
+        <TanStackDevtools />
+      </Suspense>
+    </>
+  )
+}
