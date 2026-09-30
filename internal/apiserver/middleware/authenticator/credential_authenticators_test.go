@@ -76,3 +76,82 @@ func TestTokenAuthenticator(t *testing.T) {
 		require.Nil(t, identity)
 		require.False(t, next)
 		require.False(t, ok)
+	})
+
+	t.Run("propagates repository errors", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		tokenRepo := usermocks.NewMockIAccessTokenRepo(ctrl)
+		userRepo := usermocks.NewMockIUserRepo(ctrl)
+		wantErr := errors.New("database unavailable")
+		tokenRepo.EXPECT().GetByTokenHash(ctx, utils.Sha256Hex(token)).Return(nil, wantErr)
+
+		identity, next, ok, err := NewTokenAuthenticator(tokenRepo, userRepo).AuthenticateToken(ctx, "", token)
+		require.ErrorIs(t, err, wantErr)
+		require.Nil(t, identity)
+		require.False(t, next)
+		require.False(t, ok)
+	})
+}
+
+func TestSSHKeyAuthenticator(t *testing.T) {
+	ctx := context.Background()
+	fingerprint := "SHA256:test"
+
+	t.Run("authenticates an active key", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		keyRepo := usermocks.NewMockISSHKeyRepo(ctrl)
+		userRepo := usermocks.NewMockIUserRepo(ctrl)
+		keyRepo.EXPECT().GetByFingerprint(ctx, fingerprint).Return(&user.SSHKey{Id: 1, UserId: 42}, nil)
+		userRepo.EXPECT().GetUser(ctx, 42).Return(&user.User{ID: 42, Username: "alice"}, nil)
+
+		identity, next, ok, err := NewSSHKeyAuthenticator(keyRepo, userRepo).Authenticate(ctx, fingerprint)
+		require.NoError(t, err)
+		require.False(t, next)
+		require.True(t, ok)
+		require.Equal(t, "alice", identity.GetName())
+	})
+
+	t.Run("rejects an expired key", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		keyRepo := usermocks.NewMockISSHKeyRepo(ctrl)
+		userRepo := usermocks.NewMockIUserRepo(ctrl)
+		expired := time.Now().Add(-time.Minute)
+		keyRepo.EXPECT().GetByFingerprint(ctx, fingerprint).Return(&user.SSHKey{Id: 1, UserId: 42, ExpireAt: &expired}, nil)
+
+		identity, next, ok, err := NewSSHKeyAuthenticator(keyRepo, userRepo).Authenticate(ctx, fingerprint)
+		require.NoError(t, err)
+		require.Nil(t, identity)
+		require.False(t, next)
+		require.False(t, ok)
+	})
+}
+
+func TestRobotAuthenticators(t *testing.T) {
+	ctx := context.Background()
+	token := utils.RobotTokenPrefix + "Abcdefg1"
+	rb := &robot.Robot{ID: 7, Name: "robot$ci", Enabled: true, TokenHash: utils.Sha256Hex(token)}
+
+	t.Run("basic credentials", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		repo := robotmocks.NewMockIRobotRepo(ctrl)
+		repo.EXPECT().GetRobotByName(ctx, rb.Name).Return(rb, nil)
+
+		identity, next, ok, err := NewRobotAuthenticator(repo).AuthenticateToken(ctx, rb.Name, token)
+		require.NoError(t, err)
+		require.False(t, next)
+		require.True(t, ok)
+		require.Equal(t, 7, identity.GetID())
+	})
+
+	t.Run("bearer token", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		repo := robotmocks.NewMockIRobotRepo(ctrl)
+		repo.EXPECT().GetRobotByTokenHash(ctx, utils.Sha256Hex(token)).Return(rb, nil)
+
+		identity, next, ok, err := NewRobotTokenAuthenticator(repo).AuthenticateToken(ctx, "", token)
+		require.NoError(t, err)
+		require.False(t, next)
+		require.True(t, ok)
+		require.Equal(t, "robot$ci", identity.GetName())
+	})
+}
