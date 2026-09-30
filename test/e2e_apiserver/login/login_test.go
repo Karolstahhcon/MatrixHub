@@ -89,3 +89,185 @@ var _ = Describe("Login", Label("login"), func() {
 	// ═══════════════════════════════════════════════════════════
 	// 1. Login API
 	// ═══════════════════════════════════════════════════════════
+	Context("Login API", func() {
+		It("should login successfully with valid admin credentials", Label("L00001", "smoke"), func() {
+			_, httpResp, err := newLoginApi().LoginLogin(ctx, v1alpha1login.V1alpha1LoginRequest{
+				Username: tools.DefaultAdminUsername,
+				Password: tools.DefaultAdminPassword,
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(httpResp).NotTo(BeNil())
+			Expect(httpResp.StatusCode).To(Equal(http.StatusOK))
+		})
+
+		It("should return a Set-Cookie header on successful login", Label("L00002"), func() {
+			_, httpResp, err := newLoginApi().LoginLogin(ctx, v1alpha1login.V1alpha1LoginRequest{
+				Username: tools.DefaultAdminUsername,
+				Password: tools.DefaultAdminPassword,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			cookie := extractSetCookie(httpResp)
+			Expect(cookie).NotTo(BeEmpty(), "Set-Cookie header must be present after login")
+			GinkgoWriter.Printf("Session cookie: %s\n", cookie)
+		})
+
+		It("should grant authenticated access with the login cookie", Label("L00003"), func() {
+			_, httpResp, err := newLoginApi().LoginLogin(ctx, v1alpha1login.V1alpha1LoginRequest{
+				Username: tools.DefaultAdminUsername,
+				Password: tools.DefaultAdminPassword,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			cookie := extractSetCookie(httpResp)
+			Expect(cookie).NotTo(BeEmpty())
+
+			currentUserApi := tools.CreateCurrentUserClientWithCookie(cookie)
+			resp, _, err := currentUserApi.CurrentUserGetCurrentUser(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.Username).To(Equal(tools.DefaultAdminUsername))
+
+			GinkgoWriter.Printf("Authenticated as: %s (id=%d, isAdmin=%v)\n", resp.Username, resp.Id, resp.IsAdmin)
+		})
+
+		It("should fail to login with an incorrect password", Label("L00004"), func() {
+			_, _, err := newLoginApi().LoginLogin(ctx, v1alpha1login.V1alpha1LoginRequest{
+				Username: tools.DefaultAdminUsername,
+				Password: "wrong-password-xyz",
+			})
+			Expect(err).To(HaveOccurred(), "incorrect password must be rejected")
+			GinkgoWriter.Printf("Expected error: %v\n", err)
+		})
+
+		It("should fail to login with a non-existent username", Label("L00005"), func() {
+			_, _, err := newLoginApi().LoginLogin(ctx, v1alpha1login.V1alpha1LoginRequest{
+				Username: "no-such-user-xyz",
+				Password: "somepassword",
+			})
+			Expect(err).To(HaveOccurred(), "non-existent user must be rejected")
+			GinkgoWriter.Printf("Expected error: %v\n", err)
+		})
+
+		It("should fail to login with an empty username", Label("L00006"), func() {
+			_, _, err := newLoginApi().LoginLogin(ctx, v1alpha1login.V1alpha1LoginRequest{
+				Username: "",
+				Password: tools.DefaultAdminPassword,
+			})
+			Expect(err).To(HaveOccurred(), "empty username must fail validation")
+			GinkgoWriter.Printf("Expected error: %v\n", err)
+		})
+
+		It("should fail to login with an empty password", Label("L00007"), func() {
+			_, _, err := newLoginApi().LoginLogin(ctx, v1alpha1login.V1alpha1LoginRequest{
+				Username: tools.DefaultAdminUsername,
+				Password: "",
+			})
+			Expect(err).To(HaveOccurred(), "empty password must fail validation")
+			GinkgoWriter.Printf("Expected error: %v\n", err)
+		})
+
+		It("should login successfully with remember_me set to true", Label("L00008"), func() {
+			_, httpResp, err := newLoginApi().LoginLogin(ctx, v1alpha1login.V1alpha1LoginRequest{
+				Username:   tools.DefaultAdminUsername,
+				Password:   tools.DefaultAdminPassword,
+				RememberMe: true,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			cookie := extractSetCookie(httpResp)
+			Expect(cookie).NotTo(BeEmpty(), "remember_me login must still issue a session cookie")
+			GinkgoWriter.Printf("remember_me cookie: %s\n", cookie)
+		})
+	})
+
+	// ═══════════════════════════════════════════════════════════
+	// 2. Logout API
+	// ═══════════════════════════════════════════════════════════
+	Context("Logout API", func() {
+		var (
+			username string
+			cookie   string
+		)
+
+		BeforeEach(func() {
+			password := "Test@123456"
+			username = tools.GenerateTestUsername("login-logout")
+			var err error
+			_, cookie, err = tools.CreateUserAndLoginWithID(username, password, false)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			userID, err := tools.GetUserIDByUsername(username)
+			if err == nil {
+				_ = tools.DeleteUser(userID)
+			}
+		})
+
+		It("should logout successfully when authenticated", Label("L00009"), func() {
+			_, _, err := newLoginApiWithCookie(cookie).LoginLogout(ctx, v1alpha1login.V1alpha1LogoutRequest{})
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should invalidate the session cookie after logout", Label("L00010"), func() {
+			_, _, err := newLoginApiWithCookie(cookie).LoginLogout(ctx, v1alpha1login.V1alpha1LogoutRequest{})
+			Expect(err).NotTo(HaveOccurred())
+
+			// The old cookie must no longer grant access.
+			currentUserApi := tools.CreateCurrentUserClientWithCookie(cookie)
+			_, _, err = currentUserApi.CurrentUserGetCurrentUser(ctx)
+			Expect(err).To(HaveOccurred(), "stale cookie must be rejected after logout")
+			GinkgoWriter.Printf("Expected auth error after logout: %v\n", err)
+		})
+
+		It("should fail to logout without a valid session", Label("L00011"), func() {
+			_, _, err := newLoginApi().LoginLogout(ctx, v1alpha1login.V1alpha1LogoutRequest{})
+			Expect(err).To(HaveOccurred(), "logout with no session must be rejected")
+			GinkgoWriter.Printf("Expected error: %v\n", err)
+		})
+	})
+
+	// ═══════════════════════════════════════════════════════════
+	// 3. Multi-user login isolation
+	// ═══════════════════════════════════════════════════════════
+	Context("Multi-user session isolation", func() {
+		It("should issue independent sessions for concurrent users", Label("L00012"), func() {
+			password := "Test@123456"
+
+			usernameA := tools.GenerateTestUsername("login-ua")
+			usernameB := tools.GenerateTestUsername("login-ub")
+
+			_, cookieA, err := tools.CreateUserAndLoginWithID(usernameA, password, false)
+			Expect(err).NotTo(HaveOccurred())
+
+			_, cookieB, err := tools.CreateUserAndLoginWithID(usernameB, password, false)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(cookieA).NotTo(Equal(cookieB), "each user must receive a unique session cookie")
+
+			apiA := tools.CreateCurrentUserClientWithCookie(cookieA)
+			apiB := tools.CreateCurrentUserClientWithCookie(cookieB)
+
+			respA, _, err := apiA.CurrentUserGetCurrentUser(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(respA.Username).To(Equal(usernameA))
+
+			respB, _, err := apiB.CurrentUserGetCurrentUser(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(respB.Username).To(Equal(usernameB))
+
+			GinkgoWriter.Printf("User A: %s (id=%d), User B: %s (id=%d)\n",
+				respA.Username, respA.Id, respB.Username, respB.Id)
+
+			// Cleanup
+			idA, err := tools.GetUserIDByUsername(usernameA)
+			if err == nil {
+				_ = tools.DeleteUser(idA)
+			}
+			idB, err := tools.GetUserIDByUsername(usernameB)
+			if err == nil {
+				_ = tools.DeleteUser(idB)
+			}
+		})
+	})
+})
