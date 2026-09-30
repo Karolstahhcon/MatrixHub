@@ -16,3 +16,10 @@ export const Route = createFileRoute('/(auth)/admin/robots/$robotId/edit')({
 
 function RouteComponent() {
   const { robotId } = Route.useParams()
+
+  return (
+    <AdminPageLayout>
+      <RobotAccountEditPage robotId={Number(robotId)} />
+    </AdminPageLayout>
+  )
+}
