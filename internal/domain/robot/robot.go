@@ -28,3 +28,63 @@ type ProjectScope string
 
 const (
 	RobotPrefix = "robot$"
+
+	ProjectScopeSelected ProjectScope = "selected"
+	ProjectScopeAll      ProjectScope = "all"
+)
+
+type Robot struct {
+	ID                  int `gorm:"primary_key"`
+	Name                string
+	Description         string
+	Enabled             bool
+	ProjectId           int
+	ExpireAt            *time.Time
+	Duration            int
+	TokenHash           string
+	ProjectScope        ProjectScope
+	Projects            []*project.Project                   `gorm:"many2many:robots_projects"`
+	PlatformPermissions datatypes.JSONSlice[role.Permission] `gorm:"type:json"`
+	ProjectPermissions  datatypes.JSONSlice[role.Permission] `gorm:"type:json"`
+	CreateBy            int
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
+}
+
+func (Robot) TableName() string {
+	return "robots"
+}
+
+func (r Robot) CheckTokenHash(hash string) bool {
+	return r.TokenHash == hash
+}
+
+func (r Robot) IsValid(t time.Time) bool {
+	return r.Enabled && !r.IsExpired(t)
+}
+
+func (r Robot) IsExpired(t time.Time) bool {
+	return r.ExpireAt != nil && r.ExpireAt.Before(t)
+}
+
+type RobotPoject struct {
+	ID        int `gorm:"primary_key"`
+	RobotId   int
+	ProjectId int
+	CreatedAt time.Time
+}
+
+func (RobotPoject) TableName() string {
+	return "robots_projects"
+}
+
+//go:generate go tool mockgen -source=robot.go -destination=mocks/robot_repo_mock.go -package=mocks
+type IRobotRepo interface {
+	CreateRobot(ctx context.Context, robot *Robot) error
+	GetRobot(ctx context.Context, id int) (*Robot, error)
+	GetRobotByName(ctx context.Context, name string) (*Robot, error)
+	GetRobotByTokenHash(ctx context.Context, tokenHash string) (*Robot, error)
+	UpdateRobot(ctx context.Context, robot *Robot) error
+	DeleteRobot(ctx context.Context, id int) error
+	ListSystemRobots(ctx context.Context, page, pageSize int, search string) ([]*Robot, int64, error)
+}
