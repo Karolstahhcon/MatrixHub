@@ -56,3 +56,62 @@ func TestAuthzInterceptorCleanupPermissions(t *testing.T) {
 			var gotPerm role.Permission
 			interceptor := AuthzInterceptor(func(ctx context.Context, perm role.Permission) (bool, error) {
 				gotPerm = perm
+				return true, nil
+			})
+
+			called := false
+			_, err := interceptor(ctx, nil, &grpc.UnaryServerInfo{FullMethod: tt.method}, func(context.Context, interface{}) (interface{}, error) {
+				called = true
+				return nil, nil
+			})
+			if err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
+			if !called {
+				t.Fatal("expected handler to be called")
+			}
+			if gotPerm != tt.permission {
+				t.Fatalf("expected permission %q, got %q", tt.permission, gotPerm)
+			}
+		})
+	}
+}
+
+func TestAuthzInterceptorExecuteCleanupDenied(t *testing.T) {
+	ctx := auth.WithIdentity(context.Background(), user.NewUserIdentity(1, "admin"))
+	interceptor := AuthzInterceptor(func(ctx context.Context, perm role.Permission) (bool, error) {
+		if perm != role.CleanupExecute {
+			t.Fatalf("expected permission %q, got %q", role.CleanupExecute, perm)
+		}
+		return false, nil
+	})
+
+	called := false
+	_, err := interceptor(ctx, nil, &grpc.UnaryServerInfo{FullMethod: "/matrixhub.v1alpha1.Cleanup/ExecuteCleanup"}, func(context.Context, interface{}) (interface{}, error) {
+		called = true
+		return nil, nil
+	})
+
+	if called {
+		t.Fatal("expected handler not to be called")
+	}
+	if status.Code(err) != codes.PermissionDenied {
+		t.Fatalf("expected PermissionDenied, got %v", err)
+	}
+}
+
+func TestAuthzInterceptorCleanupRequiresIdentity(t *testing.T) {
+	interceptor := AuthzInterceptor(func(ctx context.Context, perm role.Permission) (bool, error) {
+		t.Fatal("verifyFunc should not be called without identity")
+		return false, nil
+	})
+
+	_, err := interceptor(context.Background(), nil, &grpc.UnaryServerInfo{FullMethod: "/matrixhub.v1alpha1.Cleanup/PreviewCleanup"}, func(context.Context, interface{}) (interface{}, error) {
+		t.Fatal("handler should not be called without identity")
+		return nil, nil
+	})
+
+	if status.Code(err) != codes.Unauthenticated {
+		t.Fatalf("expected Unauthenticated, got %v", err)
+	}
+}
