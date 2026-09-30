@@ -38,3 +38,85 @@ type JobServer struct {
 
 // New builds a JobServer from config and domain services (cfg is copied; defaults applied without mutating the caller's struct).
 func New(cfg *config.JobServerConfig, syncSvc syncpolicy.ISyncPolicyService, syncJobSvc syncjob.ISyncJobService, ls logstore.LogStore, canc canceller.Canceller) *JobServer {
+	c := *cfg
+	if c.ShutdownGrace == 0 {
+		c.ShutdownGrace = 30 * time.Second
+	}
+	if c.SyncPolicy.PollInterval == 0 {
+		c.SyncPolicy.PollInterval = 10 * time.Second
+	}
+	if c.SyncPolicy.MaxConcurrent == 0 {
+		c.SyncPolicy.MaxConcurrent = 5
+	}
+	if c.SyncPolicy.TaskMaxDuration == 0 {
+		c.SyncPolicy.TaskMaxDuration = 2 * time.Hour
+	}
+	if c.SyncTask.PollInterval == 0 {
+		c.SyncTask.PollInterval = 5 * time.Second
+	}
+	if c.SyncTask.MaxConcurrent == 0 {
+		c.SyncTask.MaxConcurrent = 5
+	}
+	if c.SyncTask.TaskMaxDuration == 0 {
+		c.SyncTask.TaskMaxDuration = 2 * time.Hour
+	}
+	if c.SyncJob.PollInterval == 0 {
+		c.SyncJob.PollInterval = 3 * time.Second
+	}
+	if c.SyncJob.MaxConcurrent == 0 {
+		c.SyncJob.MaxConcurrent = 5
+	}
+	if c.SyncJob.TaskMaxDuration == 0 {
+		c.SyncJob.TaskMaxDuration = 2 * time.Hour
+	}
+	syncPolicyProcessor := processor.NewSyncPolicyProcessor(c.SyncPolicy, syncSvc)
+	syncTaskProcessor := processor.NewSyncTaskProcessor(c.SyncTask, syncSvc)
+	syncJobProcessor := processor.NewSyncJobProcessor(c.SyncJob, syncJobSvc, canc)
+	return &JobServer{
+		cfg:             &c,
+		processors:      []processor.Adapter{syncPolicyProcessor, syncTaskProcessor, syncJobProcessor},
+		syncTaskTrigger: syncTaskProcessor,
+		syncJobTrigger:  syncJobProcessor,
+	}
+}
+
+// TriggerSyncTask wakes the task processor after a pending task has been persisted.
+func (js *JobServer) TriggerSyncTask(id int) bool { return js.syncTaskTrigger.Trigger(id) }
+
+// TriggerSyncJob wakes the job processor after a pending job has been persisted.
+func (js *JobServer) TriggerSyncJob(id int) bool { return js.syncJobTrigger.Trigger(id) }
+
+// Run starts all processor loops and blocks until ctx is cancelled.
+func (js *JobServer) Run(ctx context.Context) {
+	for _, p := range js.processors {
+		p.Start(ctx)
+	}
+	<-ctx.Done()
+	log.Info("jobserver: context cancelled, processor loops stopping")
+}
+
+// Shutdown waits for each processor's Wait() with a global grace timeout.
+func (js *JobServer) Shutdown(grace time.Duration) {
+	if grace <= 0 {
+		grace = 30 * time.Second
+	}
+	done := make(chan struct{})
+	go func() {
+		var wg sync.WaitGroup
+		for _, p := range js.processors {
+			wg.Add(1)
+			go func(p processor.Adapter) {
+				defer wg.Done()
+				p.Wait()
+			}(p)
+		}
+		wg.Wait()
+		close(done)
+	}()
+	select {
+	case <-done:
+		log.Info("jobserver: all processors stopped")
+	case <-time.After(grace):
+		log.Warnw("jobserver: shutdown grace exceeded", "grace", grace)
+	}
+}
