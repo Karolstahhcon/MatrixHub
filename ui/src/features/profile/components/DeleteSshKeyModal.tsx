@@ -23,3 +23,28 @@ export function DeleteSshKeyModal({
   const handleConfirm = () => {
     if (!sshKey?.id) {
       return
+    }
+
+    mutation.mutate(sshKey.id, {
+      onSuccess: () => onClose(),
+    })
+  }
+
+  return (
+    <ModalWrapper
+      type="danger"
+      opened={opened}
+      onClose={onClose}
+      title={t('profile.sshKey.delete.title')}
+      closeOnClickOutside={false}
+      confirmLoading={mutation.isPending}
+      onConfirm={handleConfirm}
+    >
+      <Text size="sm">
+        {t('profile.sshKey.delete.confirm', {
+          name: sshKey?.name ?? '',
+        })}
+      </Text>
+    </ModalWrapper>
+  )
+}
