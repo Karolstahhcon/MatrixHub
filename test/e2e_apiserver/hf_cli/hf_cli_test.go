@@ -67,3 +67,72 @@ var _ = Describe("HF CLI", Label("hf-cli"), func() {
 
 		create := runHF(root, env, "repos", "create", repoID, "--repo-type", "model")
 		Expect(create.Err).NotTo(HaveOccurred(), create.FailureMessage())
+
+		sourceDir := filepath.Join(root, "source")
+		Expect(os.MkdirAll(sourceDir, 0755)).To(Succeed())
+		const readme = "# MatrixHub HF CLI e2e\n"
+		Expect(os.WriteFile(filepath.Join(sourceDir, "README.md"), []byte(readme), 0600)).To(Succeed())
+		Expect(os.WriteFile(filepath.Join(sourceDir, "config.json"), []byte(`{"model_type":"matrixhub-e2e"}`), 0600)).To(Succeed())
+
+		upload := runHF(root, env, "upload", repoID, sourceDir, ".", "--commit-message", "hf cli e2e upload")
+		Expect(upload.Err).NotTo(HaveOccurred(), upload.FailureMessage())
+
+		downloadDir := filepath.Join(root, "download")
+		download := runHF(root, env, "download", repoID, "README.md", "--revision", "main", "--local-dir", downloadDir, "--force-download")
+		Expect(download.Err).NotTo(HaveOccurred(), download.FailureMessage())
+		content, err := os.ReadFile(filepath.Join(downloadDir, "README.md"))
+		Expect(err).NotTo(HaveOccurred())
+		Expect(string(content)).To(Equal(readme))
+	})
+
+	It("should reject an unauthenticated download from a private project", Label("HF00002"), func() {
+		model := tools.GenerateTestModelName("hf-private")
+		repoID := fixture.Project.Name + "/" + model
+
+		create := runHF(root, env, "repos", "create", repoID, "--repo-type", "model")
+		Expect(create.Err).NotTo(HaveOccurred(), create.FailureMessage())
+		source := filepath.Join(root, "private.txt")
+		Expect(os.WriteFile(source, []byte("private\n"), 0600)).To(Succeed())
+		upload := runHF(root, env, "upload", repoID, source, "private.txt")
+		Expect(upload.Err).NotTo(HaveOccurred(), upload.FailureMessage())
+
+		anonymousEnv := tools.HFCLIEnvironment(filepath.Join(root, "anonymous"), "")
+		anonymousDownloadDir := filepath.Join(root, "anonymous-download")
+		download := runHF(root, anonymousEnv, "download", repoID, "private.txt", "--local-dir", anonymousDownloadDir, "--force-download")
+		Expect(download.Err).To(HaveOccurred(), "private repository download unexpectedly succeeded")
+		_, err := os.Stat(filepath.Join(anonymousDownloadDir, "private.txt"))
+		Expect(os.IsNotExist(err)).To(BeTrue(), "private file was written despite failed authentication")
+	})
+
+	It("should upload and download a large file through the HF LFS flow", Label("HF00003", "lfs", "slow"), func() {
+		model := tools.GenerateTestModelName("hf-lfs")
+		repoID := fixture.Project.Name + "/" + model
+
+		create := runHF(root, env, "repos", "create", repoID, "--repo-type", "model")
+		Expect(create.Err).NotTo(HaveOccurred(), create.FailureMessage())
+
+		payload := make([]byte, 10*1024*1024+1)
+		for i := range payload {
+			payload[i] = byte(i % 251)
+		}
+		expectedHash := sha256.Sum256(payload)
+		source := filepath.Join(root, "weights.safetensors")
+		Expect(os.WriteFile(source, payload, 0600)).To(Succeed())
+
+		upload := runHF(root, env, "upload", repoID, source, "weights.safetensors", "--commit-message", "hf lfs upload")
+		Expect(upload.Err).NotTo(HaveOccurred(), upload.FailureMessage())
+
+		downloadDir := filepath.Join(root, "lfs-download")
+		download := runHF(root, env, "download", repoID, "weights.safetensors", "--local-dir", downloadDir, "--force-download")
+		Expect(download.Err).NotTo(HaveOccurred(), download.FailureMessage())
+		downloaded, err := os.ReadFile(filepath.Join(downloadDir, "weights.safetensors"))
+		Expect(err).NotTo(HaveOccurred())
+		Expect(sha256.Sum256(downloaded)).To(Equal(expectedHash))
+	})
+})
+
+func runHF(dir string, env map[string]string, args ...string) tools.CommandResult {
+	ctx, cancel := context.WithTimeout(context.Background(), hfCommandTimeout)
+	defer cancel()
+	return tools.RunCommand(ctx, dir, env, "hf", args...)
+}

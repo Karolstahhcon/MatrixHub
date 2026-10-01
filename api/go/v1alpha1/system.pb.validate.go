@@ -120,3 +120,248 @@ func (e GetSystemConfigRequestValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
+		"invalid %sGetSystemConfigRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetSystemConfigRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetSystemConfigRequestValidationError{}
+
+// Validate checks the field values on SystemConfig with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *SystemConfig) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on SystemConfig with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in SystemConfigMultiError, or
+// nil if none found.
+func (m *SystemConfig) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *SystemConfig) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetEndpoints()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, SystemConfigValidationError{
+					field:  "Endpoints",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, SystemConfigValidationError{
+					field:  "Endpoints",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetEndpoints()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return SystemConfigValidationError{
+				field:  "Endpoints",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return SystemConfigMultiError(errors)
+	}
+
+	return nil
+}
+
+// SystemConfigMultiError is an error wrapping multiple validation errors
+// returned by SystemConfig.ValidateAll() if the designated constraints aren't met.
+type SystemConfigMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m SystemConfigMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m SystemConfigMultiError) AllErrors() []error { return m }
+
+// SystemConfigValidationError is the validation error returned by
+// SystemConfig.Validate if the designated constraints aren't met.
+type SystemConfigValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e SystemConfigValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e SystemConfigValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e SystemConfigValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e SystemConfigValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e SystemConfigValidationError) ErrorName() string { return "SystemConfigValidationError" }
+
+// Error satisfies the builtin error interface
+func (e SystemConfigValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sSystemConfig.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = SystemConfigValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = SystemConfigValidationError{}
+
+// Validate checks the field values on Endpoints with the rules defined in the
+// proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *Endpoints) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on Endpoints with the rules defined in
+// the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in EndpointsMultiError, or nil
+// if none found.
+func (m *Endpoints) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *Endpoints) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for HfBase
+
+	if len(errors) > 0 {
+		return EndpointsMultiError(errors)
+	}
+
+	return nil
+}
+
+// EndpointsMultiError is an error wrapping multiple validation errors returned
+// by Endpoints.ValidateAll() if the designated constraints aren't met.
+type EndpointsMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m EndpointsMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m EndpointsMultiError) AllErrors() []error { return m }
+
+// EndpointsValidationError is the validation error returned by
+// Endpoints.Validate if the designated constraints aren't met.
+type EndpointsValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e EndpointsValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e EndpointsValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e EndpointsValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e EndpointsValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e EndpointsValidationError) ErrorName() string { return "EndpointsValidationError" }
+
+// Error satisfies the builtin error interface
+func (e EndpointsValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sEndpoints.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = EndpointsValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = EndpointsValidationError{}
