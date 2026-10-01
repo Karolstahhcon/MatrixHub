@@ -55,3 +55,60 @@ func TestConfigValidate(t *testing.T) {
 			},
 		},
 		{
+			name: "unsupported driver",
+			config: Config{
+				Driver: "oracle",
+				DSN:    "unused",
+			},
+			wantErr: "unsupported database driver",
+		},
+		{
+			name: "missing dsn",
+			config: Config{
+				Driver: DriverPostgres,
+			},
+			wantErr: "database DSN is required",
+		},
+		{
+			name: "sqlite has multiple open connections",
+			config: Config{
+				Driver:       DriverSQLite,
+				DSN:          "file:test.db",
+				MaxOpenConns: 2,
+				MaxIdleConns: 1,
+			},
+			wantErr: "sqlite requires maxOpenConns to be 1",
+		},
+		{
+			name: "migration path is required",
+			config: Config{
+				Driver:       DriverSQLite,
+				DSN:          "file:test.db",
+				MaxOpenConns: 1,
+				MaxIdleConns: 1,
+				Migrate:      true,
+			},
+			wantErr: "sqlPath is required",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.config.validate()
+			if tt.wantErr == "" {
+				require.NoError(t, err)
+				return
+			}
+			require.ErrorContains(t, err, tt.wantErr)
+		})
+	}
+}
+
+func TestSQLiteConfigApplyDefaults(t *testing.T) {
+	config := Config{Driver: DriverSQLite}
+
+	config.applyDefaults()
+
+	require.Equal(t, 1, config.MaxOpenConns)
+	require.Equal(t, 1, config.MaxIdleConns)
+}
