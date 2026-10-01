@@ -102,3 +102,108 @@ func (mr *MockIDatasetServiceMockRecorder) GetDatasetBlob(ctx, project, name, re
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDatasetBlob", reflect.TypeOf((*MockIDatasetService)(nil).GetDatasetBlob), ctx, project, name, revision, path)
 }
 
+// GetDatasetCommit mocks base method.
+func (m *MockIDatasetService) GetDatasetCommit(ctx context.Context, project, name, commitID string) (*git.Commit, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDatasetCommit", ctx, project, name, commitID)
+	ret0, _ := ret[0].(*git.Commit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDatasetCommit indicates an expected call of GetDatasetCommit.
+func (mr *MockIDatasetServiceMockRecorder) GetDatasetCommit(ctx, project, name, commitID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDatasetCommit", reflect.TypeOf((*MockIDatasetService)(nil).GetDatasetCommit), ctx, project, name, commitID)
+}
+
+// GetDatasetTree mocks base method.
+func (m *MockIDatasetService) GetDatasetTree(ctx context.Context, project, name, revision, path string) ([]*git.TreeEntry, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDatasetTree", ctx, project, name, revision, path)
+	ret0, _ := ret[0].([]*git.TreeEntry)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDatasetTree indicates an expected call of GetDatasetTree.
+func (mr *MockIDatasetServiceMockRecorder) GetDatasetTree(ctx, project, name, revision, path any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDatasetTree", reflect.TypeOf((*MockIDatasetService)(nil).GetDatasetTree), ctx, project, name, revision, path)
+}
+
+// ListDatasetCommits mocks base method.
+func (m *MockIDatasetService) ListDatasetCommits(ctx context.Context, project, name, revision string, page, pageSize int) ([]*git.Commit, int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListDatasetCommits", ctx, project, name, revision, page, pageSize)
+	ret0, _ := ret[0].([]*git.Commit)
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// ListDatasetCommits indicates an expected call of ListDatasetCommits.
+func (mr *MockIDatasetServiceMockRecorder) ListDatasetCommits(ctx, project, name, revision, page, pageSize any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListDatasetCommits", reflect.TypeOf((*MockIDatasetService)(nil).ListDatasetCommits), ctx, project, name, revision, page, pageSize)
+}
+
+// ListDatasetRevisions mocks base method.
+func (m *MockIDatasetService) ListDatasetRevisions(ctx context.Context, project, name string) (*git.Revisions, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListDatasetRevisions", ctx, project, name)
+	ret0, _ := ret[0].(*git.Revisions)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListDatasetRevisions indicates an expected call of ListDatasetRevisions.
+func (mr *MockIDatasetServiceMockRecorder) ListDatasetRevisions(ctx, project, name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListDatasetRevisions", reflect.TypeOf((*MockIDatasetService)(nil).ListDatasetRevisions), ctx, project, name)
+}
+
+// ListDatasetTaskLabels mocks base method.
+func (m *MockIDatasetService) ListDatasetTaskLabels(ctx context.Context) ([]*model.Label, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListDatasetTaskLabels", ctx)
+	ret0, _ := ret[0].([]*model.Label)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListDatasetTaskLabels indicates an expected call of ListDatasetTaskLabels.
+func (mr *MockIDatasetServiceMockRecorder) ListDatasetTaskLabels(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListDatasetTaskLabels", reflect.TypeOf((*MockIDatasetService)(nil).ListDatasetTaskLabels), ctx)
+}
+
+// ListDatasets mocks base method.
+func (m *MockIDatasetService) ListDatasets(ctx context.Context, filter *model.Filter) ([]*dataset.Dataset, int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListDatasets", ctx, filter)
+	ret0, _ := ret[0].([]*dataset.Dataset)
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// ListDatasets indicates an expected call of ListDatasets.
+func (mr *MockIDatasetServiceMockRecorder) ListDatasets(ctx, filter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListDatasets", reflect.TypeOf((*MockIDatasetService)(nil).ListDatasets), ctx, filter)
+}
+
+// SyncMetadata mocks base method.
+func (m *MockIDatasetService) SyncMetadata(ctx context.Context, project, name string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SyncMetadata", ctx, project, name)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SyncMetadata indicates an expected call of SyncMetadata.
+func (mr *MockIDatasetServiceMockRecorder) SyncMetadata(ctx, project, name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncMetadata", reflect.TypeOf((*MockIDatasetService)(nil).SyncMetadata), ctx, project, name)
+}
