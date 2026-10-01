@@ -44,3 +44,27 @@ export function updateRegistryMutationOptions() {
       invalidates: [adminRegistryKeys.lists()],
     } satisfies NotificationMeta,
   })
+}
+
+export function deleteRegistryMutationOptions() {
+  return mutationOptions({
+    mutationFn: ({ id }: DeleteRegistryRequest) => Registries.DeleteRegistry({
+      id: requireRegistryId(id),
+    }),
+    meta: {
+      successMessage: i18n.t('routes.admin.registries.notifications.deleteSuccess'),
+      errorMessage: i18n.t('routes.admin.registries.notifications.deleteError'),
+      invalidates: [adminRegistryKeys.lists()],
+    } satisfies NotificationMeta,
+  })
+}
+
+export function pingRegistryMutationOptions() {
+  return mutationOptions({
+    mutationFn: (input: PingRegistryRequest) => Registries.PingRegistry(input),
+    meta: {
+      successMessage: i18n.t('routes.admin.registries.notifications.pingSuccess'),
+      errorMessage: i18n.t('routes.admin.registries.notifications.pingError'),
+    } satisfies NotificationMeta,
+  })
+}
