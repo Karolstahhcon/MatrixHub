@@ -56,3 +56,62 @@ function DeleteUserModal({
           <Button
             loading={loading}
             onClick={onConfirm}
+          >
+            {t('routes.admin.users.deleteModal.submit')}
+          </Button>
+        </Group>
+      )}
+    >
+      <Stack gap="sm">
+        <Text size="sm">
+          {t('routes.admin.users.deleteModal.description', {
+            username: getUserDisplayName(user),
+          })}
+        </Text>
+      </Stack>
+    </ModalWrapper>
+  )
+}
+
+export function DeleteUserAction({
+  user,
+  disabled,
+}: DeleteUserActionProps) {
+  const { t } = useTranslation()
+  const [opened, {
+    open,
+    close,
+  }] = useDisclosure(false)
+  const mutation = useMutation(deleteUserMutationOptions())
+
+  const handleDelete = async () => {
+    await mutation.mutateAsync({ id: user.id })
+    close()
+  }
+
+  return (
+    <>
+      <Button
+        variant="transparent"
+        size="compact-sm"
+        color="red"
+        disabled={disabled}
+        onClick={open}
+      >
+        {t('routes.admin.users.actions.delete')}
+      </Button>
+
+      {opened && (
+        <DeleteUserModal
+          opened
+          user={user}
+          loading={mutation.isPending}
+          onClose={close}
+          onConfirm={() => {
+            void handleDelete()
+          }}
+        />
+      )}
+    </>
+  )
+}
