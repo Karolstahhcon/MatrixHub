@@ -45,3 +45,51 @@ var _ = Describe("SyncPolicy Processor", func() {
 		registry, err := tools.CreateHuggingFaceRegistryFixture(ctx, "e2e-syncpolicy-processor-registry", "https://hf-mirror.com")
 		Expect(err).NotTo(HaveOccurred())
 		defer registry.Cleanup(ctx)
+		Expect(registry.ID).To(BeNumerically(">", 0))
+
+		req := v1alpha1.V1alpha1CreateSyncPolicyRequest{
+			Name:        name,
+			Description: "e2e sync policy processor test",
+			PolicyType:  &policyType,
+			TriggerType: &triggerType,
+			PullBasePolicy: &v1alpha1.V1alpha1PullBasePolicy{
+				SourceRegistryId:  registry.ID,
+				ResourceName:      "demo-org/demo-model",
+				ResourceTypes:     []v1alpha1.V1alpha1ResourceType{"RESOURCE_TYPE_MODEL"},
+				TargetProjectName: project.Name,
+			},
+			TriggerTypeSchedule: &v1alpha1.V1alpha1TriggerTypeSchedule{
+				Cron: "*/1 * * * *",
+			},
+			IsOverwrite: false,
+		}
+
+		resp, _, err := api.SyncPolicyCreateSyncPolicy(ctx, req)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp.SyncPolicy).NotTo(BeNil())
+		pid := resp.SyncPolicy.Id
+		Expect(pid).To(BeNumerically(">", 0))
+
+		defer func() {
+			_, _, _ = api.SyncPolicyDeleteSyncPolicy(ctx, pid)
+		}()
+
+		// Poll until the processor claims the policy and inserts at least one sync task.
+		deadline := time.Now().Add(3 * time.Minute)
+		for {
+			if time.Now().After(deadline) {
+				Fail("timeout waiting for processor to create sync task")
+			}
+
+			list, _, err := api.SyncPolicyListSyncTasks(ctx, pid, &v1alpha1.SyncPolicyApiSyncPolicyListSyncTasksOpts{
+				Page:     optional.NewInt32(1),
+				PageSize: optional.NewInt32(20),
+			})
+			Expect(err).NotTo(HaveOccurred())
+			if len(list.SyncTasks) > 0 {
+				return
+			}
+			time.Sleep(5 * time.Second)
+		}
+	})
+})
