@@ -29,3 +29,67 @@ const (
 	SyncJobStatusSucceeded
 	SyncJobStatusFailed
 	SyncJobStatusStopped
+	SyncJobStatusPending
+)
+
+func (s SyncJobStatus) Value() (driver.Value, error) {
+	return int64(s), nil
+}
+
+func (s *SyncJobStatus) Scan(value any) error {
+	if value == nil {
+		*s = SyncJobStatusUnspecified
+		return nil
+	}
+	switch v := value.(type) {
+	case int64:
+		*s = SyncJobStatus(v)
+	case int:
+		*s = SyncJobStatus(v)
+	case int32:
+		*s = SyncJobStatus(v)
+	case uint8:
+		*s = SyncJobStatus(v)
+	default:
+		return fmt.Errorf("cannot scan %T into SyncJobStatus", value)
+	}
+	return nil
+}
+
+type SyncJob struct {
+	ID                 int           `gorm:"primarykey"`
+	RemoteRegistryID   int           `gorm:"column:remote_registry_id"`
+	RemoteProjectName  string        `gorm:"column:remote_project_name"`
+	RemoteResourceName string        `gorm:"column:remote_resource_name"`
+	ProjectName        string        `gorm:"column:project_name"`
+	ResourceName       string        `gorm:"column:resource_name"`
+	ResourceType       string        `gorm:"column:resource_type"`
+	SyncType           string        `gorm:"column:sync_type"`
+	Status             SyncJobStatus `gorm:"column:status"`
+	CompletedTimestamp int64         `gorm:"column:completed_timestamp"`
+	SyncTaskID         int           `gorm:"column:sync_task_id"`
+	CompletePercents   int           `gorm:"column:complete_percents"`
+	CreatedAt          time.Time     `gorm:"column:created_at"`
+	UpdatedAt          time.Time     `gorm:"column:updated_at"`
+}
+
+func (SyncJob) TableName() string {
+	return "sync_jobs"
+}
+
+func (p *SyncJob) HasSyncTask() bool {
+	return p.SyncTaskID > 0
+}
+
+//go:generate go tool mockgen -source=sync_job.go -destination=mocks/sync_job_repo_mock.go -package=mocks
+type ISyncJobRepo interface {
+	CreateSyncJob(ctx context.Context, syncJob *SyncJob) error
+	CreateSyncJobs(ctx context.Context, syncJobs []*SyncJob) error
+	GetSyncJob(ctx context.Context, id int) (*SyncJob, error)
+	UpdateSyncJob(ctx context.Context, syncJob *SyncJob) error
+	DeleteSyncJob(ctx context.Context, id int) error
+	ListSyncJobsByTaskID(ctx context.Context, taskID int, page, pageSize int, status SyncJobStatus, resourceType string) ([]*SyncJob, int64, error)
+
+	SelectPendingJobs(ctx context.Context, limit int) ([]*SyncJob, error)
+	UpdateJobStatusCAS(ctx context.Context, jobID int, fromStatus, toStatus SyncJobStatus) (bool, error)
+}
