@@ -106,3 +106,58 @@ export function AddMemberModal({
       <Stack gap="md">
         <form.Field
           name="memberType"
+          validators={{ onChange: requiredString }}
+        >
+          {field => (
+            <Select
+              label={t('projects.detail.membersPage.addMemberModal.memberType')}
+              withAsterisk
+              data={memberTypeOptions}
+              value={field.state.value}
+              onChange={(value) => {
+                field.handleChange(value ?? '')
+                form.setFieldValue('memberId', '')
+              }}
+              error={fieldError(field)}
+            />
+          )}
+        </form.Field>
+        <form.Field
+          name="memberId"
+          validators={{ onChange: requiredString }}
+        >
+          {field => (
+            <Select
+              label={t('projects.detail.membersPage.addMemberModal.user')}
+              withAsterisk
+              data={userOptions}
+              value={field.state.value || null}
+              onChange={value => field.handleChange(value ?? '')}
+              searchable
+              disabled={memberType === MemberType.MEMBER_TYPE_GROUP}
+              error={fieldError(field)}
+            />
+          )}
+        </form.Field>
+        <form.Field
+          name="role"
+          validators={{ onChange: requiredString }}
+        >
+          {field => (
+            <Select
+              label={t('projects.detail.membersPage.addMemberModal.roleType')}
+              withAsterisk
+              allowDeselect={false}
+              data={roleOptions}
+              inputWrapperOrder={['label', 'input', 'error', 'description']}
+              description={roleDescription}
+              value={field.state.value || null}
+              onChange={value => field.handleChange(value ?? '')}
+              error={fieldError(field)}
+            />
+          )}
+        </form.Field>
+      </Stack>
+    </ModalWrapper>
+  )
+}
