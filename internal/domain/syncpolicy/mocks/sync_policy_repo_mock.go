@@ -70,3 +70,76 @@ func (mr *MockISyncPolicyRepoMockRecorder) CreateSyncPolicy(ctx, policy any) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSyncPolicy", reflect.TypeOf((*MockISyncPolicyRepo)(nil).CreateSyncPolicy), ctx, policy)
 }
 
+// DeleteSyncPolicy mocks base method.
+func (m *MockISyncPolicyRepo) DeleteSyncPolicy(ctx context.Context, id int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteSyncPolicy", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteSyncPolicy indicates an expected call of DeleteSyncPolicy.
+func (mr *MockISyncPolicyRepoMockRecorder) DeleteSyncPolicy(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSyncPolicy", reflect.TypeOf((*MockISyncPolicyRepo)(nil).DeleteSyncPolicy), ctx, id)
+}
+
+// GetSyncPolicy mocks base method.
+func (m *MockISyncPolicyRepo) GetSyncPolicy(ctx context.Context, id int) (*syncpolicy.SyncPolicy, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSyncPolicy", ctx, id)
+	ret0, _ := ret[0].(*syncpolicy.SyncPolicy)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSyncPolicy indicates an expected call of GetSyncPolicy.
+func (mr *MockISyncPolicyRepoMockRecorder) GetSyncPolicy(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSyncPolicy", reflect.TypeOf((*MockISyncPolicyRepo)(nil).GetSyncPolicy), ctx, id)
+}
+
+// ListSyncPolicies mocks base method.
+func (m *MockISyncPolicyRepo) ListSyncPolicies(ctx context.Context, page, pageSize int, search string) ([]*syncpolicy.SyncPolicy, int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListSyncPolicies", ctx, page, pageSize, search)
+	ret0, _ := ret[0].([]*syncpolicy.SyncPolicy)
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// ListSyncPolicies indicates an expected call of ListSyncPolicies.
+func (mr *MockISyncPolicyRepoMockRecorder) ListSyncPolicies(ctx, page, pageSize, search any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSyncPolicies", reflect.TypeOf((*MockISyncPolicyRepo)(nil).ListSyncPolicies), ctx, page, pageSize, search)
+}
+
+// SelectDuePolicies mocks base method.
+func (m *MockISyncPolicyRepo) SelectDuePolicies(ctx context.Context, nowMs int64, limit int) ([]*syncpolicy.SyncPolicy, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SelectDuePolicies", ctx, nowMs, limit)
+	ret0, _ := ret[0].([]*syncpolicy.SyncPolicy)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SelectDuePolicies indicates an expected call of SelectDuePolicies.
+func (mr *MockISyncPolicyRepoMockRecorder) SelectDuePolicies(ctx, nowMs, limit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SelectDuePolicies", reflect.TypeOf((*MockISyncPolicyRepo)(nil).SelectDuePolicies), ctx, nowMs, limit)
+}
+
+// UpdateSyncPolicy mocks base method.
+func (m *MockISyncPolicyRepo) UpdateSyncPolicy(ctx context.Context, policy *syncpolicy.SyncPolicy) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSyncPolicy", ctx, policy)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateSyncPolicy indicates an expected call of UpdateSyncPolicy.
+func (mr *MockISyncPolicyRepoMockRecorder) UpdateSyncPolicy(ctx, policy any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSyncPolicy", reflect.TypeOf((*MockISyncPolicyRepo)(nil).UpdateSyncPolicy), ctx, policy)
+}
