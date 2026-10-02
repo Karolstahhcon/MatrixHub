@@ -9,3 +9,14 @@ apiserver:
     repository: Karolstahhcon/matrixhub
     tag: "latest"
     pullPolicy: Always
+  service:
+    type: NodePort
+  storage:
+    mode: pvc
+    pvc:
+      size: 60Gi
+
+mysql:
+  registry: docker.m.daocloud.io
+  persistence:
+    size: 8Gi
