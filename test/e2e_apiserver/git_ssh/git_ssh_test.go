@@ -116,3 +116,121 @@ var _ = Describe("Git over SSH", Label("git-ssh"), func() {
 		cloneDir := filepath.Join(root, "viewer-clone")
 		runGitSuccessfully(root, sshClient.GitEnvironment(), "clone", remote, cloneDir)
 		configureGitIdentity(cloneDir, sshClient.GitEnvironment())
+		Expect(os.WriteFile(filepath.Join(cloneDir, "viewer.txt"), []byte("denied\n"), 0600)).To(Succeed())
+		runGitSuccessfully(cloneDir, sshClient.GitEnvironment(), "add", "viewer.txt")
+		runGitSuccessfully(cloneDir, sshClient.GitEnvironment(), "commit", "-m", "viewer write")
+		push := runGit(cloneDir, sshClient.GitEnvironment(), "push", "origin", "main")
+		Expect(push.Err).To(HaveOccurred(), "viewer push unexpectedly succeeded")
+	})
+
+	// TODO: Re-enable after Git LFS HTTP authentication works for SSH remotes.
+	PIt("should push and clone Git LFS content over SSH", Label("GS00004", "lfs", "slow"), func() {
+		if _, err := exec.LookPath("git-lfs"); err != nil {
+			if os.Getenv("CI") != "" {
+				Fail("git-lfs is required in CI")
+			}
+			Skip("git-lfs is not installed")
+		}
+
+		model := tools.GenerateTestModelName("git-lfs")
+		remote, source := createAndCloneModelRepository(ctx, fixture, sshClient, root, model, "lfs-source")
+		runGitSuccessfully(source, sshClient.GitEnvironment(), "lfs", "install", "--local")
+		runGitSuccessfully(source, sshClient.GitEnvironment(), "lfs", "track", "*.bin")
+
+		payload := make([]byte, 1024*1024)
+		for i := range payload {
+			payload[i] = byte(i % 251)
+		}
+		expectedHash := sha256.Sum256(payload)
+		Expect(os.WriteFile(filepath.Join(source, "weights.bin"), payload, 0600)).To(Succeed())
+		runGitSuccessfully(source, sshClient.GitEnvironment(), "add", ".gitattributes", "weights.bin")
+		runGitSuccessfully(source, sshClient.GitEnvironment(), "commit", "-m", "add LFS payload")
+		runGitSuccessfully(source, sshClient.GitEnvironment(), "push", "-u", "origin", "main")
+
+		cloneDir := filepath.Join(root, "lfs-clone")
+		runGitSuccessfully(root, sshClient.GitEnvironment(), "clone", remote, cloneDir)
+		cloned, err := os.ReadFile(filepath.Join(cloneDir, "weights.bin"))
+		Expect(err).NotTo(HaveOccurred())
+		Expect(sha256.Sum256(cloned)).To(Equal(expectedHash))
+	})
+
+	It("should push branches and tags over SSH", Label("GS00005"), func() {
+		model := tools.GenerateTestModelName("git-refs")
+		remote, source := createAndCloneModelRepository(ctx, fixture, sshClient, root, model, "refs-source")
+		Expect(os.WriteFile(filepath.Join(source, "README.md"), []byte("main\n"), 0600)).To(Succeed())
+		runGitSuccessfully(source, sshClient.GitEnvironment(), "add", "README.md")
+		runGitSuccessfully(source, sshClient.GitEnvironment(), "commit", "-m", "main commit")
+		runGitSuccessfully(source, sshClient.GitEnvironment(), "push", "-u", "origin", "main")
+
+		runGitSuccessfully(source, sshClient.GitEnvironment(), "switch", "-c", "feature/e2e")
+		Expect(os.WriteFile(filepath.Join(source, "feature.txt"), []byte("feature\n"), 0600)).To(Succeed())
+		runGitSuccessfully(source, sshClient.GitEnvironment(), "add", "feature.txt")
+		runGitSuccessfully(source, sshClient.GitEnvironment(), "commit", "-m", "feature commit")
+		runGitSuccessfully(source, sshClient.GitEnvironment(), "tag", "v0.0.1-e2e")
+		runGitSuccessfully(source, sshClient.GitEnvironment(), "push", "origin", "feature/e2e", "v0.0.1-e2e")
+
+		refs := runGit(root, sshClient.GitEnvironment(), "ls-remote", remote)
+		Expect(refs.Err).NotTo(HaveOccurred(), refs.FailureMessage())
+		Expect(refs.Stdout).To(ContainSubstring("refs/heads/feature/e2e"))
+		Expect(refs.Stdout).To(ContainSubstring("refs/tags/v0.0.1-e2e"))
+	})
+
+	It("should reject new SSH connections after the key is deleted", Label("GS00006"), func() {
+		model := tools.GenerateTestModelName("git-revoked-key")
+		remote, source := createAndCloneModelRepository(ctx, fixture, sshClient, root, model, "revoked-source")
+		Expect(os.WriteFile(filepath.Join(source, "README.md"), []byte("seed\n"), 0600)).To(Succeed())
+		runGitSuccessfully(source, sshClient.GitEnvironment(), "add", "README.md")
+		runGitSuccessfully(source, sshClient.GitEnvironment(), "commit", "-m", "seed repository")
+		runGitSuccessfully(source, sshClient.GitEnvironment(), "push", "-u", "origin", "main")
+
+		keys, _, err := fixture.CurrentUser.CurrentUserListSSHKeys(ctx)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(keys.Items).To(HaveLen(1))
+		_, _, err = fixture.CurrentUser.CurrentUserDeleteSSHKey(ctx, keys.Items[0].Id)
+		Expect(err).NotTo(HaveOccurred())
+
+		lsRemote := runGit(root, sshClient.GitEnvironment(), "ls-remote", remote)
+		Expect(lsRemote.Err).To(HaveOccurred(), "SSH access unexpectedly succeeded after key deletion")
+	})
+})
+
+func createAndCloneModelRepository(
+	ctx context.Context,
+	fixture *tools.ProjectUserFixture,
+	sshClient *tools.SSHClientFixture,
+	root, model, dirName string,
+) (string, string) {
+	modelsAPI := tools.CreateModelClientWithCookie(fixture.Cookie)
+	_, _, err := modelsAPI.ModelsCreateModel(ctx, v1alpha1model.V1alpha1CreateModelRequest{
+		Project: fixture.Project.Name,
+		Name:    model,
+	})
+	Expect(err).NotTo(HaveOccurred())
+
+	remote := sshClient.RepositoryURL(fixture.Project.Name, model)
+	dir := filepath.Join(root, dirName)
+	env := sshClient.GitEnvironment()
+	runGitSuccessfully(root, env, "clone", remote, dir)
+	configureGitIdentity(dir, env)
+	return remote, dir
+}
+
+func configureGitIdentity(dir string, env map[string]string) {
+	runGitSuccessfully(dir, env, "config", "user.name", "MatrixHub E2E")
+	runGitSuccessfully(dir, env, "config", "user.email", "e2e@matrixhub.invalid")
+}
+
+func runGitSuccessfully(dir string, env map[string]string, args ...string) {
+	result := runGit(dir, env, args...)
+	ExpectWithOffset(1, result.Err).NotTo(HaveOccurred(), result.FailureMessage())
+}
+
+func runGit(dir string, env map[string]string, args ...string) tools.CommandResult {
+	ctx, cancel := context.WithTimeout(context.Background(), gitCommandTimeout)
+	defer cancel()
+	result := tools.RunCommand(ctx, dir, env, "git", args...)
+	if result.Err != nil {
+		GinkgoWriter.Printf("%s\n", result.FailureMessage())
+	}
+	return result
+}

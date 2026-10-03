@@ -51,3 +51,56 @@ export function SshKeysPage() {
 
   return (
     <Stack gap="sm">
+      <Alert
+        hidden={!hintVisible}
+        icon={<IconInfoCircle size={20} />}
+        variant="light"
+        color="cyan"
+        withCloseButton
+        onClose={() => setHintVisible(false)}
+        styles={{ icon: { marginRight: 6 } }}
+      >
+        {t('profile.sshKey.hint')}
+        {' '}
+        <Anchor
+          href={t('common.docs', { doc: SSH_KEY_DOC_URL })}
+          target="_blank"
+          rel="noopener noreferrer"
+          inherit
+        >
+          {t('profile.sshKey.generateHint')}
+          {' '}
+          <IconExternalLink size={14} />
+        </Anchor>
+      </Alert>
+
+      <SshKeysTable
+        data={data?.items ?? []}
+        onDelete={handleDelete}
+        loading={false}
+        fetching={isFetching}
+        onRefresh={handleRefresh}
+        emptyTitle={t('profile.sshKey.emptyTitle')}
+        toolbarExtra={(
+          <Button
+            radius={6}
+            onClick={createHandlers.open}
+          >
+            {t('profile.sshKey.create.button')}
+          </Button>
+        )}
+      />
+
+      <CreateSshKeyModal
+        opened={createOpened}
+        onClose={createHandlers.close}
+      />
+
+      <DeleteSshKeyModal
+        sshKey={deleteTarget}
+        opened={deleteOpened}
+        onClose={handleDeleteClose}
+      />
+    </Stack>
+  )
+}
