@@ -34,3 +34,39 @@ var (
 	ContextAccessToken = contextKey("accesstoken")
 
 	// ContextAPIKey takes an APIKey as authentication for the request
+	ContextAPIKey = contextKey("apikey")
+)
+
+// BasicAuth provides basic http authentication to a request passed via context using ContextBasicAuth
+type BasicAuth struct {
+	UserName string `json:"userName,omitempty"`
+	Password string `json:"password,omitempty"`
+}
+
+// APIKey provides API key based authentication to a request passed via context using ContextAPIKey
+type APIKey struct {
+	Key    string
+	Prefix string
+}
+
+type Configuration struct {
+	BasePath      string            `json:"basePath,omitempty"`
+	Host          string            `json:"host,omitempty"`
+	Scheme        string            `json:"scheme,omitempty"`
+	DefaultHeader map[string]string `json:"defaultHeader,omitempty"`
+	UserAgent     string            `json:"userAgent,omitempty"`
+	HTTPClient    *http.Client
+}
+
+func NewConfiguration() *Configuration {
+	cfg := &Configuration{
+		BasePath:      "https://localhost",
+		DefaultHeader: make(map[string]string),
+		UserAgent:     "Swagger-Codegen/1.0.0/go",
+	}
+	return cfg
+}
+
+func (c *Configuration) AddDefaultHeader(key string, value string) {
+	c.DefaultHeader[key] = value
+}
