@@ -28,3 +28,14 @@ function transformPermissionCategories(
           name: permission.name ?? value,
         }
       }).filter(item => item.value),
+    }
+  }).filter(category => category.key)
+}
+
+export function getPlatformPermissionCategories(categories?: RoleCategory[]) {
+  return transformPermissionCategories(categories)
+}
+
+export function getProjectPermissionCategories(categories?: RoleCategory[]) {
+  return transformPermissionCategories(categories)
+}
