@@ -123,3 +123,129 @@ export function ProjectModelsPage() {
             variant="transparent"
             size="lg"
             onClick={() => void refetch()}
+            loading={isRefreshing}
+            c="gray.6"
+            aria-label={t('shared.refresh')}
+          >
+            <IconRefresh size={24} />
+          </ActionIcon>
+
+          <SortDropdown
+            fieldOptions={sortFieldOptions}
+            fieldValue={sortField}
+            order={sortOrder}
+            refreshing={isRefreshing}
+            onFieldChange={(nextField) => {
+              if (sortFieldOptions.find(o => o.value === nextField)?.disabled) {
+                return
+              }
+
+              startTransition(() => {
+                void navigate({
+                  replace: true,
+                  search: prev => ({
+                    ...prev,
+                    sort: nextField === 'updatedAt' ? nextField : prev.sort,
+                    order: sortOrder,
+                    page: 1,
+                  }),
+                })
+              })
+            }}
+            onToggleOrder={() => {
+              startTransition(() => {
+                void navigate({
+                  replace: true,
+                  search: prev => ({
+                    ...prev,
+                    order: sortOrder === 'desc' ? 'asc' : 'desc',
+                    page: 1,
+                  }),
+                })
+              })
+            }}
+          />
+
+          {isProxy
+            ? (
+                <Button
+                  radius={6}
+                  leftSection={<IconCube size={16} />}
+                  onClick={() => setDownloadDrawerOpened(true)}
+                >
+                  {t('projects.detail.proxyDownload.title')}
+                </Button>
+              )
+            : canCreateModel && (
+              <Link to="/models/new" search={{ projectId }}>
+                <Button
+                  radius={6}
+                  leftSection={<IconCube size={16} />}
+                >
+                  {t('projects.detail.modelsPage.create')}
+                </Button>
+              </Link>
+            )}
+        </SearchToolbar>
+
+        {isError
+          ? (
+              <Alert color="red" title={t('model.list.loadFailed')}>
+                <Button
+                  mt="sm"
+                  size="xs"
+                  variant="light"
+                  onClick={() => void refetch()}
+                >
+                  {t('model.list.retry')}
+                </Button>
+              </Alert>
+            )
+          : showProxyDownloadGuide
+            ? (
+                <ProxyProjectDownloadGuide
+                  remoteOrganization={project.organization}
+                  organization={project.name}
+                  requiresToken={project.type === ProjectType.PROJECT_TYPE_PRIVATE}
+                />
+              )
+            : (
+                <>
+                  <Space h="lg" />
+
+                  <ResourceCardGrid
+                    loading={showSkeletons}
+                    skeletonCount={DEFAULT_PAGE_SIZE}
+                  >
+                    {cardElements}
+                  </ResourceCardGrid>
+
+                  <Pagination
+                    total={total}
+                    totalPages={totalPages}
+                    page={page}
+                    onPageChange={(nextPage) => {
+                      void navigate({
+                        search: prev => ({
+                          ...prev,
+                          page: nextPage,
+                        }),
+                      })
+                    }}
+                  />
+                </>
+              )}
+      </Stack>
+
+      {isProxy && (
+        <ProxyProjectDownloadDrawer
+          opened={downloadDrawerOpened}
+          remoteOrganization={project.organization}
+          organization={project.name}
+          requiresToken={project.type === ProjectType.PROJECT_TYPE_PRIVATE}
+          onClose={() => setDownloadDrawerOpened(false)}
+        />
+      )}
+    </Box>
+  )
+}
