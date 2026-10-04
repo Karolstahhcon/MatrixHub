@@ -19,3 +19,24 @@ export function DiffLimitAlert({
   onOpenRawDiff,
 }: DiffLimitAlertProps) {
   const { t } = useTranslation()
+
+  return (
+    <Alert variant="light" color="yellow">
+      <Text size="sm" component="span">
+        <Trans
+          t={t}
+          i18nKey="shared.commitDetail.diffLimitNoticeWithLink"
+          values={{ count: maxFiles }}
+          components={[
+            <Anchor
+              key="raw-diff-link"
+              size="sm"
+              href="#"
+              onClick={onOpenRawDiff}
+            />,
+          ]}
+        />
+      </Text>
+    </Alert>
+  )
+}
