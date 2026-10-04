@@ -45,3 +45,50 @@ export function UsersPage() {
     onRefresh,
     onPageChange,
   } = useRouteListState({
+    search,
+    navigate,
+    records: users,
+    getRecordId: getUserRowId,
+    refresh: refreshUsers,
+  })
+
+  const handleBatchDelete = () => {
+    if (selectedRecords.length === 0) {
+      return
+    }
+
+    batchDeleteModal.open(selectedRecords)
+  }
+
+  return (
+    <>
+      <UsersTable
+        data={users}
+        pagination={pagination}
+        loading={isLoading}
+        fetching={isFetching}
+        page={search.page ?? DEFAULT_USERS_PAGE}
+        searchValue={search.query ?? ''}
+        onSearchChange={onSearchChange}
+        onRefresh={onRefresh}
+        onBatchDelete={handleBatchDelete}
+        rowSelection={rowSelection}
+        onRowSelectionChange={setRowSelection}
+        onPageChange={onPageChange}
+        selectedCount={selectedCount}
+        toolbarExtra={<CreateUserAction />}
+      />
+
+      {batchDeleteModal.opened && batchDeleteModal.payload && (
+        <BatchDeleteUsersModal
+          opened
+          users={batchDeleteModal.payload}
+          onClose={batchDeleteModal.close}
+          onSuccess={() => {
+            clearRowSelection()
+          }}
+        />
+      )}
+    </>
+  )
+}
