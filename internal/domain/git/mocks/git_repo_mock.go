@@ -150,3 +150,156 @@ func (m *MockIGitRepo) FindOrphanedRepos(ctx context.Context, validModelPaths, v
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
+
+// FindOrphanedRepos indicates an expected call of FindOrphanedRepos.
+func (mr *MockIGitRepoMockRecorder) FindOrphanedRepos(ctx, validModelPaths, validDatasetPaths any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindOrphanedRepos", reflect.TypeOf((*MockIGitRepo)(nil).FindOrphanedRepos), ctx, validModelPaths, validDatasetPaths)
+}
+
+// GetBlob mocks base method.
+func (m *MockIGitRepo) GetBlob(ctx context.Context, repoType, project, name, revision, path string) (*git.TreeEntry, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBlob", ctx, repoType, project, name, revision, path)
+	ret0, _ := ret[0].(*git.TreeEntry)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBlob indicates an expected call of GetBlob.
+func (mr *MockIGitRepoMockRecorder) GetBlob(ctx, repoType, project, name, revision, path any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlob", reflect.TypeOf((*MockIGitRepo)(nil).GetBlob), ctx, repoType, project, name, revision, path)
+}
+
+// GetCommit mocks base method.
+func (m *MockIGitRepo) GetCommit(ctx context.Context, repoType, project, name, commitID string) (*git.Commit, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCommit", ctx, repoType, project, name, commitID)
+	ret0, _ := ret[0].(*git.Commit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCommit indicates an expected call of GetCommit.
+func (mr *MockIGitRepoMockRecorder) GetCommit(ctx, repoType, project, name, commitID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommit", reflect.TypeOf((*MockIGitRepo)(nil).GetCommit), ctx, repoType, project, name, commitID)
+}
+
+// GetTree mocks base method.
+func (m *MockIGitRepo) GetTree(ctx context.Context, repoType, project, name, revision, path string) ([]*git.TreeEntry, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTree", ctx, repoType, project, name, revision, path)
+	ret0, _ := ret[0].([]*git.TreeEntry)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTree indicates an expected call of GetTree.
+func (mr *MockIGitRepoMockRecorder) GetTree(ctx, repoType, project, name, revision, path any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTree", reflect.TypeOf((*MockIGitRepo)(nil).GetTree), ctx, repoType, project, name, revision, path)
+}
+
+// LFSSize mocks base method.
+func (m *MockIGitRepo) LFSSize(ctx context.Context) int64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LFSSize", ctx)
+	ret0, _ := ret[0].(int64)
+	return ret0
+}
+
+// LFSSize indicates an expected call of LFSSize.
+func (mr *MockIGitRepoMockRecorder) LFSSize(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LFSSize", reflect.TypeOf((*MockIGitRepo)(nil).LFSSize), ctx)
+}
+
+// ListCommits mocks base method.
+func (m *MockIGitRepo) ListCommits(ctx context.Context, repoType, project, name, revision string, page, pageSize int) ([]*git.Commit, int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListCommits", ctx, repoType, project, name, revision, page, pageSize)
+	ret0, _ := ret[0].([]*git.Commit)
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// ListCommits indicates an expected call of ListCommits.
+func (mr *MockIGitRepoMockRecorder) ListCommits(ctx, repoType, project, name, revision, page, pageSize any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListCommits", reflect.TypeOf((*MockIGitRepo)(nil).ListCommits), ctx, repoType, project, name, revision, page, pageSize)
+}
+
+// ListRevisions mocks base method.
+func (m *MockIGitRepo) ListRevisions(ctx context.Context, repoType, project, name string) (*git.Revisions, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListRevisions", ctx, repoType, project, name)
+	ret0, _ := ret[0].(*git.Revisions)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListRevisions indicates an expected call of ListRevisions.
+func (mr *MockIGitRepoMockRecorder) ListRevisions(ctx, repoType, project, name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListRevisions", reflect.TypeOf((*MockIGitRepo)(nil).ListRevisions), ctx, repoType, project, name)
+}
+
+// PullFromRemote mocks base method.
+func (m *MockIGitRepo) PullFromRemote(ctx context.Context, gitRepository *git.GitRepository) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PullFromRemote", ctx, gitRepository)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PullFromRemote indicates an expected call of PullFromRemote.
+func (mr *MockIGitRepoMockRecorder) PullFromRemote(ctx, gitRepository any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PullFromRemote", reflect.TypeOf((*MockIGitRepo)(nil).PullFromRemote), ctx, gitRepository)
+}
+
+// PushToRemote mocks base method.
+func (m *MockIGitRepo) PushToRemote(ctx context.Context, gitRepository *git.GitRepository) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PushToRemote", ctx, gitRepository)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PushToRemote indicates an expected call of PushToRemote.
+func (mr *MockIGitRepoMockRecorder) PushToRemote(ctx, gitRepository any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PushToRemote", reflect.TypeOf((*MockIGitRepo)(nil).PushToRemote), ctx, gitRepository)
+}
+
+// RepositoriesSize mocks base method.
+func (m *MockIGitRepo) RepositoriesSize(ctx context.Context) int64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RepositoriesSize", ctx)
+	ret0, _ := ret[0].(int64)
+	return ret0
+}
+
+// RepositoriesSize indicates an expected call of RepositoriesSize.
+func (mr *MockIGitRepoMockRecorder) RepositoriesSize(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RepositoriesSize", reflect.TypeOf((*MockIGitRepo)(nil).RepositoriesSize), ctx)
+}
+
+// RepositoryExists mocks base method.
+func (m *MockIGitRepo) RepositoryExists(ctx context.Context, repoType, project, name string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RepositoryExists", ctx, repoType, project, name)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RepositoryExists indicates an expected call of RepositoryExists.
+func (mr *MockIGitRepoMockRecorder) RepositoryExists(ctx, repoType, project, name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RepositoryExists", reflect.TypeOf((*MockIGitRepo)(nil).RepositoryExists), ctx, repoType, project, name)
+}
