@@ -314,3 +314,83 @@ var _ = Describe("Robot", Label("robot"), func() {
 			robotName    string
 			robotID      int64
 			initialToken string
+		)
+
+		BeforeEach(func() {
+			robotName = generateRobotName("rb-refresh")
+			createResp, _, err := robotsApi.RobotsCreateRobotAccount(ctx, v1alpha1robot.V1alpha1CreateRobotAccountRequest{
+				Name: robotName,
+			})
+			Expect(err).NotTo(HaveOccurred())
+			initialToken = createResp.Token
+
+			listResp, _, err := robotsApi.RobotsListRobotAccounts(ctx, &v1alpha1robot.RobotsApiRobotsListRobotAccountsOpts{
+				Search: optional.NewString(robotPrefix + robotName),
+			})
+			Expect(err).NotTo(HaveOccurred())
+			for _, r := range listResp.Items {
+				if r.Name == robotPrefix+robotName {
+					robotID = r.Id
+					break
+				}
+			}
+			Expect(robotID).NotTo(BeZero())
+		})
+
+		AfterEach(func() {
+			if robotID != 0 {
+				_, _, _ = robotsApi.RobotsDeleteRobotAccount(ctx, robotID)
+			}
+		})
+
+		It("should auto-generate a new token different from the initial one", Label("R00013"), func() {
+			resp, _, err := robotsApi.RobotsRefreshRobotAccountToken(ctx, robotID, v1alpha1robot.RobotsRefreshRobotAccountTokenBody{
+				AutoGenerate: true,
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.Token).NotTo(BeEmpty())
+			Expect(resp.Token).NotTo(Equal(initialToken), "refreshed token must differ from the initial one")
+
+			GinkgoWriter.Printf("Token refreshed successfully\n")
+		})
+
+		It("should fail to refresh token for a non-existent robot", Label("R00014"), func() {
+			_, _, err := robotsApi.RobotsRefreshRobotAccountToken(ctx, 999999999, v1alpha1robot.RobotsRefreshRobotAccountTokenBody{
+				AutoGenerate: true,
+			})
+			Expect(err).To(HaveOccurred(), "refreshing token for non-existent robot must return an error")
+		})
+	})
+
+	// ═══════════════════════════════════════════════════════════
+	// 5. DeleteRobotAccount API
+	// ═══════════════════════════════════════════════════════════
+	Context("DeleteRobotAccount API", func() {
+		It("should delete a robot account and make it inaccessible", Label("R00015"), func() {
+			name := generateRobotName("rb-del")
+			_, _, err := robotsApi.RobotsCreateRobotAccount(ctx, v1alpha1robot.V1alpha1CreateRobotAccountRequest{
+				Name: name,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			listResp, _, err := robotsApi.RobotsListRobotAccounts(ctx, &v1alpha1robot.RobotsApiRobotsListRobotAccountsOpts{
+				Search: optional.NewString(robotPrefix + name),
+			})
+			Expect(err).NotTo(HaveOccurred())
+			var robotID int64
+			for _, r := range listResp.Items {
+				if r.Name == robotPrefix+name {
+					robotID = r.Id
+					break
+				}
+			}
+			Expect(robotID).NotTo(BeZero())
+
+			_, _, err = robotsApi.RobotsDeleteRobotAccount(ctx, robotID)
+			Expect(err).NotTo(HaveOccurred())
+
+			_, _, err = robotsApi.RobotsGetRobotAccount(ctx, robotID)
+			Expect(err).To(HaveOccurred(), "deleted robot must no longer be accessible")
+		})
+	})
+})
