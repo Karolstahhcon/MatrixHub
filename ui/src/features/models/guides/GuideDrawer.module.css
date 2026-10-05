@@ -33,3 +33,38 @@
 .stepIndex {
   flex-shrink: 0;
   padding: 0;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  font-size: 11px;
+}
+
+.stepBody {
+  padding: var(--mantine-spacing-sm);
+}
+
+.accordionItem,
+.accordionItem[data-active] {
+  border-color: var(--app-color-gray-30);
+  background: var(--app-color-background-body);
+}
+
+.accordionControl,
+.accordionControl:hover {
+  background: var(--app-color-gray-10);
+}
+
+.accordionItem[data-active] .accordionControl {
+  border-bottom: 1px solid var(--app-color-gray-30);
+}
+
+.accordionContent {
+  padding: var(--mantine-spacing-sm);
+}
+
+.note {
+  padding: var(--mantine-spacing-sm) var(--mantine-spacing-md);
+  background: var(--app-color-gray-10);
+  border: 1px solid var(--app-color-gray-30);
+  border-radius: var(--mantine-radius-sm);
+}
