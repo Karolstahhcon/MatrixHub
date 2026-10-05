@@ -18,3 +18,44 @@ import (
 	"context"
 
 	"github.com/matrixhub-ai/matrixhub/internal/domain/registry"
+)
+
+// Discovery discovers remote repositories for a given registry type.
+type Discovery interface {
+	// ListRepositories returns remote repositories matching the filter.
+	// The registry credential (if any) is used for authenticated access.
+	ListRepositories(ctx context.Context, reg *registry.Registry, filter Filter) ([]RemoteRepository, error)
+}
+
+// Filter holds criteria for listing remote repositories.
+type Filter struct {
+	Namespace    string // e.g., "google"
+	ResourceType string // "model", "dataset"
+}
+
+// RemoteRepository represents a repository discovered on a remote registry.
+type RemoteRepository struct {
+	Namespace    string
+	Name         string
+	ResourceType string
+}
+
+// Provider keys — used as stable map keys for Discovery registrations.
+const (
+	ProviderHuggingFace = "HUGGINGFACE"
+	ProviderMatrixHub   = "MATRIXHUB"
+)
+
+// KeyFromRegistryType converts a stored registry.Type (proto enum string, e.g.
+// "REGISTRY_TYPE_HUGGINGFACE") to a stable provider key. If the type is not
+// recognised, the original value is returned unchanged.
+func KeyFromRegistryType(t string) string {
+	switch t {
+	case "REGISTRY_TYPE_HUGGINGFACE":
+		return ProviderHuggingFace
+	case "REGISTRY_TYPE_MATRIXHUB":
+		return ProviderMatrixHub
+	default:
+		return t
+	}
+}
