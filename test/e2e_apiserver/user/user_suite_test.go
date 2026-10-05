@@ -17,3 +17,22 @@ package user_test
 import (
 	"testing"
 
+	testenv "github.com/matrixhub-ai/matrixhub/test/e2e_apiserver/init"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+)
+
+func TestUser(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "User Suite")
+}
+
+var _ = BeforeSuite(func() {
+	defer GinkgoRecover()
+	testenv.InitTestEnvironment()
+})
+
+var _ = AfterSuite(func() {
+	testenv.CleanupTestEnvironment()
+})
