@@ -1265,3 +1265,1271 @@ func (m ListDatasetRevisionsRequestMultiError) AllErrors() []error { return m }
 
 // ListDatasetRevisionsRequestValidationError is the validation error returned
 // by ListDatasetRevisionsRequest.Validate if the designated constraints
+// aren't met.
+type ListDatasetRevisionsRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ListDatasetRevisionsRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ListDatasetRevisionsRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ListDatasetRevisionsRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ListDatasetRevisionsRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ListDatasetRevisionsRequestValidationError) ErrorName() string {
+	return "ListDatasetRevisionsRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ListDatasetRevisionsRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sListDatasetRevisionsRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ListDatasetRevisionsRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ListDatasetRevisionsRequestValidationError{}
+
+var _ListDatasetRevisionsRequest_Name_NotInLookup = map[string]struct{}{
+	"models":   {},
+	"datasets": {},
+	"spaces":   {},
+	"resolve":  {},
+}
+
+// Validate checks the field values on ListDatasetRevisionsResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ListDatasetRevisionsResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ListDatasetRevisionsResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ListDatasetRevisionsResponseMultiError, or nil if none found.
+func (m *ListDatasetRevisionsResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ListDatasetRevisionsResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetItems()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, ListDatasetRevisionsResponseValidationError{
+					field:  "Items",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, ListDatasetRevisionsResponseValidationError{
+					field:  "Items",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetItems()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return ListDatasetRevisionsResponseValidationError{
+				field:  "Items",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return ListDatasetRevisionsResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// ListDatasetRevisionsResponseMultiError is an error wrapping multiple
+// validation errors returned by ListDatasetRevisionsResponse.ValidateAll() if
+// the designated constraints aren't met.
+type ListDatasetRevisionsResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ListDatasetRevisionsResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ListDatasetRevisionsResponseMultiError) AllErrors() []error { return m }
+
+// ListDatasetRevisionsResponseValidationError is the validation error returned
+// by ListDatasetRevisionsResponse.Validate if the designated constraints
+// aren't met.
+type ListDatasetRevisionsResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ListDatasetRevisionsResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ListDatasetRevisionsResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ListDatasetRevisionsResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ListDatasetRevisionsResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ListDatasetRevisionsResponseValidationError) ErrorName() string {
+	return "ListDatasetRevisionsResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ListDatasetRevisionsResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sListDatasetRevisionsResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ListDatasetRevisionsResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ListDatasetRevisionsResponseValidationError{}
+
+// Validate checks the field values on ListDatasetCommitsRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ListDatasetCommitsRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ListDatasetCommitsRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ListDatasetCommitsRequestMultiError, or nil if none found.
+func (m *ListDatasetCommitsRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ListDatasetCommitsRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetProject()) < 1 {
+		err := ListDatasetCommitsRequestValidationError{
+			field:  "Project",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if _, ok := _ListDatasetCommitsRequest_Name_NotInLookup[m.GetName()]; ok {
+		err := ListDatasetCommitsRequestValidationError{
+			field:  "Name",
+			reason: "value must not be in list [models datasets spaces resolve]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetName()) < 1 {
+		err := ListDatasetCommitsRequestValidationError{
+			field:  "Name",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	// no validation rules for Revision
+
+	// no validation rules for Diff
+
+	// no validation rules for Page
+
+	// no validation rules for PageSize
+
+	if len(errors) > 0 {
+		return ListDatasetCommitsRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// ListDatasetCommitsRequestMultiError is an error wrapping multiple validation
+// errors returned by ListDatasetCommitsRequest.ValidateAll() if the
+// designated constraints aren't met.
+type ListDatasetCommitsRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ListDatasetCommitsRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ListDatasetCommitsRequestMultiError) AllErrors() []error { return m }
+
+// ListDatasetCommitsRequestValidationError is the validation error returned by
+// ListDatasetCommitsRequest.Validate if the designated constraints aren't met.
+type ListDatasetCommitsRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ListDatasetCommitsRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ListDatasetCommitsRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ListDatasetCommitsRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ListDatasetCommitsRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ListDatasetCommitsRequestValidationError) ErrorName() string {
+	return "ListDatasetCommitsRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ListDatasetCommitsRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sListDatasetCommitsRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ListDatasetCommitsRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ListDatasetCommitsRequestValidationError{}
+
+var _ListDatasetCommitsRequest_Name_NotInLookup = map[string]struct{}{
+	"models":   {},
+	"datasets": {},
+	"spaces":   {},
+	"resolve":  {},
+}
+
+// Validate checks the field values on ListDatasetCommitsResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ListDatasetCommitsResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ListDatasetCommitsResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ListDatasetCommitsResponseMultiError, or nil if none found.
+func (m *ListDatasetCommitsResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ListDatasetCommitsResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetItems() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ListDatasetCommitsResponseValidationError{
+						field:  fmt.Sprintf("Items[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ListDatasetCommitsResponseValidationError{
+						field:  fmt.Sprintf("Items[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ListDatasetCommitsResponseValidationError{
+					field:  fmt.Sprintf("Items[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if all {
+		switch v := interface{}(m.GetPagination()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, ListDatasetCommitsResponseValidationError{
+					field:  "Pagination",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, ListDatasetCommitsResponseValidationError{
+					field:  "Pagination",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetPagination()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return ListDatasetCommitsResponseValidationError{
+				field:  "Pagination",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return ListDatasetCommitsResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// ListDatasetCommitsResponseMultiError is an error wrapping multiple
+// validation errors returned by ListDatasetCommitsResponse.ValidateAll() if
+// the designated constraints aren't met.
+type ListDatasetCommitsResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ListDatasetCommitsResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ListDatasetCommitsResponseMultiError) AllErrors() []error { return m }
+
+// ListDatasetCommitsResponseValidationError is the validation error returned
+// by ListDatasetCommitsResponse.Validate if the designated constraints aren't met.
+type ListDatasetCommitsResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ListDatasetCommitsResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ListDatasetCommitsResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ListDatasetCommitsResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ListDatasetCommitsResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ListDatasetCommitsResponseValidationError) ErrorName() string {
+	return "ListDatasetCommitsResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ListDatasetCommitsResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sListDatasetCommitsResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ListDatasetCommitsResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ListDatasetCommitsResponseValidationError{}
+
+// Validate checks the field values on GetDatasetCommitRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetDatasetCommitRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetDatasetCommitRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetDatasetCommitRequestMultiError, or nil if none found.
+func (m *GetDatasetCommitRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetDatasetCommitRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetProject()) < 1 {
+		err := GetDatasetCommitRequestValidationError{
+			field:  "Project",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if _, ok := _GetDatasetCommitRequest_Name_NotInLookup[m.GetName()]; ok {
+		err := GetDatasetCommitRequestValidationError{
+			field:  "Name",
+			reason: "value must not be in list [models datasets spaces resolve]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetName()) < 1 {
+		err := GetDatasetCommitRequestValidationError{
+			field:  "Name",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetId()) < 1 {
+		err := GetDatasetCommitRequestValidationError{
+			field:  "Id",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return GetDatasetCommitRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetDatasetCommitRequestMultiError is an error wrapping multiple validation
+// errors returned by GetDatasetCommitRequest.ValidateAll() if the designated
+// constraints aren't met.
+type GetDatasetCommitRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetDatasetCommitRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetDatasetCommitRequestMultiError) AllErrors() []error { return m }
+
+// GetDatasetCommitRequestValidationError is the validation error returned by
+// GetDatasetCommitRequest.Validate if the designated constraints aren't met.
+type GetDatasetCommitRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetDatasetCommitRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetDatasetCommitRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetDatasetCommitRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetDatasetCommitRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetDatasetCommitRequestValidationError) ErrorName() string {
+	return "GetDatasetCommitRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetDatasetCommitRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetDatasetCommitRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetDatasetCommitRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetDatasetCommitRequestValidationError{}
+
+var _GetDatasetCommitRequest_Name_NotInLookup = map[string]struct{}{
+	"models":   {},
+	"datasets": {},
+	"spaces":   {},
+	"resolve":  {},
+}
+
+// Validate checks the field values on GetDatasetTreeRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetDatasetTreeRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetDatasetTreeRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetDatasetTreeRequestMultiError, or nil if none found.
+func (m *GetDatasetTreeRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetDatasetTreeRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetProject()) < 1 {
+		err := GetDatasetTreeRequestValidationError{
+			field:  "Project",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if _, ok := _GetDatasetTreeRequest_Name_NotInLookup[m.GetName()]; ok {
+		err := GetDatasetTreeRequestValidationError{
+			field:  "Name",
+			reason: "value must not be in list [models datasets spaces resolve]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetName()) < 1 {
+		err := GetDatasetTreeRequestValidationError{
+			field:  "Name",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	// no validation rules for Revision
+
+	// no validation rules for Path
+
+	if len(errors) > 0 {
+		return GetDatasetTreeRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetDatasetTreeRequestMultiError is an error wrapping multiple validation
+// errors returned by GetDatasetTreeRequest.ValidateAll() if the designated
+// constraints aren't met.
+type GetDatasetTreeRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetDatasetTreeRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetDatasetTreeRequestMultiError) AllErrors() []error { return m }
+
+// GetDatasetTreeRequestValidationError is the validation error returned by
+// GetDatasetTreeRequest.Validate if the designated constraints aren't met.
+type GetDatasetTreeRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetDatasetTreeRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetDatasetTreeRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetDatasetTreeRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetDatasetTreeRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetDatasetTreeRequestValidationError) ErrorName() string {
+	return "GetDatasetTreeRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetDatasetTreeRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetDatasetTreeRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetDatasetTreeRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetDatasetTreeRequestValidationError{}
+
+var _GetDatasetTreeRequest_Name_NotInLookup = map[string]struct{}{
+	"models":   {},
+	"datasets": {},
+	"spaces":   {},
+	"resolve":  {},
+}
+
+// Validate checks the field values on GetDatasetTreeResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetDatasetTreeResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetDatasetTreeResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetDatasetTreeResponseMultiError, or nil if none found.
+func (m *GetDatasetTreeResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetDatasetTreeResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetItems() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, GetDatasetTreeResponseValidationError{
+						field:  fmt.Sprintf("Items[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, GetDatasetTreeResponseValidationError{
+						field:  fmt.Sprintf("Items[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return GetDatasetTreeResponseValidationError{
+					field:  fmt.Sprintf("Items[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return GetDatasetTreeResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetDatasetTreeResponseMultiError is an error wrapping multiple validation
+// errors returned by GetDatasetTreeResponse.ValidateAll() if the designated
+// constraints aren't met.
+type GetDatasetTreeResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetDatasetTreeResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetDatasetTreeResponseMultiError) AllErrors() []error { return m }
+
+// GetDatasetTreeResponseValidationError is the validation error returned by
+// GetDatasetTreeResponse.Validate if the designated constraints aren't met.
+type GetDatasetTreeResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetDatasetTreeResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetDatasetTreeResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetDatasetTreeResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetDatasetTreeResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetDatasetTreeResponseValidationError) ErrorName() string {
+	return "GetDatasetTreeResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetDatasetTreeResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetDatasetTreeResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetDatasetTreeResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetDatasetTreeResponseValidationError{}
+
+// Validate checks the field values on GetDatasetBlobRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetDatasetBlobRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetDatasetBlobRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetDatasetBlobRequestMultiError, or nil if none found.
+func (m *GetDatasetBlobRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetDatasetBlobRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetProject()) < 1 {
+		err := GetDatasetBlobRequestValidationError{
+			field:  "Project",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if _, ok := _GetDatasetBlobRequest_Name_NotInLookup[m.GetName()]; ok {
+		err := GetDatasetBlobRequestValidationError{
+			field:  "Name",
+			reason: "value must not be in list [models datasets spaces resolve]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetName()) < 1 {
+		err := GetDatasetBlobRequestValidationError{
+			field:  "Name",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	// no validation rules for Revision
+
+	// no validation rules for Path
+
+	if len(errors) > 0 {
+		return GetDatasetBlobRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetDatasetBlobRequestMultiError is an error wrapping multiple validation
+// errors returned by GetDatasetBlobRequest.ValidateAll() if the designated
+// constraints aren't met.
+type GetDatasetBlobRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetDatasetBlobRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetDatasetBlobRequestMultiError) AllErrors() []error { return m }
+
+// GetDatasetBlobRequestValidationError is the validation error returned by
+// GetDatasetBlobRequest.Validate if the designated constraints aren't met.
+type GetDatasetBlobRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetDatasetBlobRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetDatasetBlobRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetDatasetBlobRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetDatasetBlobRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetDatasetBlobRequestValidationError) ErrorName() string {
+	return "GetDatasetBlobRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetDatasetBlobRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetDatasetBlobRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetDatasetBlobRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetDatasetBlobRequestValidationError{}
+
+var _GetDatasetBlobRequest_Name_NotInLookup = map[string]struct{}{
+	"models":   {},
+	"datasets": {},
+	"spaces":   {},
+	"resolve":  {},
+}
+
+// Validate checks the field values on Dataset with the rules defined in the
+// proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *Dataset) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on Dataset with the rules defined in the
+// proto definition for this message. If any rules are violated, the result is
+// a list of violation errors wrapped in DatasetMultiError, or nil if none found.
+func (m *Dataset) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *Dataset) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Id
+
+	// no validation rules for Project
+
+	// no validation rules for Name
+
+	// no validation rules for DefaultBranch
+
+	// no validation rules for NumRows
+
+	for idx, item := range m.GetLabels() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, DatasetValidationError{
+						field:  fmt.Sprintf("Labels[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, DatasetValidationError{
+						field:  fmt.Sprintf("Labels[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return DatasetValidationError{
+					field:  fmt.Sprintf("Labels[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	// no validation rules for Size
+
+	if all {
+		switch v := interface{}(m.GetCloneUrls()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, DatasetValidationError{
+					field:  "CloneUrls",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, DatasetValidationError{
+					field:  "CloneUrls",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetCloneUrls()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return DatasetValidationError{
+				field:  "CloneUrls",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	// no validation rules for ReadmeContent
+
+	// no validation rules for CreatedAt
+
+	// no validation rules for UpdatedAt
+
+	if len(errors) > 0 {
+		return DatasetMultiError(errors)
+	}
+
+	return nil
+}
+
+// DatasetMultiError is an error wrapping multiple validation errors returned
+// by Dataset.ValidateAll() if the designated constraints aren't met.
+type DatasetMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m DatasetMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m DatasetMultiError) AllErrors() []error { return m }
+
+// DatasetValidationError is the validation error returned by Dataset.Validate
+// if the designated constraints aren't met.
+type DatasetValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e DatasetValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e DatasetValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e DatasetValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e DatasetValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e DatasetValidationError) ErrorName() string { return "DatasetValidationError" }
+
+// Error satisfies the builtin error interface
+func (e DatasetValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sDataset.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = DatasetValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = DatasetValidationError{}
