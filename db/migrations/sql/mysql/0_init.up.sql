@@ -143,3 +143,148 @@ CREATE TABLE `access_tokens` (
      `name` varchar(64) NOT NULL,
      `user_id` bigint NOT NULL,
      `token_hash` varchar(128) NOT NULL DEFAULT '',
+     `enabled` tinyint(1) NOT NULL DEFAULT '0',
+     `expire_at` timestamp NULL DEFAULT NULL,
+     `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+     `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+     PRIMARY KEY (`id`),
+     UNIQUE KEY `uniq_token_hash` (`token_hash`),
+     KEY `idx_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `ssh_keys` (
+    `id` int NOT NULL AUTO_INCREMENT,
+    `user_id` bigint NOT NULL,
+    `name` varchar(128) NOT NULL,
+    `public_key` text NOT NULL,
+    `fingerprint` varchar(128) NOT NULL,
+    `expire_at` timestamp NULL DEFAULT NULL,
+    `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uix_ssh_keys_fingerprint` (`fingerprint`),
+    KEY `ix_ssh_keys_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `sync_policies`
+(
+    `id`                   int          NOT NULL AUTO_INCREMENT,
+    `name`                 varchar(255) NOT NULL,
+    `description`          text,
+    `policy_type`          int          NOT NULL DEFAULT 1, -- 1: pull, 2: push
+    `trigger_type`         int          NOT NULL DEFAULT 1, -- 1: manual, 2: scheduled
+    `registry_id`          int,                              -- external registry ID
+    `local_resource_name`  varchar(255),                     -- local resource name
+    `local_project_name`   varchar(255),                     -- local project name
+    `remote_resource_name` varchar(255),                     -- remote resource name
+    `remote_project_name`  varchar(255),                     -- remote project name
+    `resource_types`       varchar(255),                     -- comma separated: model,dataset
+    `bandwidth`            varchar(64),
+    `cron`                varchar(128) NOT NULL DEFAULT '',
+    `last_run_at`         bigint NOT NULL DEFAULT 0,
+    `next_run_at`         bigint NOT NULL DEFAULT 0,
+    `is_overwrite`         tinyint(1)   NOT NULL DEFAULT 0,
+    `is_disabled`          tinyint(1)   NOT NULL DEFAULT 0,
+    `created_at`           timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`           timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_name` (`name`),
+    KEY `idx_due` (`is_disabled`, `next_run_at`),
+    KEY `idx_registry_id` (`registry_id`),
+    CONSTRAINT `fk_sync_policies_registry_id`
+        FOREIGN KEY (`registry_id`) REFERENCES `registries` (`id`) ON DELETE SET NULL
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `sync_tasks`
+(
+    `id`                  int       NOT NULL AUTO_INCREMENT,
+    `sync_policy_id`      int       NOT NULL,
+    `trigger_type`        int       NOT NULL DEFAULT 1, -- 1: manual, 2: scheduled
+    `status`              int       NOT NULL DEFAULT 1, -- 1: running, 2: succeeded, 3: failed, 4: stopped
+    `started_timestamp`   bigint    DEFAULT 0,
+    `completed_timestamp` bigint    DEFAULT 0,
+    `total_items`         int       DEFAULT 0,
+    `successful_items`    int       DEFAULT 0,
+    `stopped_items`       int       DEFAULT 0,
+    `failed_items`        int       DEFAULT 0,
+    `complete_percents`   int       DEFAULT 0,
+    `created_at`          timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`          timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_sync_policy_id` (`sync_policy_id`),
+    KEY `idx_status` (`status`),
+    CONSTRAINT `fk_sync_tasks_policy_id`
+        FOREIGN KEY (`sync_policy_id`) REFERENCES `sync_policies` (`id`) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `sync_jobs`
+(
+    `id`                   int          NOT NULL AUTO_INCREMENT,
+    `remote_registry_id`   int          NOT NULL,
+    `remote_project_name`  varchar(255) NOT NULL,
+    `remote_resource_name` varchar(255) NOT NULL,
+    `project_name`         varchar(255),
+    `resource_name`        varchar(255) NOT NULL,
+    `resource_type`        varchar(64)  NOT NULL,
+    `sync_type`            varchar(64)  NOT NULL,
+    `status`               int          NOT NULL DEFAULT 1, -- 1: running, 2: succeeded, 3: failed, 4: stopped
+    `completed_timestamp`  bigint       DEFAULT 0,
+    `sync_task_id`         int,
+    `complete_percents`    int,
+    `created_at`           timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`           timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_status` (`status`),
+    KEY `idx_sync_task_id_status` (`sync_task_id`, `status`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+
+INSERT INTO `roles` (`id`, `name`, `permissions`, `scope`)
+VALUES (1, 'platform_admin', '["*.*"]', 'platform'),
+       (2, 'project_admin', '["project.get","project.create","project.update","project.delete","member.get","member.add","member.remove","member.role_update","model.*","dataset.*"]', 'project'),
+       (3, 'project_editor', '["project.get","project.create","member.get","model.get","model.pull","model.push","dataset.get","dataset.pull","dataset.push"]', 'project'),
+       (4, 'project_viewer', '["project.get","project.create","member.get","model.get","model.pull","dataset.get","dataset.pull"]', 'project');
+
+CREATE TABLE IF NOT EXISTS sessions (
+    token CHAR(43) COLLATE utf8mb4_bin PRIMARY KEY,
+    data BLOB NOT NULL,
+    expiry TIMESTAMP(6) NOT NULL,
+    INDEX sessions_expiry_idx (expiry)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+
+INSERT INTO `users` (`username`, `password`, `email`)
+VALUES
+    ('admin', '$2a$10$GD9CROEWOuDcfGRbF3vB7e2bVplplnNW35uc03mju/Lm3ACEIylde', '');
+
+INSERT INTO `members_roles_projects` (`member_id`, `member_type`, `role_id`, `project_id`)
+VALUES
+    ('1', 'user', 1, NULL);
+
+CREATE TABLE IF NOT EXISTS `robots` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) DEFAULT NULL,
+  `description` varchar(1024) DEFAULT NULL,
+  `project_id` int DEFAULT NULL,
+  `token_hash` varchar(128) DEFAULT NULL,
+  `duration` int DEFAULT NULL,
+  `enabled` tinyint(1) NOT NULL DEFAULT '0',
+  `expire_at` timestamp NULL DEFAULT NULL,
+  `platform_permissions` text,
+  `project_permissions` text,
+  `project_scope` varchar(32) NOT NULL,
+  `create_by` int DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uni_name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `robots_projects` (
+   `id` int NOT NULL AUTO_INCREMENT,
+   `robot_id` int NOT NULL,
+   `project_id` int NOT NULL,
+   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+   PRIMARY KEY (`id`),
+   UNIQUE KEY `composite_index` (`robot_id`,`project_id`),
+   KEY `idx_project_id` (`project_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4

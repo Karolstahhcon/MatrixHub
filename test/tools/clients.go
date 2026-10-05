@@ -47,3 +47,53 @@ var (
 // Close cleans up resources
 func Close() {
 	closeOnce.Do(func() {
+		log.Println("MatrixHub test resources cleaned up")
+	})
+}
+
+// GetBaseURL returns the HTTP base URL
+func GetBaseURL() string {
+	if baseURL == "" {
+		baseURL = os.Getenv(EnvMatrixHubBaseURL)
+		if baseURL == "" {
+			baseURL = DefaultBaseURL
+		}
+	}
+	return baseURL
+}
+
+// GetSelfURL returns the URL by which MatrixHub server components can reach
+// MatrixHub itself, or "" when it has not been configured. Tests that need it
+// should skip rather than fall back to GetBaseURL: that URL is only valid from
+// the test process, and using it would make the server silently fail to connect.
+func GetSelfURL() string {
+	return os.Getenv(EnvMatrixHubSelfURL)
+}
+
+// GenerateTestProjectName generates a unique project name for testing
+func GenerateTestProjectName(prefix string) string {
+	return fmt.Sprintf("%s-test-%d", prefix, time.Now().UnixNano())
+}
+
+// GenerateTestModelName generates a unique model name for testing
+func GenerateTestModelName(prefix string) string {
+	return fmt.Sprintf("%s-test-%d", prefix, time.Now().UnixNano())
+}
+
+// GetGitModelName returns the name of a pre-existing model with git data for testing.
+// Set MATRIXHUB_GIT_MODEL env var to override (default: "llama-2-7b").
+func GetGitModelName() string {
+	if v := os.Getenv("MATRIXHUB_GIT_MODEL"); v != "" {
+		return v
+	}
+	return "llama-2-7b"
+}
+
+// GetGitModelProject returns the project name of the pre-existing git model.
+// Set MATRIXHUB_GIT_PROJECT env var to override (default: "ai-research").
+func GetGitModelProject() string {
+	if v := os.Getenv("MATRIXHUB_GIT_PROJECT"); v != "" {
+		return v
+	}
+	return "ai-research"
+}
