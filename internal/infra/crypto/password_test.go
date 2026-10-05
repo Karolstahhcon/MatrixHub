@@ -8,3 +8,25 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package crypto_test
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/require"
+
+	infra "github.com/matrixhub-ai/matrixhub/internal/infra/crypto"
+)
+
+func TestPasswordHash(t *testing.T) {
+	hash, err := infra.HashPassword("correct horse battery staple")
+	require.NoError(t, err)
+	require.NotEqual(t, "correct horse battery staple", hash)
+	require.True(t, infra.CheckPasswordHash("correct horse battery staple", hash))
+	require.False(t, infra.CheckPasswordHash("wrong password", hash))
+	require.False(t, infra.CheckPasswordHash("password", "not-a-bcrypt-hash"))
+}
