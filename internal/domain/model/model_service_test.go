@@ -382,3 +382,772 @@ func TestModelService_CheckOrSyncFromRemoteRecordsSuccessfulSync(t *testing.T) {
 }
 
 func TestModelService_SyncMetadataPersistsZeroValues(t *testing.T) {
+	ctx := context.Background()
+	ctrl := gomock.NewController(t)
+	modelRepo := modelmocks.NewMockIModelRepo(ctrl)
+	labelRepo := modelmocks.NewMockILabelRepo(ctrl)
+	gitRepo := gitmocks.NewMockIGitRepo(ctrl)
+
+	modelRepo.EXPECT().GetByProjectAndName(gomock.Any(), "proj", "empty").
+		Return(&model.Model{
+			ID: 42, Name: "empty", ProjectName: "proj", Size: 100, ParameterCount: 50,
+			ReadmeContent: "old", Labels: []model.Label{{Name: "old", Category: "other", Scope: "model"}},
+		}, nil)
+	gitRepo.EXPECT().ExtractMetadata(gomock.Any(), "models", "proj", "empty").
+		Return(&git.RepoMetadataFiles{ReadmeContent: []byte("# Empty")}, nil)
+	modelRepo.EXPECT().UpdateMetadata(gomock.Any(), int64(42), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ int64, update *model.MetadataUpdate) error {
+			require.NotNil(t, update.ReadmeContent)
+			require.Equal(t, "# Empty", *update.ReadmeContent)
+			require.NotNil(t, update.Size)
+			require.Zero(t, *update.Size)
+			require.NotNil(t, update.ParameterCount)
+			require.Zero(t, *update.ParameterCount)
+			return nil
+		})
+	labelRepo.EXPECT().UpdateModelLabels(gomock.Any(), int64(42), []int(nil)).Return(nil)
+
+	service := model.NewModelService(modelRepo, labelRepo, gitRepo, nil, nil)
+	require.NoError(t, service.SyncMetadata(ctx, "proj", "empty"))
+}
+
+func TestModelService_EnsureModelPropagatesProjectLookupError(t *testing.T) {
+	ctx := context.Background()
+	ctrl := gomock.NewController(t)
+	modelRepo := modelmocks.NewMockIModelRepo(ctrl)
+	gitRepo := gitmocks.NewMockIGitRepo(ctrl)
+	projectRepo := projectmocks.NewMockIProjectRepo(ctrl)
+	wantErr := errors.New("project not found")
+	projectRepo.EXPECT().
+		GetProjectByName(ctx, "proj").
+		Return(nil, wantErr)
+
+	service := model.NewModelService(
+		modelRepo,
+		nil,
+		gitRepo,
+		projectRepo,
+		nil,
+	)
+
+	got, err := service.EnsureModel(ctx, "proj", "model")
+
+	require.ErrorIs(t, err, wantErr)
+	require.Nil(t, got)
+}
+
+func TestModelService_CreateModelValidatesPath(t *testing.T) {
+	ctx := context.Background()
+
+	for _, tc := range []struct {
+		name    string
+		project string
+		model   string
+	}{
+		{name: "empty project", model: "model"},
+		{name: "empty name", project: "proj"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			service := model.NewModelService(
+				modelmocks.NewMockIModelRepo(ctrl),
+				nil,
+				gitmocks.NewMockIGitRepo(ctrl),
+				nil,
+				nil,
+			)
+
+			got, err := service.CreateModel(ctx, tc.project, tc.model)
+
+			require.Error(t, err)
+			require.Nil(t, got)
+		})
+	}
+}
+
+func TestModelService_GetModelValidatesAndDelegates(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("returns invalid input errors before repository access", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		service := model.NewModelService(modelmocks.NewMockIModelRepo(ctrl), nil, nil, nil, nil)
+
+		got, err := service.GetModel(ctx, "", "model")
+
+		require.Error(t, err)
+		require.Nil(t, got)
+	})
+
+	t.Run("returns the repository model", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		modelRepo := modelmocks.NewMockIModelRepo(ctrl)
+		want := &model.Model{ID: 1, ProjectName: "proj", Name: "model"}
+		modelRepo.EXPECT().GetByProjectAndName(ctx, "proj", "model").Return(want, nil)
+		service := model.NewModelService(modelRepo, nil, nil, nil, nil)
+
+		got, err := service.GetModel(ctx, "proj", "model")
+
+		require.NoError(t, err)
+		require.Same(t, want, got)
+	})
+}
+
+func TestModelService_ListModelsUsesDefaultFilter(t *testing.T) {
+	ctx := context.Background()
+	ctrl := gomock.NewController(t)
+	modelRepo := modelmocks.NewMockIModelRepo(ctrl)
+	want := []*model.Model{{ID: 1, ProjectName: "proj", Name: "model"}}
+	modelRepo.EXPECT().
+		List(ctx, gomock.Eq(&model.Filter{Page: 1, PageSize: 20})).
+		Return(want, int64(1), nil)
+	service := model.NewModelService(modelRepo, nil, nil, nil, nil)
+
+	got, total, err := service.ListModels(ctx, nil)
+
+	require.NoError(t, err)
+	require.Equal(t, int64(1), total)
+	require.Equal(t, want, got)
+}
+
+func TestModelService_DeleteModelDeletesRepositoryBeforeRecord(t *testing.T) {
+	ctx := context.Background()
+	ctrl := gomock.NewController(t)
+	modelRepo := modelmocks.NewMockIModelRepo(ctrl)
+	gitRepo := gitmocks.NewMockIGitRepo(ctrl)
+
+	gomock.InOrder(
+		gitRepo.EXPECT().DeleteRepository(ctx, "models", "proj", "model").Return(nil),
+		modelRepo.EXPECT().Delete(ctx, "proj", "model").Return(nil),
+	)
+	service := model.NewModelService(modelRepo, nil, gitRepo, nil, nil)
+
+	err := service.DeleteModel(ctx, "proj", "model")
+
+	require.NoError(t, err)
+}
+
+func TestModelService_ListModelLabelsUsesModelScope(t *testing.T) {
+	ctx := context.Background()
+	ctrl := gomock.NewController(t)
+	labelRepo := modelmocks.NewMockILabelRepo(ctrl)
+	taskLabels := []*model.Label{{Name: "text-generation"}}
+	frameLabels := []*model.Label{{Name: "transformers"}}
+	gomock.InOrder(
+		labelRepo.EXPECT().ListByCategoryAndScope(ctx, "task", "model").Return(taskLabels, nil),
+		labelRepo.EXPECT().ListByCategoryAndScope(ctx, "library", "model").Return(frameLabels, nil),
+	)
+	service := model.NewModelService(nil, labelRepo, nil, nil, nil)
+
+	gotTask, err := service.ListModelTaskLabels(ctx)
+	require.NoError(t, err)
+	require.Equal(t, taskLabels, gotTask)
+
+	gotFrame, err := service.ListModelFrameLabels(ctx)
+	require.NoError(t, err)
+	require.Equal(t, frameLabels, gotFrame)
+}
+
+func TestModelService_ListModelRevisionsChecksModelBeforeGit(t *testing.T) {
+	ctx := context.Background()
+	ctrl := gomock.NewController(t)
+	modelRepo := modelmocks.NewMockIModelRepo(ctrl)
+	gitRepo := gitmocks.NewMockIGitRepo(ctrl)
+	want := &git.Revisions{Branches: []*git.Revision{{Name: "main"}}}
+	gomock.InOrder(
+		modelRepo.EXPECT().GetByProjectAndName(ctx, "proj", "model").Return(&model.Model{ID: 1}, nil),
+		gitRepo.EXPECT().ListRevisions(ctx, "models", "proj", "model").Return(want, nil),
+	)
+	service := model.NewModelService(modelRepo, nil, gitRepo, nil, nil)
+
+	got, err := service.ListModelRevisions(ctx, "proj", "model")
+
+	require.NoError(t, err)
+	require.Same(t, want, got)
+}
+
+func TestModelService_ListModelCommitsUsesDefaultPagination(t *testing.T) {
+	ctx := context.Background()
+	ctrl := gomock.NewController(t)
+	modelRepo := modelmocks.NewMockIModelRepo(ctrl)
+	gitRepo := gitmocks.NewMockIGitRepo(ctrl)
+	want := []*git.Commit{{ID: "commit"}}
+	gomock.InOrder(
+		modelRepo.EXPECT().GetByProjectAndName(ctx, "proj", "model").Return(&model.Model{ID: 1}, nil),
+		gitRepo.EXPECT().ListCommits(ctx, "models", "proj", "model", "", 1, 20).Return(want, int64(1), nil),
+	)
+	service := model.NewModelService(modelRepo, nil, gitRepo, nil, nil)
+
+	got, total, err := service.ListModelCommits(ctx, "proj", "model", "", 0, 0)
+
+	require.NoError(t, err)
+	require.Equal(t, int64(1), total)
+	require.Equal(t, want, got)
+}
+
+func TestModelService_GitReadsCheckModelBeforeDelegating(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("get commit", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		modelRepo := modelmocks.NewMockIModelRepo(ctrl)
+		gitRepo := gitmocks.NewMockIGitRepo(ctrl)
+		want := &git.Commit{ID: "commit"}
+		gomock.InOrder(
+			modelRepo.EXPECT().GetByProjectAndName(ctx, "proj", "model").Return(&model.Model{ID: 1}, nil),
+			gitRepo.EXPECT().GetCommit(ctx, "models", "proj", "model", "commit").Return(want, nil),
+		)
+		service := model.NewModelService(modelRepo, nil, gitRepo, nil, nil)
+
+		got, err := service.GetModelCommit(ctx, "proj", "model", "commit")
+
+		require.NoError(t, err)
+		require.Same(t, want, got)
+	})
+
+	t.Run("get tree", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		modelRepo := modelmocks.NewMockIModelRepo(ctrl)
+		gitRepo := gitmocks.NewMockIGitRepo(ctrl)
+		want := []*git.TreeEntry{{Path: "README.md"}}
+		gomock.InOrder(
+			modelRepo.EXPECT().GetByProjectAndName(ctx, "proj", "model").Return(&model.Model{ID: 1}, nil),
+			gitRepo.EXPECT().GetTree(ctx, "models", "proj", "model", "main", "").Return(want, nil),
+		)
+		service := model.NewModelService(modelRepo, nil, gitRepo, nil, nil)
+
+		got, err := service.GetModelTree(ctx, "proj", "model", "main", "")
+
+		require.NoError(t, err)
+		require.Equal(t, want, got)
+	})
+
+	t.Run("get blob", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		modelRepo := modelmocks.NewMockIModelRepo(ctrl)
+		gitRepo := gitmocks.NewMockIGitRepo(ctrl)
+		want := &git.TreeEntry{Path: "README.md"}
+		gomock.InOrder(
+			modelRepo.EXPECT().GetByProjectAndName(ctx, "proj", "model").Return(&model.Model{ID: 1}, nil),
+			gitRepo.EXPECT().GetBlob(ctx, "models", "proj", "model", "main", "README.md").Return(want, nil),
+		)
+		service := model.NewModelService(modelRepo, nil, gitRepo, nil, nil)
+
+		got, err := service.GetModelBlob(ctx, "proj", "model", "main", "README.md")
+
+		require.NoError(t, err)
+		require.Same(t, want, got)
+	})
+}
+
+func TestModelService_CreateModelCommitCreatesRecordAndSyncsMetadata(t *testing.T) {
+	ctx := context.Background()
+	ctrl := gomock.NewController(t)
+	modelRepo := modelmocks.NewMockIModelRepo(ctrl)
+	labelRepo := modelmocks.NewMockILabelRepo(ctrl)
+	gitRepo := gitmocks.NewMockIGitRepo(ctrl)
+	projectRepo := projectmocks.NewMockIProjectRepo(ctrl)
+	created := &model.Model{ID: 42, ProjectID: 3, ProjectName: "proj", Name: "model"}
+	commit := &git.Commit{Message: "add README"}
+	ops := []git.CommitOperation{{Type: git.CommitOperationAdd, Path: "README.md", Content: []byte("# Model")}}
+
+	gomock.InOrder(
+		projectRepo.EXPECT().GetProjectByName(ctx, "proj").Return(&project.Project{ID: 3, Name: "proj"}, nil),
+		modelRepo.EXPECT().GetByProjectAndName(ctx, "proj", "model").Return(nil, errors.New("model not found")),
+		modelRepo.EXPECT().Create(ctx, &model.Model{Name: "model", ProjectID: 3, ProjectName: "proj"}).Return(created, nil),
+		gitRepo.EXPECT().CreateCommit(ctx, "models", "proj", "model", "main", commit, ops).Return("commit", nil),
+		modelRepo.EXPECT().GetByProjectAndName(ctx, "proj", "model").Return(created, nil),
+		gitRepo.EXPECT().ExtractMetadata(ctx, "models", "proj", "model").Return(&git.RepoMetadataFiles{}, nil),
+		modelRepo.EXPECT().UpdateMetadata(ctx, int64(42), gomock.Any()).Return(nil),
+		labelRepo.EXPECT().UpdateModelLabels(ctx, int64(42), []int(nil)).Return(nil),
+	)
+	service := model.NewModelService(modelRepo, labelRepo, gitRepo, projectRepo, nil)
+
+	commitID, err := service.CreateModelCommit(ctx, "proj", "model", "main", commit, ops)
+
+	require.NoError(t, err)
+	require.Equal(t, "commit", commitID)
+}
+
+func TestModelService_UpdateModelSettingUsesModelID(t *testing.T) {
+	ctx := context.Background()
+	ctrl := gomock.NewController(t)
+	modelRepo := modelmocks.NewMockIModelRepo(ctrl)
+	popular := true
+	update := &model.SettingUpdate{IsPopular: &popular}
+	gomock.InOrder(
+		modelRepo.EXPECT().GetByProjectAndName(ctx, "proj", "model").Return(&model.Model{ID: 42}, nil),
+		modelRepo.EXPECT().UpdateSetting(ctx, int64(42), update).Return(nil),
+	)
+	service := model.NewModelService(modelRepo, nil, nil, nil, nil)
+
+	err := service.UpdateModelSetting(ctx, "proj", "model", update)
+
+	require.NoError(t, err)
+}
+
+func TestModelService_CreateModelStopsAtEachFailedDependency(t *testing.T) {
+	ctx := context.Background()
+	notFoundErr := errors.New("model not found")
+
+	t.Run("existing model", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		modelRepo := modelmocks.NewMockIModelRepo(ctrl)
+		modelRepo.EXPECT().
+			GetByProjectAndName(ctx, "proj", "model").
+			Return(&model.Model{ID: 1}, nil)
+
+		got, err := model.NewModelService(modelRepo, nil, nil, nil, nil).CreateModel(ctx, "proj", "model")
+
+		require.EqualError(t, err, "model already exists")
+		require.Nil(t, got)
+	})
+
+	t.Run("repository lookup", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		modelRepo := modelmocks.NewMockIModelRepo(ctrl)
+		gitRepo := gitmocks.NewMockIGitRepo(ctrl)
+		wantErr := errors.New("git unavailable")
+		gomock.InOrder(
+			modelRepo.EXPECT().GetByProjectAndName(ctx, "proj", "model").Return(nil, notFoundErr),
+			gitRepo.EXPECT().RepositoryExists(ctx, "models", "proj", "model").Return(false, wantErr),
+		)
+
+		got, err := model.NewModelService(modelRepo, nil, gitRepo, nil, nil).CreateModel(ctx, "proj", "model")
+
+		require.ErrorIs(t, err, wantErr)
+		require.Nil(t, got)
+	})
+
+	t.Run("repository creation", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		modelRepo := modelmocks.NewMockIModelRepo(ctrl)
+		gitRepo := gitmocks.NewMockIGitRepo(ctrl)
+		wantErr := errors.New("create repository failed")
+		gomock.InOrder(
+			modelRepo.EXPECT().GetByProjectAndName(ctx, "proj", "model").Return(nil, notFoundErr),
+			gitRepo.EXPECT().RepositoryExists(ctx, "models", "proj", "model").Return(false, nil),
+			gitRepo.EXPECT().CreateRepository(ctx, "models", "proj", "model").Return(wantErr),
+		)
+
+		got, err := model.NewModelService(modelRepo, nil, gitRepo, nil, nil).CreateModel(ctx, "proj", "model")
+
+		require.ErrorIs(t, err, wantErr)
+		require.Nil(t, got)
+	})
+
+	t.Run("model record creation", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		modelRepo := modelmocks.NewMockIModelRepo(ctrl)
+		gitRepo := gitmocks.NewMockIGitRepo(ctrl)
+		wantErr := errors.New("insert failed")
+		gomock.InOrder(
+			modelRepo.EXPECT().GetByProjectAndName(ctx, "proj", "model").Return(nil, notFoundErr),
+			gitRepo.EXPECT().RepositoryExists(ctx, "models", "proj", "model").Return(true, nil),
+			modelRepo.EXPECT().Create(ctx, &model.Model{Name: "model", ProjectName: "proj"}).Return(nil, wantErr),
+		)
+
+		got, err := model.NewModelService(modelRepo, nil, gitRepo, nil, nil).CreateModel(ctx, "proj", "model")
+
+		require.ErrorIs(t, err, wantErr)
+		require.Nil(t, got)
+	})
+}
+
+func TestModelService_DeleteModelDoesNotDeleteRecordWhenGitDeletionFails(t *testing.T) {
+	ctx := context.Background()
+	ctrl := gomock.NewController(t)
+	modelRepo := modelmocks.NewMockIModelRepo(ctrl)
+	gitRepo := gitmocks.NewMockIGitRepo(ctrl)
+	wantErr := errors.New("delete repository failed")
+	gitRepo.EXPECT().DeleteRepository(ctx, "models", "proj", "model").Return(wantErr)
+
+	err := model.NewModelService(modelRepo, nil, gitRepo, nil, nil).DeleteModel(ctx, "proj", "model")
+
+	require.ErrorIs(t, err, wantErr)
+}
+
+func TestModelService_ModelReadsReturnLookupErrors(t *testing.T) {
+	ctx := context.Background()
+	wantErr := errors.New("model not found")
+
+	t.Run("model", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		modelRepo := modelmocks.NewMockIModelRepo(ctrl)
+		modelRepo.EXPECT().GetByProjectAndName(ctx, "proj", "model").Return(nil, wantErr)
+
+		got, err := model.NewModelService(modelRepo, nil, nil, nil, nil).GetModel(ctx, "proj", "model")
+
+		require.ErrorIs(t, err, wantErr)
+		require.Nil(t, got)
+	})
+
+	t.Run("revisions", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		modelRepo := modelmocks.NewMockIModelRepo(ctrl)
+		modelRepo.EXPECT().GetByProjectAndName(ctx, "proj", "model").Return(nil, wantErr)
+
+		got, err := model.NewModelService(modelRepo, nil, nil, nil, nil).ListModelRevisions(ctx, "proj", "model")
+
+		require.ErrorIs(t, err, wantErr)
+		require.Nil(t, got)
+	})
+
+	t.Run("commits", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		modelRepo := modelmocks.NewMockIModelRepo(ctrl)
+		modelRepo.EXPECT().GetByProjectAndName(ctx, "proj", "model").Return(nil, wantErr)
+
+		got, total, err := model.NewModelService(modelRepo, nil, nil, nil, nil).ListModelCommits(ctx, "proj", "model", "main", 1, 20)
+
+		require.ErrorIs(t, err, wantErr)
+		require.Nil(t, got)
+		require.Zero(t, total)
+	})
+
+	t.Run("commit", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		modelRepo := modelmocks.NewMockIModelRepo(ctrl)
+		modelRepo.EXPECT().GetByProjectAndName(ctx, "proj", "model").Return(nil, wantErr)
+
+		got, err := model.NewModelService(modelRepo, nil, nil, nil, nil).GetModelCommit(ctx, "proj", "model", "commit")
+
+		require.ErrorIs(t, err, wantErr)
+		require.Nil(t, got)
+	})
+
+	t.Run("tree", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		modelRepo := modelmocks.NewMockIModelRepo(ctrl)
+		modelRepo.EXPECT().GetByProjectAndName(ctx, "proj", "model").Return(nil, wantErr)
+
+		got, err := model.NewModelService(modelRepo, nil, nil, nil, nil).GetModelTree(ctx, "proj", "model", "main", "")
+
+		require.ErrorIs(t, err, wantErr)
+		require.Nil(t, got)
+	})
+
+	t.Run("blob", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		modelRepo := modelmocks.NewMockIModelRepo(ctrl)
+		modelRepo.EXPECT().GetByProjectAndName(ctx, "proj", "model").Return(nil, wantErr)
+
+		got, err := model.NewModelService(modelRepo, nil, nil, nil, nil).GetModelBlob(ctx, "proj", "model", "main", "README.md")
+
+		require.ErrorIs(t, err, wantErr)
+		require.Nil(t, got)
+	})
+}
+
+func TestModelService_SyncMetadataCreatesAndAssignsClassifiedLabels(t *testing.T) {
+	ctx := context.Background()
+	ctrl := gomock.NewController(t)
+	modelRepo := modelmocks.NewMockIModelRepo(ctrl)
+	labelRepo := modelmocks.NewMockILabelRepo(ctrl)
+	gitRepo := gitmocks.NewMockIGitRepo(ctrl)
+	mod := &model.Model{
+		ID: 42, Name: "model", ProjectName: "proj", Size: 1000, ParameterCount: 500,
+		Labels: []model.Label{{Name: "old", Category: "other", Scope: "model"}},
+	}
+	files := &git.RepoMetadataFiles{
+		ReadmeContent: []byte(`---
+pipeline_tag: text-generation
+library_name: transformers
+language: en
+license: apache-2.0
+tags:
+  - instruction-tuned
+---
+# Model
+`),
+		ConfigJSON:           []byte(`{"torch_dtype":"float16"}`),
+		SafetensorsIndexJSON: []byte(`{"metadata":{"total_size":100}}`),
+		Size:                 200,
+	}
+
+	gomock.InOrder(
+		modelRepo.EXPECT().GetByProjectAndName(ctx, "proj", "model").Return(mod, nil),
+		gitRepo.EXPECT().ExtractMetadata(ctx, "models", "proj", "model").Return(files, nil),
+		modelRepo.EXPECT().UpdateMetadata(ctx, int64(42), gomock.Any()).DoAndReturn(
+			func(_ context.Context, _ int64, update *model.MetadataUpdate) error {
+				require.Equal(t, string(files.ReadmeContent), *update.ReadmeContent)
+				require.EqualValues(t, 200, *update.Size)
+				require.EqualValues(t, 50, *update.ParameterCount)
+				return nil
+			},
+		),
+		labelRepo.EXPECT().GetOrCreateByName(ctx, "text-generation", "task", "model").Return(&model.Label{ID: 1}, nil),
+		labelRepo.EXPECT().GetOrCreateByName(ctx, "transformers", "library", "model").Return(&model.Label{ID: 2}, nil),
+		labelRepo.EXPECT().GetOrCreateByName(ctx, "en", "language", "model").Return(&model.Label{ID: 3}, nil),
+		labelRepo.EXPECT().GetOrCreateByName(ctx, "apache-2.0", "license", "model").Return(&model.Label{ID: 4}, nil),
+		labelRepo.EXPECT().GetOrCreateByName(ctx, "instruction-tuned", "other", "model").Return(&model.Label{ID: 5}, nil),
+		labelRepo.EXPECT().UpdateModelLabels(ctx, int64(42), []int{1, 2, 3, 4, 5}).Return(nil),
+	)
+
+	err := model.NewModelService(modelRepo, labelRepo, gitRepo, nil, nil).SyncMetadata(ctx, "proj", "model")
+
+	require.NoError(t, err)
+}
+
+func TestModelService_RejectsEmptyPathBeforeRepositoryAccess(t *testing.T) {
+	ctx := context.Background()
+
+	for _, tc := range []struct {
+		name         string
+		call         func(t *testing.T, service model.IModelService, project, name string) error
+		emptyNameErr string
+	}{
+		{
+			name: "get model",
+			call: func(t *testing.T, service model.IModelService, project, name string) error {
+				got, err := service.GetModel(ctx, project, name)
+				require.Nil(t, got)
+				return err
+			},
+			emptyNameErr: "invalid input",
+		},
+		{
+			name: "delete model",
+			call: func(_ *testing.T, service model.IModelService, project, name string) error {
+				return service.DeleteModel(ctx, project, name)
+			},
+			emptyNameErr: "invalid input",
+		},
+		{
+			name: "list revisions",
+			call: func(t *testing.T, service model.IModelService, project, name string) error {
+				got, err := service.ListModelRevisions(ctx, project, name)
+				require.Nil(t, got)
+				return err
+			},
+			emptyNameErr: "invalid input",
+		},
+		{
+			name: "list commits",
+			call: func(t *testing.T, service model.IModelService, project, name string) error {
+				got, total, err := service.ListModelCommits(ctx, project, name, "main", 1, 20)
+				require.Nil(t, got)
+				require.Zero(t, total)
+				return err
+			},
+			emptyNameErr: "invalid input",
+		},
+		{
+			name: "get commit",
+			call: func(t *testing.T, service model.IModelService, project, name string) error {
+				got, err := service.GetModelCommit(ctx, project, name, "commit")
+				require.Nil(t, got)
+				return err
+			},
+			emptyNameErr: "invalid input",
+		},
+		{
+			name: "get tree",
+			call: func(t *testing.T, service model.IModelService, project, name string) error {
+				got, err := service.GetModelTree(ctx, project, name, "main", "")
+				require.Nil(t, got)
+				return err
+			},
+			emptyNameErr: "invalid input",
+		},
+		{
+			name: "get blob",
+			call: func(t *testing.T, service model.IModelService, project, name string) error {
+				got, err := service.GetModelBlob(ctx, project, name, "main", "README.md")
+				require.Nil(t, got)
+				return err
+			},
+			emptyNameErr: "invalid input",
+		},
+		{
+			name: "update setting",
+			call: func(_ *testing.T, service model.IModelService, project, name string) error {
+				return service.UpdateModelSetting(ctx, project, name, &model.SettingUpdate{})
+			},
+			emptyNameErr: "invalid name",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			for _, input := range []struct {
+				name    string
+				project string
+				model   string
+				wantErr string
+			}{
+				{name: "empty project", model: "model", wantErr: "invalid project"},
+				{name: "empty name", project: "proj", wantErr: tc.emptyNameErr},
+			} {
+				t.Run(input.name, func(t *testing.T) {
+					ctrl := gomock.NewController(t)
+					// No expectations: validation must fail before any dependency is used.
+					service := model.NewModelService(
+						modelmocks.NewMockIModelRepo(ctrl),
+						modelmocks.NewMockILabelRepo(ctrl),
+						gitmocks.NewMockIGitRepo(ctrl),
+						projectmocks.NewMockIProjectRepo(ctrl),
+						registrymocks.NewMockIRegistryRepo(ctrl),
+					)
+
+					err := tc.call(t, service, input.project, input.model)
+
+					require.EqualError(t, err, input.wantErr)
+				})
+			}
+		})
+	}
+}
+
+func TestModelService_GetModelCommitRejectsEmptyCommitID(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	service := model.NewModelService(modelmocks.NewMockIModelRepo(ctrl), nil, gitmocks.NewMockIGitRepo(ctrl), nil, nil)
+
+	got, err := service.GetModelCommit(context.Background(), "proj", "model", "")
+
+	require.EqualError(t, err, "invalid input")
+	require.Nil(t, got)
+}
+
+func TestModelService_ListModelCommitsDefaultsOnlyNonPositivePagination(t *testing.T) {
+	ctx := context.Background()
+
+	for _, tc := range []struct {
+		name               string
+		page, pageSize     int
+		wantPage, wantSize int
+	}{
+		{name: "negative values use defaults", page: -1, pageSize: -5, wantPage: 1, wantSize: 20},
+		{name: "explicit values are kept", page: 3, pageSize: 50, wantPage: 3, wantSize: 50},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			modelRepo := modelmocks.NewMockIModelRepo(ctrl)
+			gitRepo := gitmocks.NewMockIGitRepo(ctrl)
+			want := []*git.Commit{{ID: "commit"}}
+			gomock.InOrder(
+				modelRepo.EXPECT().GetByProjectAndName(ctx, "proj", "model").Return(&model.Model{ID: 1}, nil),
+				gitRepo.EXPECT().
+					ListCommits(ctx, "models", "proj", "model", "main", tc.wantPage, tc.wantSize).
+					Return(want, int64(1), nil),
+			)
+			service := model.NewModelService(modelRepo, nil, gitRepo, nil, nil)
+
+			got, total, err := service.ListModelCommits(ctx, "proj", "model", "main", tc.page, tc.pageSize)
+
+			require.NoError(t, err)
+			require.Equal(t, int64(1), total)
+			require.Equal(t, want, got)
+		})
+	}
+}
+
+func TestModelService_UpdateModelSettingStopsAtFailedDependency(t *testing.T) {
+	ctx := context.Background()
+	failure := errors.New("database unavailable")
+	popular := true
+	update := &model.SettingUpdate{IsPopular: &popular}
+
+	t.Run("model lookup", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		modelRepo := modelmocks.NewMockIModelRepo(ctrl)
+		modelRepo.EXPECT().GetByProjectAndName(ctx, "proj", "model").Return(nil, failure)
+
+		err := model.NewModelService(modelRepo, nil, nil, nil, nil).UpdateModelSetting(ctx, "proj", "model", update)
+
+		require.ErrorIs(t, err, failure)
+	})
+
+	t.Run("setting update", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		modelRepo := modelmocks.NewMockIModelRepo(ctrl)
+		gomock.InOrder(
+			modelRepo.EXPECT().GetByProjectAndName(ctx, "proj", "model").Return(&model.Model{ID: 42}, nil),
+			modelRepo.EXPECT().UpdateSetting(ctx, int64(42), update).Return(failure),
+		)
+
+		err := model.NewModelService(modelRepo, nil, nil, nil, nil).UpdateModelSetting(ctx, "proj", "model", update)
+
+		require.ErrorIs(t, err, failure)
+	})
+}
+
+func TestModelService_SyncMetadataStopsAtFailedDependency(t *testing.T) {
+	ctx := context.Background()
+	failure := errors.New("dependency unavailable")
+	mod := &model.Model{ID: 42, Name: "model", ProjectName: "proj"}
+	// The card yields a license label followed by an "other" label.
+	files := &git.RepoMetadataFiles{ReadmeContent: []byte("---\nlicense: mit\ntags:\n- chat\n---\n")}
+
+	for _, tc := range []struct {
+		name    string
+		setup   func(modelRepo *modelmocks.MockIModelRepo, labelRepo *modelmocks.MockILabelRepo, gitRepo *gitmocks.MockIGitRepo)
+		wantErr string
+	}{
+		{
+			name: "model lookup",
+			setup: func(modelRepo *modelmocks.MockIModelRepo, _ *modelmocks.MockILabelRepo, _ *gitmocks.MockIGitRepo) {
+				modelRepo.EXPECT().GetByProjectAndName(ctx, "proj", "model").Return(nil, failure)
+			},
+			wantErr: "model not found: dependency unavailable",
+		},
+		{
+			name: "metadata extraction",
+			setup: func(modelRepo *modelmocks.MockIModelRepo, _ *modelmocks.MockILabelRepo, gitRepo *gitmocks.MockIGitRepo) {
+				gomock.InOrder(
+					modelRepo.EXPECT().GetByProjectAndName(ctx, "proj", "model").Return(mod, nil),
+					gitRepo.EXPECT().ExtractMetadata(ctx, "models", "proj", "model").Return(nil, failure),
+				)
+			},
+			wantErr: "failed to read metadata files: dependency unavailable",
+		},
+		{
+			name: "metadata update",
+			setup: func(modelRepo *modelmocks.MockIModelRepo, _ *modelmocks.MockILabelRepo, gitRepo *gitmocks.MockIGitRepo) {
+				gomock.InOrder(
+					modelRepo.EXPECT().GetByProjectAndName(ctx, "proj", "model").Return(mod, nil),
+					gitRepo.EXPECT().ExtractMetadata(ctx, "models", "proj", "model").Return(files, nil),
+					modelRepo.EXPECT().UpdateMetadata(ctx, int64(42), gomock.Any()).Return(failure),
+				)
+			},
+			wantErr: "failed to update model metadata: dependency unavailable",
+		},
+		{
+			name: "label creation",
+			setup: func(modelRepo *modelmocks.MockIModelRepo, labelRepo *modelmocks.MockILabelRepo, gitRepo *gitmocks.MockIGitRepo) {
+				gomock.InOrder(
+					modelRepo.EXPECT().GetByProjectAndName(ctx, "proj", "model").Return(mod, nil),
+					gitRepo.EXPECT().ExtractMetadata(ctx, "models", "proj", "model").Return(files, nil),
+					modelRepo.EXPECT().UpdateMetadata(ctx, int64(42), gomock.Any()).Return(nil),
+					labelRepo.EXPECT().GetOrCreateByName(ctx, "mit", "license", "model").Return(&model.Label{ID: 1}, nil),
+					labelRepo.EXPECT().GetOrCreateByName(ctx, "chat", "other", "model").Return(nil, failure),
+				)
+			},
+			wantErr: "failed to get/create label chat (category=other): dependency unavailable",
+		},
+		{
+			name: "label assignment",
+			setup: func(modelRepo *modelmocks.MockIModelRepo, labelRepo *modelmocks.MockILabelRepo, gitRepo *gitmocks.MockIGitRepo) {
+				gomock.InOrder(
+					modelRepo.EXPECT().GetByProjectAndName(ctx, "proj", "model").Return(mod, nil),
+					gitRepo.EXPECT().ExtractMetadata(ctx, "models", "proj", "model").Return(files, nil),
+					modelRepo.EXPECT().UpdateMetadata(ctx, int64(42), gomock.Any()).Return(nil),
+					labelRepo.EXPECT().GetOrCreateByName(ctx, "mit", "license", "model").Return(&model.Label{ID: 1}, nil),
+					labelRepo.EXPECT().GetOrCreateByName(ctx, "chat", "other", "model").Return(&model.Label{ID: 2}, nil),
+					labelRepo.EXPECT().UpdateModelLabels(ctx, int64(42), []int{1, 2}).Return(failure),
+				)
+			},
+			wantErr: "dependency unavailable",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			modelRepo := modelmocks.NewMockIModelRepo(ctrl)
+			labelRepo := modelmocks.NewMockILabelRepo(ctrl)
+			gitRepo := gitmocks.NewMockIGitRepo(ctrl)
+			tc.setup(modelRepo, labelRepo, gitRepo)
+
+			err := model.NewModelService(modelRepo, labelRepo, gitRepo, nil, nil).SyncMetadata(ctx, "proj", "model")
+
+			require.ErrorIs(t, err, failure)
+			require.EqualError(t, err, tc.wantErr)
+		})
+	}
+}
