@@ -13,3 +13,8 @@ type V1alpha1CreateRobotAccountRequest struct {
 	Name string `json:"name,omitempty"`
 	Description string `json:"description,omitempty"`
 	ExpireDays int32 `json:"expireDays,omitempty"`
+	PlatformPermissions []string `json:"platformPermissions,omitempty"`
+	ProjectPermissions []string `json:"projectPermissions,omitempty"`
+	Projects []string `json:"projects,omitempty"`
+	ProjectScope *V1alpha1RobotAccountProjectScope `json:"projectScope,omitempty"`
+}

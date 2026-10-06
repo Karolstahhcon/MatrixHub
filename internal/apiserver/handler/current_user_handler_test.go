@@ -29,3 +29,35 @@ type sshKeyServiceStub struct {
 	createErr error
 }
 
+func (s *sshKeyServiceStub) CreateSSHKey(context.Context, user.SSHKey) error {
+	return s.createErr
+}
+
+func TestCurrentUserHandlerCreateSSHKeyAlreadyExists(t *testing.T) {
+	tests := []struct {
+		name    string
+		repoErr error
+	}{
+		{name: "active key", repoErr: user.ErrSSHKeyAlreadyExists},
+		{name: "expired key", repoErr: user.ErrSSHKeyExpired},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler := &CurrentUserHandler{
+				sshKeyService: &sshKeyServiceStub{createErr: tt.repoErr},
+			}
+
+			_, err := handler.CreateSSHKey(context.Background(), &v1alpha1.CreateSSHKeyRequest{
+				Name:      "existing-key",
+				PublicKey: "SHA256:AA",
+			})
+			if status.Code(err) != codes.AlreadyExists {
+				t.Fatalf("status code = %s, want %s (err: %v)", status.Code(err), codes.AlreadyExists, err)
+			}
+			if status.Convert(err).Message() != tt.repoErr.Error() {
+				t.Fatalf("status message = %q, want %q", status.Convert(err).Message(), tt.repoErr.Error())
+			}
+		})
+	}
+}

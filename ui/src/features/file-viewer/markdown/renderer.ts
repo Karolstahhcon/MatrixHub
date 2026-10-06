@@ -61,3 +61,66 @@ const COLOR_VALUE = /^(?:#[0-9a-f]{3,8}|rgba?\([\d\s.,%/]+\)|inherit|transparent
 const COLOR_PROPERTY = /^(?:color|background-color|--shiki-(?:dark|light)(?:-bg)?)$/
 
 function isColorOnlyStyle(style: string): boolean {
+  return style
+    .split(';')
+    .map(declaration => declaration.trim())
+    .filter(Boolean)
+    .every((declaration) => {
+      const [property, ...rest] = declaration.split(':')
+      const value = rest.join(':').trim()
+
+      return COLOR_PROPERTY.test(property.trim()) && COLOR_VALUE.test(value)
+    })
+}
+
+purifier.addHook('uponSanitizeAttribute', (_node, data) => {
+  if (data.attrName === 'style' && !isColorOnlyStyle(data.attrValue)) {
+    data.keepAttr = false
+  }
+})
+
+// Every external link — markdown-generated or raw HTML — opens in a new tab.
+purifier.addHook('afterSanitizeAttributes', (node) => {
+  if (node.tagName !== 'A') {
+    return
+  }
+
+  const href = node.getAttribute('href') ?? ''
+
+  if (href.startsWith('#')) {
+    node.removeAttribute('target')
+
+    return
+  }
+
+  node.setAttribute('target', '_blank')
+  node.setAttribute('rel', 'noopener noreferrer')
+})
+
+function createRenderer(): Renderer {
+  const md = MarkdownItAsync({
+    html: true,
+    linkify: true,
+    warnOnSyncRender: true,
+    highlight: (code, lang) => highlightCode(code, lang),
+  })
+
+  md.use(MarkdownItGitHubAlerts)
+  md.use(MarkdownItAnchor, {
+    slugify: slugifyHeading,
+    tabIndex: false,
+    // Wrap heading text in a link to its own anchor so a click records the hash in the URL.
+    permalink: MarkdownItAnchor.permalink.headerLink({ safariReaderFix: true }),
+  })
+
+  return md
+}
+
+/** Render markdown to sanitized HTML (GitHub-flavored: alerts, autolinks, Shiki-highlighted code). */
+export async function renderMarkdown(content: string): Promise<string> {
+  rendererPromise ??= Promise.resolve(createRenderer())
+  const md = await rendererPromise
+  const html = await md.renderAsync(stripFrontmatter(content))
+
+  return purifier.sanitize(html)
+}
