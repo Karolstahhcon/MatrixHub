@@ -170,3 +170,175 @@ func TestDatasetDB_ListAttachesLabelsToDatasets(t *testing.T) {
 			Size: 2048, ReadmeContent: "# images", CreatedAt: repoTestCreatedAt, UpdatedAt: repoTestUpdatedAt,
 		},
 	}, datasets)
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestDatasetDB_ListWrapsQueryErrors(t *testing.T) {
+	ctx := context.Background()
+	dbErr := errors.New("database unavailable")
+
+	for _, test := range []struct {
+		name    string
+		expect  func(sqlmock.Sqlmock)
+		wantErr string
+	}{
+		{
+			name: "count",
+			expect: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(exactSQL(datasetCountSQL)).WillReturnError(dbErr)
+			},
+			wantErr: "failed to count datasets",
+		},
+		{
+			name: "list",
+			expect: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(exactSQL(datasetCountSQL)).WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
+				mock.ExpectQuery(exactSQL(datasetListSQL + " ORDER BY d.updated_at DESC LIMIT ?")).WithArgs(20).WillReturnError(dbErr)
+			},
+			wantErr: "failed to list datasets",
+		},
+		{
+			name: "labels",
+			expect: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(exactSQL(datasetCountSQL)).WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
+				mock.ExpectQuery(exactSQL(datasetListSQL + " ORDER BY d.updated_at DESC LIMIT ?")).WithArgs(20).WillReturnRows(datasetListRows("corpus"))
+				mock.ExpectQuery(exactSQL("SELECT dl.dataset_id, l.* FROM datasets_labels dl INNER JOIN labels l ON dl.label_id = l.id WHERE dl.dataset_id IN (?)")).
+					WithArgs(int64(7)).
+					WillReturnError(dbErr)
+			},
+			wantErr: "failed to fetch labels",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			repo, mock := newDatasetDBForTest(t)
+			test.expect(mock)
+
+			datasets, total, err := repo.List(ctx, &model.Filter{Page: 1, PageSize: 20})
+
+			require.ErrorIs(t, err, dbErr)
+			require.ErrorContains(t, err, test.wantErr)
+			require.Nil(t, datasets)
+			require.Zero(t, total)
+			require.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestDatasetDB_GetByProjectAndName(t *testing.T) {
+	ctx := context.Background()
+	dbErr := errors.New("database unavailable")
+
+	for _, test := range []struct {
+		name    string
+		rows    *sqlmock.Rows
+		err     error
+		want    *dataset.Dataset
+		wantErr error
+	}{
+		{
+			name: "maps the joined row",
+			rows: sqlmock.NewRows([]string{
+				"id", "name", "project_id", "default_branch", "num_rows", "size", "readme_content",
+				"created_at", "updated_at", "project_name",
+			}).AddRow(int64(7), "corpus", 3, "main", "1000", int64(2048), "# corpus", repoTestCreatedAt, repoTestUpdatedAt, "proj"),
+			want: &dataset.Dataset{
+				ID: 7, Name: "corpus", ProjectID: 3, ProjectName: "proj", DefaultBranch: "main", NumRows: "1000",
+				Size: 2048, ReadmeContent: "# corpus", CreatedAt: repoTestCreatedAt, UpdatedAt: repoTestUpdatedAt,
+			},
+		},
+		{
+			name:    "not found",
+			rows:    sqlmock.NewRows([]string{"id"}),
+			wantErr: gorm.ErrRecordNotFound,
+		},
+		{
+			name:    "query error",
+			err:     dbErr,
+			wantErr: dbErr,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			repo, mock := newDatasetDBForTest(t)
+			query := mock.ExpectQuery(exactSQL(datasetGetSQL)).WithArgs("proj", "corpus", 1)
+			if test.err != nil {
+				query.WillReturnError(test.err)
+			} else {
+				query.WillReturnRows(test.rows)
+			}
+
+			got, err := repo.GetByProjectAndName(ctx, "proj", "corpus")
+
+			if test.wantErr != nil {
+				require.ErrorIs(t, err, test.wantErr)
+				require.ErrorContains(t, err, "failed to get dataset")
+				require.Nil(t, got)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, test.want, got)
+			}
+			require.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestDatasetDB_Delete(t *testing.T) {
+	ctx := context.Background()
+	dbErr := errors.New("database unavailable")
+	expectLookup := func(mock sqlmock.Sqlmock) *sqlmock.ExpectedQuery {
+		return mock.ExpectQuery(exactSQL(datasetGetSQL)).WithArgs("proj", "corpus", 1)
+	}
+	found := func() *sqlmock.Rows {
+		return sqlmock.NewRows([]string{"id", "name", "project_name"}).AddRow(int64(7), "corpus", "proj")
+	}
+
+	for _, test := range []struct {
+		name       string
+		expect     func(sqlmock.Sqlmock)
+		wantErr    error
+		wantErrMsg string
+	}{
+		{
+			name: "deletes by the looked up ID",
+			expect: func(mock sqlmock.Sqlmock) {
+				expectLookup(mock).WillReturnRows(found())
+				mock.ExpectExec(exactSQL("DELETE FROM `datasets` WHERE `datasets`.`id` = ?")).
+					WithArgs(int64(7)).
+					WillReturnResult(sqlmock.NewResult(0, 1))
+			},
+		},
+		{
+			name: "lookup error",
+			expect: func(mock sqlmock.Sqlmock) {
+				expectLookup(mock).WillReturnRows(sqlmock.NewRows([]string{"id"}))
+			},
+			wantErr:    gorm.ErrRecordNotFound,
+			wantErrMsg: "failed to get dataset",
+		},
+		{
+			name: "delete error",
+			expect: func(mock sqlmock.Sqlmock) {
+				expectLookup(mock).WillReturnRows(found())
+				mock.ExpectExec(exactSQL("DELETE FROM `datasets` WHERE `datasets`.`id` = ?")).
+					WithArgs(int64(7)).
+					WillReturnError(dbErr)
+			},
+			wantErr:    dbErr,
+			wantErrMsg: "failed to delete dataset",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			repo, mock := newDatasetDBForTest(t)
+			test.expect(mock)
+
+			err := repo.Delete(ctx, "proj", "corpus")
+
+			if test.wantErr != nil {
+				require.ErrorIs(t, err, test.wantErr)
+				require.ErrorContains(t, err, test.wantErrMsg)
+			} else {
+				require.NoError(t, err)
+			}
+			require.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
