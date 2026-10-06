@@ -86,3 +86,91 @@
     "targetRegistryRequired": "Target registry is required"
   },
   "notifications": {
+    "createSuccess": "Sync rule created successfully",
+    "createError": "Failed to create sync rule",
+    "updateSuccess": "Sync rule updated successfully",
+    "updateError": "Failed to update sync rule",
+    "switchSuccess": "Sync rule status updated successfully",
+    "switchError": "Failed to update sync rule status",
+    "deleteSuccess": "Sync rule deleted successfully",
+    "deleteError": "Failed to delete sync rule",
+    "syncSuccess": "Sync task started successfully",
+    "syncError": "Failed to start sync task"
+  },
+  "errors": {
+    "missingSyncPolicyId": "Sync policy ID is required"
+  },
+  "executions": {
+    "breadcrumb": "Sync Rule: {{name}}",
+    "searchPlaceholder": "Search by task ID",
+    "filters": {
+      "status": "Status"
+    },
+    "table": {
+      "taskId": "Task",
+      "status": "Status",
+      "triggerType": "Trigger Mode",
+      "startedAt": "Created At",
+      "duration": "Duration",
+      "successRate": "Success Rate",
+      "totalItems": "Total",
+      "actions": "Actions",
+      "empty": "No sync tasks found"
+    },
+    "status": {
+      "running": "Running",
+      "stopped": "Stopped",
+      "succeeded": "Succeeded",
+      "failed": "Failed",
+      "unknown": "Unknown"
+    },
+    "actions": {
+      "stop": "Stop Task"
+    },
+    "notifications": {
+      "stopSuccess": "Sync task stopped successfully",
+      "stopError": "Failed to stop sync task"
+    },
+    "errors": {
+      "invalidSyncPolicyId": "Invalid sync policy ID",
+      "missingSyncTaskId": "Sync task ID is required",
+      "syncPolicyNotFound": "Sync rule not found"
+    },
+    "detail": {
+      "breadcrumb": "Sync Task: {{id}}",
+      "basicInfo": "Basic Information",
+      "statusDistribution": "Task Status Distribution",
+      "subTasks": "Sub-tasks",
+      "filters": {
+        "status": "All Statuses",
+        "resourceType": "Source Type"
+      },
+      "table": {
+        "id": "Task ID",
+        "resourceType": "Source Type",
+        "source": "Source",
+        "target": "Target",
+        "action": "Action",
+        "status": "Status",
+        "createdAt": "Created At",
+        "completedAt": "Completed At",
+        "logs": "Logs"
+      },
+      "status": {
+        "running": "Running",
+        "succeeded": "Succeeded",
+        "failed": "Failed",
+        "stopped": "Stopped",
+        "unknown": "Unknown"
+      },
+      "resourceType": {
+        "model": "Model",
+        "dataset": "Dataset"
+      },
+      "errors": {
+        "invalidSyncTaskId": "Invalid sync task ID",
+        "syncTaskNotFound": "Sync task not found"
+      }
+    }
+  }
+}

@@ -8,3 +8,25 @@ export const Route = createFileRoute(
   beforeLoad: async ({ params }) => {
     await ensureProjectAccess(params.projectId)
   },
+  component: RouteComponent,
+})
+
+function RouteComponent() {
+  const {
+    projectId, datasetId,
+  } = Route.useParams()
+
+  return (
+    <div>
+      Dataset Settings Form
+      <br />
+      Project ID:
+      {' '}
+      {projectId}
+      <br />
+      Dataset ID:
+      {' '}
+      {datasetId}
+    </div>
+  )
+}
