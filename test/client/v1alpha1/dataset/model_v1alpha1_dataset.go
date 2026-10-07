@@ -12,3 +12,13 @@ package v1alpha1
 type V1alpha1Dataset struct {
 	Id int32 `json:"id,omitempty"`
 	Project string `json:"project,omitempty"`
+	Name string `json:"name,omitempty"`
+	DefaultBranch string `json:"defaultBranch,omitempty"`
+	NumRows string `json:"numRows,omitempty"`
+	Labels []MatrixhubV1alpha1Label `json:"labels,omitempty"`
+	Size string `json:"size,omitempty"`
+	CloneUrls *V1alpha1CloneUrls `json:"cloneUrls,omitempty"`
+	ReadmeContent string `json:"readmeContent,omitempty"`
+	CreatedAt string `json:"createdAt,omitempty"`
+	UpdatedAt string `json:"updatedAt,omitempty"`
+}
