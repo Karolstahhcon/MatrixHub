@@ -22,3 +22,28 @@ const statusIndicatorColors: Record<StatusIndicatorType, string> = {
   neutral: 'var(--mantine-color-dimmed)',
   success: 'var(--mantine-color-green-filled)',
   warning: 'var(--mantine-color-yellow-filled)',
+}
+
+export function StatusIndicator({
+  label,
+  type = 'neutral',
+  dotSize = 10,
+  textProps,
+}: StatusIndicatorProps) {
+  return (
+    <Group gap={6} wrap="nowrap">
+      <Box
+        h={dotSize}
+        w={dotSize}
+        bg={statusIndicatorColors[type]}
+        style={{
+          borderRadius: '50%',
+          flexShrink: 0,
+        }}
+      />
+      <Text size="sm" {...textProps}>
+        {label}
+      </Text>
+    </Group>
+  )
+}
