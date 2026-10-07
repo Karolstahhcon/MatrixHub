@@ -24,3 +24,55 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/matrixhub-ai/matrixhub/api/go/v1alpha1"
+	usermocks "github.com/matrixhub-ai/matrixhub/internal/domain/user/mocks"
+)
+
+func TestLoginHandlerLogin(t *testing.T) {
+	ctx := context.Background()
+	request := &v1alpha1.LoginRequest{Username: "alice", Password: "secret", RememberMe: true}
+
+	t.Run("success", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		service := usermocks.NewMockIUserService(ctrl)
+		service.EXPECT().LoginUser(ctx, "alice", "secret", true).Return(nil)
+
+		response, err := (&LoginHandler{userService: service}).Login(ctx, request)
+		require.NoError(t, err)
+		require.NotNil(t, response)
+	})
+
+	t.Run("authentication failure", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		service := usermocks.NewMockIUserService(ctrl)
+		service.EXPECT().LoginUser(ctx, "alice", "secret", true).Return(errors.New("invalid credentials"))
+
+		response, err := (&LoginHandler{userService: service}).Login(ctx, request)
+		require.Nil(t, response)
+		require.Equal(t, codes.Unauthenticated, status.Code(err))
+	})
+}
+
+func TestLoginHandlerLogout(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("success", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		service := usermocks.NewMockIUserService(ctrl)
+		service.EXPECT().LogoutUser(ctx).Return(nil)
+
+		response, err := (&LoginHandler{userService: service}).Logout(ctx, &v1alpha1.LogoutRequest{})
+		require.NoError(t, err)
+		require.NotNil(t, response)
+	})
+
+	t.Run("session failure", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		service := usermocks.NewMockIUserService(ctrl)
+		service.EXPECT().LogoutUser(ctx).Return(errors.New("session unavailable"))
+
+		response, err := (&LoginHandler{userService: service}).Logout(ctx, &v1alpha1.LogoutRequest{})
+		require.Nil(t, response)
+		require.Equal(t, codes.Internal, status.Code(err))
+	})
+}
