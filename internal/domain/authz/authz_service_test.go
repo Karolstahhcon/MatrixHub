@@ -15,3 +15,37 @@
 package authz_test
 
 import (
+	"context"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+	"gorm.io/gorm"
+
+	"github.com/matrixhub-ai/matrixhub/internal/domain/authz"
+	"github.com/matrixhub-ai/matrixhub/internal/domain/project"
+	"github.com/matrixhub-ai/matrixhub/internal/domain/role"
+)
+
+type projectRepoStub struct {
+	project.IProjectRepo
+	getProjectByName func(context.Context, string) (*project.Project, error)
+}
+
+func (s *projectRepoStub) GetProjectByName(ctx context.Context, name string) (*project.Project, error) {
+	return s.getProjectByName(ctx, name)
+}
+
+func TestAuthzService_VerifyProjectPermissionByNameReturnsFalseForMissingProject(t *testing.T) {
+	service := authz.NewAuthzService(
+		nil,
+		&projectRepoStub{getProjectByName: func(context.Context, string) (*project.Project, error) {
+			return nil, gorm.ErrRecordNotFound
+		}},
+		nil,
+	)
+
+	allowed, err := service.VerifyProjectPermissionByName(context.Background(), "missing", role.ModelPush)
+
+	require.NoError(t, err)
+	require.False(t, allowed)
+}
