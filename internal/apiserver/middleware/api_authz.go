@@ -21,3 +21,74 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/matrixhub-ai/matrixhub/internal/domain/auth"
+	"github.com/matrixhub-ai/matrixhub/internal/domain/role"
+)
+
+// methodPermissions maps GRPC methods to required permissions
+var methodPermissions = map[string]role.Permission{
+	// User management
+	"/matrixhub.v1alpha1.Users/GetUser":           role.UserGet,
+	"/matrixhub.v1alpha1.Users/CreateUser":        role.UserCreate,
+	"/matrixhub.v1alpha1.Users/SetUserSysAdmin":   role.UserAuthorize,
+	"/matrixhub.v1alpha1.Users/DeleteUser":        role.UserDelete,
+	"/matrixhub.v1alpha1.Users/ResetUserPassword": role.UserResetPassword,
+
+	// Registry management
+	"/matrixhub.v1alpha1.Registries/ListRegistries": role.RegistryGet,
+	"/matrixhub.v1alpha1.Registries/GetRegistry":    role.RegistryGet,
+	"/matrixhub.v1alpha1.Registries/PingRegistry":   role.RegistryGet,
+	"/matrixhub.v1alpha1.Registries/CreateRegistry": role.RegistryCreate,
+	"/matrixhub.v1alpha1.Registries/UpdateRegistry": role.RegistryUpdate,
+	"/matrixhub.v1alpha1.Registries/DeleteRegistry": role.RegistryDelete,
+
+	// Sync policy management
+	"/matrixhub.v1alpha1.SyncPolicy/ListSyncPolicies": role.SyncGet,
+	"/matrixhub.v1alpha1.SyncPolicy/GetSyncPolicy":    role.SyncGet,
+	"/matrixhub.v1alpha1.SyncPolicy/ListSyncTasks":    role.SyncGet,
+	"/matrixhub.v1alpha1.SyncPolicy/CreateSyncPolicy": role.SyncCreate,
+	"/matrixhub.v1alpha1.SyncPolicy/CreateSyncTask":   role.SyncCreate,
+	"/matrixhub.v1alpha1.SyncPolicy/UpdateSyncPolicy": role.SyncUpdate,
+	"/matrixhub.v1alpha1.SyncPolicy/StopSyncTask":     role.SyncUpdate,
+	"/matrixhub.v1alpha1.SyncPolicy/DeleteSyncPolicy": role.SyncDelete,
+
+	// Robot management
+	"/matrixhub.v1alpha1.Robots/CreateRobotAccount":       role.RobotCreate,
+	"/matrixhub.v1alpha1.Robots/ListRobotAccounts":        role.RobotGet,
+	"/matrixhub.v1alpha1.Robots/GetRobotAccount":          role.RobotGet,
+	"/matrixhub.v1alpha1.Robots/DeleteRobotAccount":       role.RobotDelete,
+	"/matrixhub.v1alpha1.Robots/UpdateRobotAccount":       role.RobotUpdate,
+	"/matrixhub.v1alpha1.Robots/RefreshRobotAccountToken": role.RobotUpdate,
+
+	// Cleanup management
+	"/matrixhub.v1alpha1.Cleanup/PreviewCleanup":  role.CleanupGet,
+	"/matrixhub.v1alpha1.Cleanup/GetStorageStats": role.CleanupGet,
+	"/matrixhub.v1alpha1.Cleanup/ExecuteCleanup":  role.CleanupExecute,
+}
+
+// AuthzInterceptor returns a GRPC interceptor that checks platform-level permissions
+func AuthzInterceptor(verifyFunc func(ctx context.Context, perm role.Permission) (bool, error)) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		// Get required permission for the method
+		requiredPerm, ok := methodPermissions[info.FullMethod]
+		if !ok {
+			// No permission configured, allow by default
+			return handler(ctx, req)
+		}
+
+		if _, ok = auth.IdentityFromContext(ctx); !ok {
+			return nil, status.Error(codes.Unauthenticated, codes.Unauthenticated.String())
+		}
+
+		// Verify permission
+		allowed, err := verifyFunc(ctx, requiredPerm)
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+		if !allowed {
+			return nil, status.Error(codes.PermissionDenied, "permission denied")
+		}
+
+		return handler(ctx, req)
+	}
+}
