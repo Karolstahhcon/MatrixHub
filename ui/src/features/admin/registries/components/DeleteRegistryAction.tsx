@@ -24,3 +24,82 @@ interface DeleteRegistryModalProps {
   registry: Registry
   loading?: boolean
   onClose: () => void
+  onConfirm: () => void
+}
+
+function DeleteRegistryModal({
+  opened,
+  registry,
+  loading,
+  onClose,
+  onConfirm,
+}: DeleteRegistryModalProps) {
+  const { t } = useTranslation()
+
+  return (
+    <ModalWrapper
+      opened={opened}
+      onClose={onClose}
+      type="danger"
+      size="sm"
+      closeOnClickOutside={false}
+      title={t('routes.admin.registries.deleteModal.title')}
+      confirmLoading={loading}
+      onConfirm={onConfirm}
+    >
+      <Stack gap="sm">
+        <Text
+          size="sm"
+          style={{ overflowWrap: 'anywhere' }}
+        >
+          {t('routes.admin.registries.deleteModal.description', {
+            name: getRegistryDisplayName(registry),
+          })}
+        </Text>
+      </Stack>
+    </ModalWrapper>
+  )
+}
+
+export function DeleteRegistryAction({
+  registry,
+  disabled,
+}: DeleteRegistryActionProps) {
+  const { t } = useTranslation()
+  const [opened, {
+    open,
+    close,
+  }] = useDisclosure(false)
+  const mutation = useMutation(deleteRegistryMutationOptions())
+
+  const handleDelete = async () => {
+    await mutation.mutateAsync({ id: registry.id })
+    close()
+  }
+
+  return (
+    <>
+      <Button
+        variant="transparent"
+        size="compact-sm"
+        color="red"
+        disabled={disabled}
+        onClick={open}
+      >
+        {t('routes.admin.registries.actions.delete')}
+      </Button>
+
+      {opened && (
+        <DeleteRegistryModal
+          opened
+          registry={registry}
+          loading={mutation.isPending}
+          onClose={close}
+          onConfirm={() => {
+            void handleDelete()
+          }}
+        />
+      )}
+    </>
+  )
+}
