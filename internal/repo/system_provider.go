@@ -19,3 +19,25 @@ import (
 	"strings"
 
 	"github.com/matrixhub-ai/matrixhub/internal/domain/system"
+	"github.com/matrixhub-ai/matrixhub/internal/infra/config"
+)
+
+type systemProvider struct {
+	externalURL string
+}
+
+func NewSystemProvider(cfg *config.Config) system.IService {
+	externalURL := ""
+	if cfg != nil && cfg.APIServer != nil {
+		externalURL = strings.TrimRight(cfg.APIServer.ExternalURL, "/")
+	}
+	return &systemProvider{externalURL: externalURL}
+}
+
+func (p *systemProvider) GetPublicConfig(_ context.Context) (*system.PublicConfig, error) {
+	return &system.PublicConfig{
+		Endpoints: system.Endpoints{
+			HfBase: p.externalURL,
+		},
+	}, nil
+}
