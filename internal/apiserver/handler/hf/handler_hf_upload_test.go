@@ -71,3 +71,76 @@ func TestHandleCommitRoutesByRepositoryType(t *testing.T) {
 					Content: []byte("readme content\n"),
 				}}
 				if rt.repoType == "models" {
+					modelService.EXPECT().
+						CreateModelCommit(gomock.Any(), "test-user", "shared-name", "main", commit, ops).
+						Return(outcome.commitHash, outcome.err)
+				} else {
+					gitRepo.EXPECT().
+						CreateCommit(gomock.Any(), rt.repoType, "test-user", "shared-name", "main", commit, ops).
+						Return(outcome.commitHash, outcome.err)
+				}
+
+				testStorage := storage.NewStorage(storage.WithRootDir(t.TempDir()))
+				_, err := repository.Init(t.Context(), testStorage.ResolvePath(rt.storageName), "main")
+				require.NoError(t, err)
+				handler := NewHandler(
+					WithStorage(testStorage),
+					WithServices(modelService, gitRepo, nil),
+				)
+				body := "{\"key\":\"header\",\"value\":{\"summary\":\"Add readme\",\"description\":\"Test description\"}}\n" +
+					"{\"key\":\"file\",\"value\":{\"content\":\"readme content\\n\",\"path\":\"README.md\",\"encoding\":\"utf-8\"}}\n"
+				request := httptest.NewRequest(http.MethodPost,
+					"http://example.com/api/"+rt.repoType+"/test-user/shared-name/commit/main", strings.NewReader(body))
+				request.Header.Set("Content-Type", "application/x-ndjson")
+				response := httptest.NewRecorder()
+				handler.ServeHTTP(response, request)
+
+				require.Equal(t, outcome.wantStatus, response.Code, response.Body.String())
+				if outcome.err != nil {
+					require.Contains(t, response.Body.String(), outcome.err.Error())
+					return
+				}
+				var result commitResponse
+				require.NoError(t, json.NewDecoder(response.Body).Decode(&result))
+				require.Equal(t, commitResponse{
+					CommitURL:     "http://example.com/" + rt.storageName + "/commit/" + outcome.commitHash,
+					CommitOid:     outcome.commitHash,
+					CommitMessage: commit.Message,
+				}, result)
+			})
+		}
+	}
+}
+
+func TestCommitAuthorName(t *testing.T) {
+	robotIdentity := robot.NewRobotIdentity(4, "robot$test-pro-select")
+	encodedRobot, err := authcodec.Marshal(robotIdentity)
+	if err != nil {
+		t.Fatalf("marshal robot identity: %v", err)
+	}
+
+	tests := []struct {
+		name string
+		user authenticate.UserInfo
+		want string
+	}{
+		{
+			name: "typed identity",
+			user: authenticate.UserInfo{User: encodedRobot},
+			want: "robot$test-pro-select",
+		},
+		{
+			name: "plain user name",
+			user: authenticate.UserInfo{User: "HuggingFace"},
+			want: "HuggingFace",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := commitAuthorName(tt.user); got != tt.want {
+				t.Fatalf("commitAuthorName() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
