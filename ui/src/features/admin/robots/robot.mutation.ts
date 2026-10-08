@@ -74,3 +74,41 @@ export function enableRobotAccountMutationOptions() {
     status: RobotAccountStatus.ROBOT_ACCOUNT_STATUS_ENABLED,
     successMessage: i18n.t('routes.admin.robots.notifications.enableSuccess'),
     errorMessage: i18n.t('routes.admin.robots.notifications.enableError'),
+  })
+}
+
+export function disableRobotAccountMutationOptions() {
+  return robotStatusMutationOptions({
+    status: RobotAccountStatus.ROBOT_ACCOUNT_STATUS_DISABLED,
+    successMessage: i18n.t('routes.admin.robots.notifications.disableSuccess'),
+    errorMessage: i18n.t('routes.admin.robots.notifications.disableError'),
+  })
+}
+
+export function deleteRobotAccountMutationOptions() {
+  return mutationOptions({
+    mutationFn: ({ id }: DeleteRobotAccountRequest) => Robots.DeleteRobotAccount({
+      id: requireRobotId(id),
+    }),
+    meta: {
+      successMessage: i18n.t('routes.admin.robots.notifications.deleteSuccess'),
+      errorMessage: i18n.t('routes.admin.robots.notifications.deleteError'),
+      invalidates: [adminRobotKeys.lists()],
+    } satisfies NotificationMeta,
+  })
+}
+
+export function refreshRobotAccountTokenMutationOptions() {
+  return mutationOptions({
+    mutationFn: (input: RefreshRobotAccountTokenRequest) => Robots.RefreshRobotAccountToken({
+      ...input,
+      id: requireRobotId(input.id),
+      autoGenerate: input.autoGenerate ?? true,
+    }),
+    meta: {
+      successMessage: i18n.t('routes.admin.robots.notifications.refreshTokenSuccess'),
+      errorMessage: i18n.t('routes.admin.robots.notifications.refreshTokenError'),
+      invalidates: [adminRobotKeys.lists()],
+    } satisfies NotificationMeta,
+  })
+}
