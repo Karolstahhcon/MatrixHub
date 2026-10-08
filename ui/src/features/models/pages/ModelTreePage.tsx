@@ -60,3 +60,129 @@ export function ModelTreePage() {
       <Flex
         justify="space-between"
         align="center"
+        mb="md"
+      >
+        <Group gap="md" wrap="nowrap">
+          <ModelRevisionSelect
+            projectId={projectId}
+            modelId={modelId}
+            revision={ref}
+          />
+
+          <PathBreadcrumbs
+            name={modelId}
+            treePath={treePath}
+            getPathLinkProps={nextPath => ({
+              to: '.',
+              params: {
+                projectId,
+                modelId,
+                ref,
+                _splat: nextPath,
+              },
+            })}
+          />
+        </Group>
+
+        <Group gap="md" wrap="nowrap">
+          <TextInput
+            placeholder={t('common.fileTree.searchPlaceholder')}
+            value={searchValue}
+            onChange={e => setSearchValue(e.currentTarget.value)}
+            leftSection={<IconSearch size={16} />}
+            size="xs"
+            w={260}
+            radius="lg"
+          />
+
+          <Link
+            to="/projects/$projectId/models/$modelId/commits/$ref"
+            params={{
+              projectId,
+              modelId,
+              ref,
+            }}
+          >
+            <Button
+              size="xs"
+              color="cyan"
+              variant="light"
+              radius="xl"
+              leftSection={<IconClockHour4 size={16} />}
+            >
+              { t('model.detail.history', { count: data?.pagination?.total ?? 0 }) }
+            </Button>
+          </Link>
+        </Group>
+      </Flex>
+
+      {pathNotFound
+        ? (
+            <PathNotFound
+              path={treePath ?? ''}
+              branch={ref}
+              rootLinkProps={linkOptions({
+                to: '/projects/$projectId/models/$modelId/tree/$ref/$',
+                params: {
+                  projectId,
+                  modelId,
+                  ref,
+                  _splat: '',
+                },
+              })}
+            />
+          )
+        : (
+            <RepoFileTree
+              files={filteredFiles}
+              latestCommit={latestCommit}
+              buildTreeLink={path => linkOptions({
+                to: '/projects/$projectId/models/$modelId/tree/$ref/$',
+                params: {
+                  projectId,
+                  modelId,
+                  ref,
+                  _splat: path,
+                },
+              })}
+              buildBlobLink={path => linkOptions({
+                to: '/projects/$projectId/models/$modelId/blob/$ref/$',
+                params: {
+                  projectId,
+                  modelId,
+                  ref,
+                  _splat: path,
+                },
+              })}
+              buildCommitLink={commitId => ({
+                to: '/projects/$projectId/models/$modelId/commit/$commitId',
+                params: {
+                  projectId,
+                  modelId,
+                  commitId,
+                },
+                search: { branch: ref },
+              })}
+              isLoading={isLoading}
+            />
+          )}
+    </Box>
+  )
+}
+
+function findLatestCommit(files: RepoFile[]): RepoFile['commit'] | undefined {
+  let latest: RepoFile['commit'] | undefined
+
+  for (const file of files) {
+    if (!file.commit?.createdAt) {
+      continue
+    }
+    if (!latest?.createdAt || new Date(file.commit.createdAt).getTime() > new Date(latest.createdAt).getTime()) {
+      latest = file.commit
+    }
+  }
+
+  return latest
+}
+
+export default ModelTreePage
