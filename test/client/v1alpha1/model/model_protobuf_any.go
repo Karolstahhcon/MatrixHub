@@ -8,3 +8,7 @@
  */
 
 package v1alpha1
+
+type ProtobufAny struct {
+	Type_ string `json:"@type,omitempty"`
+}
