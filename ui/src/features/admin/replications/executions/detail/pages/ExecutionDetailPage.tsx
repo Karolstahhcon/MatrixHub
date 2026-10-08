@@ -63,3 +63,68 @@ export function ExecutionDetailPage() {
 
   const {
     data: jobsData,
+    isLoading,
+    isFetching,
+  } = useSyncJobs(syncPolicyId, syncTaskId, search)
+
+  const jobs = jobsData?.jobs ?? []
+  const pagination = jobsData?.pagination
+
+  const refreshJobs = () => {
+    queryClient.invalidateQueries({
+      queryKey: adminReplicationExecutionDetailKeys.item(syncPolicyId, syncTaskId),
+    })
+  }
+
+  const {
+    onRefresh,
+    onPageChange,
+    routeColumnFilterTableOptions,
+  } = useRouteListState({
+    search,
+    navigate,
+    records: jobs,
+    getRecordId: job => String(job.id ?? '-'),
+    refresh: refreshJobs,
+    columnFilterSync: [
+      {
+        columnId: 'status',
+        searchKey: 'status',
+      },
+      {
+        columnId: 'resourceType',
+        searchKey: 'resourceType',
+      },
+    ],
+  })
+
+  return (
+    <Stack gap="xl">
+      <Stack gap="sm">
+        <SectionTitle title={t('routes.admin.replications.executions.detail.basicInfo')} />
+        <ExecutionInfo task={task} />
+      </Stack>
+
+      <Stack gap="sm">
+        <SectionTitle title={t('routes.admin.replications.executions.detail.statusDistribution')} />
+        <ExecutionStatsCards task={task} />
+      </Stack>
+
+      <Stack gap="sm">
+        <SectionTitle title={t('routes.admin.replications.executions.detail.subTasks')} />
+        <SyncJobTable
+          syncPolicyId={syncPolicyId}
+          syncTaskId={syncTaskId}
+          data={jobs}
+          pagination={pagination}
+          loading={isLoading}
+          fetching={isFetching}
+          page={search.page ?? DEFAULT_PAGE}
+          onRefresh={onRefresh}
+          onPageChange={onPageChange}
+          tableOptions={routeColumnFilterTableOptions}
+        />
+      </Stack>
+    </Stack>
+  )
+}
