@@ -21,3 +21,26 @@ import (
 
 func TestSSHKeyIsExpired(t *testing.T) {
 	now := time.Unix(1_700_000_000, 0)
+	past := now.Add(-time.Second)
+	future := now.Add(time.Second)
+
+	tests := []struct {
+		name     string
+		expireAt *time.Time
+		want     bool
+	}{
+		{name: "never expires", expireAt: nil, want: false},
+		{name: "past expiration", expireAt: &past, want: true},
+		{name: "expiration instant", expireAt: &now, want: true},
+		{name: "future expiration", expireAt: &future, want: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			key := SSHKey{ExpireAt: tt.expireAt}
+			if got := key.IsExpired(now); got != tt.want {
+				t.Fatalf("IsExpired() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
