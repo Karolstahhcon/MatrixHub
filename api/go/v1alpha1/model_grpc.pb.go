@@ -266,3 +266,272 @@ func _Models_ListModelTaskLabels_Handler(srv interface{}, ctx context.Context, d
 		return nil, err
 	}
 	if interceptor == nil {
+		return srv.(ModelsServer).ListModelTaskLabels(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Models_ListModelTaskLabels_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModelsServer).ListModelTaskLabels(ctx, req.(*ListModelTaskLabelsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Models_ListModelFrameLabels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListModelFrameLabelsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModelsServer).ListModelFrameLabels(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Models_ListModelFrameLabels_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModelsServer).ListModelFrameLabels(ctx, req.(*ListModelFrameLabelsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Models_ListModels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListModelsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModelsServer).ListModels(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Models_ListModels_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModelsServer).ListModels(ctx, req.(*ListModelsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Models_GetModel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetModelRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModelsServer).GetModel(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Models_GetModel_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModelsServer).GetModel(ctx, req.(*GetModelRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Models_CreateModel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateModelRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModelsServer).CreateModel(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Models_CreateModel_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModelsServer).CreateModel(ctx, req.(*CreateModelRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Models_DeleteModel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteModelRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModelsServer).DeleteModel(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Models_DeleteModel_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModelsServer).DeleteModel(ctx, req.(*DeleteModelRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Models_ListModelRevisions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListModelRevisionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModelsServer).ListModelRevisions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Models_ListModelRevisions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModelsServer).ListModelRevisions(ctx, req.(*ListModelRevisionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Models_ListModelCommits_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListModelCommitsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModelsServer).ListModelCommits(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Models_ListModelCommits_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModelsServer).ListModelCommits(ctx, req.(*ListModelCommitsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Models_GetModelCommit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetModelCommitRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModelsServer).GetModelCommit(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Models_GetModelCommit_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModelsServer).GetModelCommit(ctx, req.(*GetModelCommitRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Models_GetModelTree_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetModelTreeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModelsServer).GetModelTree(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Models_GetModelTree_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModelsServer).GetModelTree(ctx, req.(*GetModelTreeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Models_GetModelBlob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetModelBlobRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModelsServer).GetModelBlob(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Models_GetModelBlob_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModelsServer).GetModelBlob(ctx, req.(*GetModelBlobRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Models_UpdateModelSetting_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateModelSettingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModelsServer).UpdateModelSetting(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Models_UpdateModelSetting_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModelsServer).UpdateModelSetting(ctx, req.(*UpdateModelSettingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// Models_ServiceDesc is the grpc.ServiceDesc for Models service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var Models_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "matrixhub.v1alpha1.Models",
+	HandlerType: (*ModelsServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ListModelTaskLabels",
+			Handler:    _Models_ListModelTaskLabels_Handler,
+		},
+		{
+			MethodName: "ListModelFrameLabels",
+			Handler:    _Models_ListModelFrameLabels_Handler,
+		},
+		{
+			MethodName: "ListModels",
+			Handler:    _Models_ListModels_Handler,
+		},
+		{
+			MethodName: "GetModel",
+			Handler:    _Models_GetModel_Handler,
+		},
+		{
+			MethodName: "CreateModel",
+			Handler:    _Models_CreateModel_Handler,
+		},
+		{
+			MethodName: "DeleteModel",
+			Handler:    _Models_DeleteModel_Handler,
+		},
+		{
+			MethodName: "ListModelRevisions",
+			Handler:    _Models_ListModelRevisions_Handler,
+		},
+		{
+			MethodName: "ListModelCommits",
+			Handler:    _Models_ListModelCommits_Handler,
+		},
+		{
+			MethodName: "GetModelCommit",
+			Handler:    _Models_GetModelCommit_Handler,
+		},
+		{
+			MethodName: "GetModelTree",
+			Handler:    _Models_GetModelTree_Handler,
+		},
+		{
+			MethodName: "GetModelBlob",
+			Handler:    _Models_GetModelBlob_Handler,
+		},
+		{
+			MethodName: "UpdateModelSetting",
+			Handler:    _Models_UpdateModelSetting_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "v1alpha1/model.proto",
+}
