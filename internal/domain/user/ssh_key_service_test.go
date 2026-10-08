@@ -52,3 +52,31 @@ func TestSSHKeyServiceCreateSSHKey(t *testing.T) {
 	t.Run("rejects an expired duplicate", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		repo := usermocks.NewMockISSHKeyRepo(ctrl)
+		expired := time.Now().Add(-time.Minute)
+		repo.EXPECT().GetByFingerprint(ctx, key.Fingerprint).Return(&user.SSHKey{Id: 1, ExpireAt: &expired}, nil)
+
+		err := user.NewSSHKeyService(repo).CreateSSHKey(ctx, key)
+		require.ErrorIs(t, err, user.ErrSSHKeyExpired)
+	})
+
+	t.Run("propagates lookup error", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		repo := usermocks.NewMockISSHKeyRepo(ctrl)
+		wantErr := errors.New("lookup failed")
+		repo.EXPECT().GetByFingerprint(ctx, key.Fingerprint).Return(nil, wantErr)
+
+		err := user.NewSSHKeyService(repo).CreateSSHKey(ctx, key)
+		require.ErrorIs(t, err, wantErr)
+	})
+
+	t.Run("propagates create error", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		repo := usermocks.NewMockISSHKeyRepo(ctrl)
+		wantErr := errors.New("create failed")
+		repo.EXPECT().GetByFingerprint(ctx, key.Fingerprint).Return(nil, nil)
+		repo.EXPECT().CreateSSHKey(ctx, key).Return(wantErr)
+
+		err := user.NewSSHKeyService(repo).CreateSSHKey(ctx, key)
+		require.ErrorIs(t, err, wantErr)
+	})
+}
