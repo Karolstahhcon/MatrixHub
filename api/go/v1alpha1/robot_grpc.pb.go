@@ -152,3 +152,158 @@ func (UnimplementedRobotsServer) testEmbeddedByValue() {}
 type UnsafeRobotsServer interface {
 	mustEmbedUnimplementedRobotsServer()
 }
+
+func RegisterRobotsServer(s grpc.ServiceRegistrar, srv RobotsServer) {
+	// If the following call panics, it indicates UnimplementedRobotsServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&Robots_ServiceDesc, srv)
+}
+
+func _Robots_CreateRobotAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateRobotAccountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RobotsServer).CreateRobotAccount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Robots_CreateRobotAccount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RobotsServer).CreateRobotAccount(ctx, req.(*CreateRobotAccountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Robots_ListRobotAccounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListRobotAccountsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RobotsServer).ListRobotAccounts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Robots_ListRobotAccounts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RobotsServer).ListRobotAccounts(ctx, req.(*ListRobotAccountsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Robots_GetRobotAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRobotAccountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RobotsServer).GetRobotAccount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Robots_GetRobotAccount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RobotsServer).GetRobotAccount(ctx, req.(*GetRobotAccountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Robots_DeleteRobotAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteRobotAccountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RobotsServer).DeleteRobotAccount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Robots_DeleteRobotAccount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RobotsServer).DeleteRobotAccount(ctx, req.(*DeleteRobotAccountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Robots_UpdateRobotAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateRobotAccountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RobotsServer).UpdateRobotAccount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Robots_UpdateRobotAccount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RobotsServer).UpdateRobotAccount(ctx, req.(*UpdateRobotAccountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Robots_RefreshRobotAccountToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RefreshRobotAccountTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RobotsServer).RefreshRobotAccountToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Robots_RefreshRobotAccountToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RobotsServer).RefreshRobotAccountToken(ctx, req.(*RefreshRobotAccountTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// Robots_ServiceDesc is the grpc.ServiceDesc for Robots service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var Robots_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "matrixhub.v1alpha1.Robots",
+	HandlerType: (*RobotsServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "CreateRobotAccount",
+			Handler:    _Robots_CreateRobotAccount_Handler,
+		},
+		{
+			MethodName: "ListRobotAccounts",
+			Handler:    _Robots_ListRobotAccounts_Handler,
+		},
+		{
+			MethodName: "GetRobotAccount",
+			Handler:    _Robots_GetRobotAccount_Handler,
+		},
+		{
+			MethodName: "DeleteRobotAccount",
+			Handler:    _Robots_DeleteRobotAccount_Handler,
+		},
+		{
+			MethodName: "UpdateRobotAccount",
+			Handler:    _Robots_UpdateRobotAccount_Handler,
+		},
+		{
+			MethodName: "RefreshRobotAccountToken",
+			Handler:    _Robots_RefreshRobotAccountToken_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "v1alpha1/robot.proto",
+}
