@@ -130,3 +130,135 @@ func (mr *MockISyncJobServiceMockRecorder) GetSyncJob(ctx, id any) *gomock.Call 
 }
 
 // ListSyncJobsByTaskID mocks base method.
+func (m *MockISyncJobService) ListSyncJobsByTaskID(ctx context.Context, taskID, page, pageSize int, status syncjob.SyncJobStatus, resourceType string) ([]*syncjob.SyncJob, int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListSyncJobsByTaskID", ctx, taskID, page, pageSize, status, resourceType)
+	ret0, _ := ret[0].([]*syncjob.SyncJob)
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// ListSyncJobsByTaskID indicates an expected call of ListSyncJobsByTaskID.
+func (mr *MockISyncJobServiceMockRecorder) ListSyncJobsByTaskID(ctx, taskID, page, pageSize, status, resourceType any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSyncJobsByTaskID", reflect.TypeOf((*MockISyncJobService)(nil).ListSyncJobsByTaskID), ctx, taskID, page, pageSize, status, resourceType)
+}
+
+// SetOnJobDone mocks base method.
+func (m *MockISyncJobService) SetOnJobDone(fn func(context.Context, int) error) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetOnJobDone", fn)
+}
+
+// SetOnJobDone indicates an expected call of SetOnJobDone.
+func (mr *MockISyncJobServiceMockRecorder) SetOnJobDone(fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetOnJobDone", reflect.TypeOf((*MockISyncJobService)(nil).SetOnJobDone), fn)
+}
+
+// UpdateSyncJob mocks base method.
+func (m *MockISyncJobService) UpdateSyncJob(ctx context.Context, param *syncjob.SyncJob) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSyncJob", ctx, param)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateSyncJob indicates an expected call of UpdateSyncJob.
+func (mr *MockISyncJobServiceMockRecorder) UpdateSyncJob(ctx, param any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSyncJob", reflect.TypeOf((*MockISyncJobService)(nil).UpdateSyncJob), ctx, param)
+}
+
+// MockMetadataSyncer is a mock of MetadataSyncer interface.
+type MockMetadataSyncer struct {
+	ctrl     *gomock.Controller
+	recorder *MockMetadataSyncerMockRecorder
+	isgomock struct{}
+}
+
+// MockMetadataSyncerMockRecorder is the mock recorder for MockMetadataSyncer.
+type MockMetadataSyncerMockRecorder struct {
+	mock *MockMetadataSyncer
+}
+
+// NewMockMetadataSyncer creates a new mock instance.
+func NewMockMetadataSyncer(ctrl *gomock.Controller) *MockMetadataSyncer {
+	mock := &MockMetadataSyncer{ctrl: ctrl}
+	mock.recorder = &MockMetadataSyncerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockMetadataSyncer) EXPECT() *MockMetadataSyncerMockRecorder {
+	return m.recorder
+}
+
+// SyncMetadata mocks base method.
+func (m *MockMetadataSyncer) SyncMetadata(ctx context.Context, project, name string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SyncMetadata", ctx, project, name)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SyncMetadata indicates an expected call of SyncMetadata.
+func (mr *MockMetadataSyncerMockRecorder) SyncMetadata(ctx, project, name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncMetadata", reflect.TypeOf((*MockMetadataSyncer)(nil).SyncMetadata), ctx, project, name)
+}
+
+// MockLogStore is a mock of LogStore interface.
+type MockLogStore struct {
+	ctrl     *gomock.Controller
+	recorder *MockLogStoreMockRecorder
+	isgomock struct{}
+}
+
+// MockLogStoreMockRecorder is the mock recorder for MockLogStore.
+type MockLogStoreMockRecorder struct {
+	mock *MockLogStore
+}
+
+// NewMockLogStore creates a new mock instance.
+func NewMockLogStore(ctrl *gomock.Controller) *MockLogStore {
+	mock := &MockLogStore{ctrl: ctrl}
+	mock.recorder = &MockLogStoreMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockLogStore) EXPECT() *MockLogStoreMockRecorder {
+	return m.recorder
+}
+
+// Reader mocks base method.
+func (m *MockLogStore) Reader(jobID int) (io.ReadCloser, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Reader", jobID)
+	ret0, _ := ret[0].(io.ReadCloser)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Reader indicates an expected call of Reader.
+func (mr *MockLogStoreMockRecorder) Reader(jobID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reader", reflect.TypeOf((*MockLogStore)(nil).Reader), jobID)
+}
+
+// Writer mocks base method.
+func (m *MockLogStore) Writer(jobID int) (io.WriteCloser, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Writer", jobID)
+	ret0, _ := ret[0].(io.WriteCloser)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Writer indicates an expected call of Writer.
+func (mr *MockLogStoreMockRecorder) Writer(jobID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Writer", reflect.TypeOf((*MockLogStore)(nil).Writer), jobID)
+}
