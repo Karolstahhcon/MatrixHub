@@ -23,3 +23,29 @@ export function DeleteProjectModal({
   const mutation = useMutation(deleteProjectMutationOptions())
 
   const handleConfirm = () => {
+    if (!project?.name) {
+      return
+    }
+    mutation.mutate(project.name, {
+      onSuccess: () => onClose(),
+    })
+  }
+
+  return (
+    <ModalWrapper
+      type="danger"
+      opened={opened}
+      onClose={onClose}
+      title={t('projects.deleteModal.title')}
+      closeOnClickOutside={false}
+      confirmLoading={mutation.isPending}
+      onConfirm={handleConfirm}
+    >
+      <Text size="sm">
+        {t('projects.deleteModal.message', {
+          name: project?.name ?? '',
+        })}
+      </Text>
+    </ModalWrapper>
+  )
+}
