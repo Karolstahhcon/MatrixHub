@@ -65,3 +65,37 @@ export function HotModelList() {
         )}
       </Group>
 
+      <Box>
+        {isLoadingError
+          ? (
+              <Alert color="red" title={t('model.list.loadFailed')}>
+                <Button
+                  mt="sm"
+                  size="xs"
+                  variant="light"
+                  onClick={() => void refetch()}
+                >
+                  {t('model.list.retry')}
+                </Button>
+              </Alert>
+            )
+          : (
+              <ResourceCardGrid
+                loading={isLoading || isPending}
+                skeletonCount={4}
+                emptyTitle={t('model.list.noRecommended')}
+              >
+                {cardElements.slice(0, 4)}
+              </ResourceCardGrid>
+            )}
+        <Collapse in={opened}>
+          <Box pt="lg">
+            <ResourceCardGrid>
+              {cardElements.slice(4)}
+            </ResourceCardGrid>
+          </Box>
+        </Collapse>
+      </Box>
+    </Box>
+  )
+}
