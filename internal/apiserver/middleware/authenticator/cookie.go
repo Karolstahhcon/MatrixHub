@@ -31,3 +31,70 @@ type CookieAuthenticator struct {
 	userRepo    user.IUserRepo
 	cookieName  string
 }
+
+func NewCookieAuthenticator(sessionRepo user.ISessionRepo, userRepo user.IUserRepo) *CookieAuthenticator {
+	return &CookieAuthenticator{sessionRepo: sessionRepo, userRepo: userRepo, cookieName: user.CookieName}
+}
+
+// Authenticate extract cookie from context or from http.Request
+func (a *CookieAuthenticator) Authenticate(ctx context.Context, r *http.Request) (auth.Identity, bool, bool, error) {
+	token := utils.GetCookieFromContext(ctx)
+	return a.AuthenticateToken(ctx, "", token)
+}
+
+func (a *CookieAuthenticator) Renew(ctx context.Context) error {
+	ctx, err := a.sessionRepo.LoadSession(ctx)
+	if err != nil {
+		return err
+	}
+	manager := a.sessionRepo.Manager()
+	if manager.Exists(ctx, user.UserIdCtxKey) {
+		manager.Put(ctx, user.LastActiveCtxKey, time.Now().Unix())
+	}
+
+	return a.sessionRepo.CommitAndWriteSessionCookie(ctx)
+}
+
+func (a *CookieAuthenticator) AuthenticateToken(ctx context.Context, _, token string) (auth.Identity, bool, bool, error) {
+	manager := a.sessionRepo.Manager()
+	ctx, err := manager.Load(ctx, token)
+	if err != nil || token == "" {
+		return nil, true, false, nil
+	}
+
+	if !manager.Exists(ctx, user.UserIdCtxKey) {
+		return nil, false, false, nil
+	}
+
+	config := a.sessionRepo.GetSessionConfig()
+	lastActive := manager.GetInt64(ctx, user.LastActiveCtxKey)
+	if lastActive == 0 {
+		return nil, false, false, nil
+	}
+	rememberMe := manager.GetBool(ctx, user.RememberMeCtxKey)
+	idleTimeout := config.NonPersistentIdleTimeout
+	if rememberMe {
+		idleTimeout = config.PersistentSessionIdleTimeout
+	}
+	if time.Since(time.Unix(lastActive, 0)) > idleTimeout {
+		_ = manager.Destroy(ctx)
+		return nil, false, false, nil
+	}
+
+	// check session version
+	userId := manager.GetInt(ctx, user.UserIdCtxKey)
+	u, err := a.userRepo.GetUser(ctx, userId)
+	if err != nil {
+		return nil, false, false, err
+	}
+	sessionVersion := manager.GetInt(ctx, user.SessionVersionKey)
+	if sessionVersion != u.SessionVersion {
+		_ = manager.Destroy(ctx)
+		return nil, false, false, nil
+	}
+
+	return user.NewUserIdentity(
+		userId,
+		manager.GetString(ctx, user.UsernameCtxKey),
+	), false, true, nil
+}
