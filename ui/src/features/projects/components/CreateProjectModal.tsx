@@ -147,3 +147,152 @@ export function CreateProjectModal({
 
   return (
     <ModalWrapper
+      opened={opened}
+      onClose={onClose}
+      closeOnClickOutside={false}
+      title={t('projects.createModal.title')}
+      confirmLoading={mutation.isPending}
+      onConfirm={handleSubmit}
+    >
+      <form.Field
+        name="name"
+        validators={{
+          onChange: projectNameSchema,
+        }}
+      >
+        {field => (
+          <TextInput
+            required
+            label={t('projects.createModal.nameLabel')}
+            value={field.state.value}
+            onChange={e => field.handleChange(e.currentTarget.value)}
+            onBlur={field.handleBlur}
+            error={fieldError(field)}
+          />
+        )}
+      </form.Field>
+
+      <Input.Wrapper
+        label={<ProjectTypeHintLabel label={t('projects.createModal.typeLabel')} />}
+      >
+        <form.Field name="isPublic">
+          {field => (
+            <Checkbox
+              mt={4}
+              label={t('projects.createModal.public')}
+              checked={field.state.value}
+              onChange={e => field.handleChange(e.currentTarget.checked)}
+            />
+          )}
+        </form.Field>
+      </Input.Wrapper>
+
+      {
+        currentUser?.isAdmin && (
+          <Input.Wrapper
+            label={(
+              <FieldHintLabel
+                label={t('projects.createModal.proxyLabel')}
+                hint={t('projects.createModal.proxyHint')}
+              />
+            )}
+          >
+            <Group justify="space-between" align="center" wrap="nowrap" mt={4}>
+              <form.Field name="enabledProxy">
+                {field => (
+                  <Switch
+                    label={field.state.value
+                      ? t('projects.createModal.proxyEnabled')
+                      : t('projects.createModal.proxyDisabled')}
+                    checked={field.state.value}
+                    onChange={(e) => {
+                      field.handleChange(e.currentTarget.checked)
+                      if (!e.currentTarget.checked) {
+                        form.deleteField('organization')
+                        form.deleteField('registryId')
+                      }
+                    }}
+                  />
+                )}
+              </form.Field>
+              <form.Subscribe selector={s => s.values.enabledProxy}>
+                {enabledProxy => enabledProxy && !showEmptyRegistryHint && (
+                  <Group gap="xs" align="center" wrap="nowrap">
+                    {showCreateRegistryShortcut && (
+                      <RegistryCreateLink size="sm">
+                        <IconPlus size={14} />
+                        {t('projects.createModal.createRegistry')}
+                      </RegistryCreateLink>
+                    )}
+                    {refreshRegistriesButton}
+                  </Group>
+                )}
+              </form.Subscribe>
+            </Group>
+            <form.Subscribe selector={s => s.values.enabledProxy}>
+              {enabledProxy => enabledProxy && (
+                <Stack gap="xs" mt="xs">
+                  {showEmptyRegistryHint && (
+                    <Group gap={4} align="center" wrap="nowrap">
+                      <IconInfoCircle
+                        size={16}
+                        color="var(--mantine-primary-color-filled)"
+                      />
+                      <Text size="sm" c="dimmed">
+                        <Trans
+                          i18nKey="projects.createModal.emptyRegistryHint"
+                          components={[registryLink]}
+                        />
+                      </Text>
+                      {refreshRegistriesButton}
+                    </Group>
+                  )}
+
+                  <Group gap="xs" align="flex-start" wrap="nowrap">
+                    <form.Field
+                      name="registryId"
+                      validators={{
+                        onChange: registryIdSchema,
+                      }}
+                    >
+                      {field => (
+                        <Select
+                          flex={1}
+                          data={registryOptions}
+                          placeholder={t('projects.createModal.registryPlaceholder')}
+                          nothingFoundMessage={t('projects.createModal.registryEmptyOption')}
+                          value={field.state.value != null ? String(field.state.value) : null}
+                          onChange={val => field.handleChange(Number(val))}
+                          onBlur={field.handleBlur}
+                          error={fieldError(field)}
+                        />
+                      )}
+                    </form.Field>
+
+                    <form.Field
+                      name="organization"
+                      validators={{
+                        onChange: organizationSchema,
+                      }}
+                    >
+                      {field => (
+                        <TextInput
+                          flex={1}
+                          placeholder={t('projects.createModal.organizationPlaceholder')}
+                          value={field.state.value ?? ''}
+                          onChange={e => field.handleChange(e.currentTarget.value)}
+                          error={fieldError(field)}
+                        />
+                      )}
+                    </form.Field>
+                  </Group>
+                </Stack>
+              )}
+            </form.Subscribe>
+          </Input.Wrapper>
+        )
+      }
+
+    </ModalWrapper>
+  )
+}
