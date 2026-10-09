@@ -8,3 +8,13 @@ export const Route = createFileRoute(
   component: RouteComponent,
 })
 
+function RouteComponent() {
+  const { t } = useTranslation()
+
+  return (
+    <Box p="md">
+      <Title order={3}>{t('datasets.new', 'Create New Dataset')}</Title>
+      {/* TODO: Add dataset creation form */}
+    </Box>
+  )
+}

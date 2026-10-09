@@ -69,3 +69,75 @@ function ProjectCard({
           <Group
             gap={8}
             wrap="nowrap"
+            miw={0}
+          >
+            <Text component="span" c="dimmed" size="sm" lh={1} flex="0 0 auto">
+              {t('projects.modelCount')}
+            </Text>
+            <Text component="span" fw={600} size="sm" lh={1} truncate>
+              {option.modelCount}
+            </Text>
+          </Group>
+          <Group
+            gap={8}
+            wrap="nowrap"
+            miw={0}
+          >
+            <Text component="span" c="dimmed" size="sm" lh={1} flex="0 0 auto">
+              {t('projects.datasetCount')}
+            </Text>
+            <Text component="span" fw={600} size="sm" lh={1} truncate>
+              {option.datasetCount}
+            </Text>
+          </Group>
+        </Group>
+      </Paper>
+    </UnstyledButton>
+  )
+}
+
+interface ProjectFilterPanelProps {
+  options: Project[]
+  loading: boolean
+  searchPlaceholder?: string
+  selectedNames: string[]
+  onSelect: (name: string) => void
+}
+
+export function ProjectFilterPanel({
+  options,
+  loading,
+  searchPlaceholder = '',
+  selectedNames,
+  onSelect,
+}: ProjectFilterPanelProps) {
+  return (
+    <BaseFilterPanel
+      loading={loading}
+      searchPlaceholder={searchPlaceholder}
+    >
+      {({ keyword }) => {
+        const filteredOptions = filterByKeyword(options, keyword)
+
+        if (!filteredOptions.length) {
+          return null
+        }
+
+        return (
+          <Stack gap="md">
+            {
+              filteredOptions.map(option => (
+                <ProjectCard
+                  key={option.name}
+                  option={option}
+                  selected={selectedNames.includes(option.name as string)}
+                  onSelect={onSelect}
+                />
+              ))
+            }
+          </Stack>
+        )
+      }}
+    </BaseFilterPanel>
+  )
+}
