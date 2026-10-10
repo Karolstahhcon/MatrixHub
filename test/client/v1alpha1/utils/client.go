@@ -351,3 +351,121 @@ func setBody(body interface{}, contentType string) (bodyBuf *bytes.Buffer, err e
 
 	if reader, ok := body.(io.Reader); ok {
 		_, err = bodyBuf.ReadFrom(reader)
+	} else if b, ok := body.([]byte); ok {
+		_, err = bodyBuf.Write(b)
+	} else if s, ok := body.(string); ok {
+		_, err = bodyBuf.WriteString(s)
+	} else if s, ok := body.(*string); ok {
+		_, err = bodyBuf.WriteString(*s)
+	} else if jsonCheck.MatchString(contentType) {
+		err = json.NewEncoder(bodyBuf).Encode(body)
+	} else if xmlCheck.MatchString(contentType) {
+		xml.NewEncoder(bodyBuf).Encode(body)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	if bodyBuf.Len() == 0 {
+		err = fmt.Errorf("Invalid body type %s\n", contentType)
+		return nil, err
+	}
+	return bodyBuf, nil
+}
+
+// detectContentType method is used to figure out `Request.Body` content type for request header
+func detectContentType(body interface{}) string {
+	contentType := "text/plain; charset=utf-8"
+	kind := reflect.TypeOf(body).Kind()
+
+	switch kind {
+	case reflect.Struct, reflect.Map, reflect.Ptr:
+		contentType = "application/json; charset=utf-8"
+	case reflect.String:
+		contentType = "text/plain; charset=utf-8"
+	default:
+		if b, ok := body.([]byte); ok {
+			contentType = http.DetectContentType(b)
+		} else if kind == reflect.Slice {
+			contentType = "application/json; charset=utf-8"
+		}
+	}
+
+	return contentType
+}
+
+// Ripped from https://github.com/gregjones/httpcache/blob/master/httpcache.go
+type cacheControl map[string]string
+
+func parseCacheControl(headers http.Header) cacheControl {
+	cc := cacheControl{}
+	ccHeader := headers.Get("Cache-Control")
+	for _, part := range strings.Split(ccHeader, ",") {
+		part = strings.Trim(part, " ")
+		if part == "" {
+			continue
+		}
+		if strings.ContainsRune(part, '=') {
+			keyval := strings.Split(part, "=")
+			cc[strings.Trim(keyval[0], " ")] = strings.Trim(keyval[1], ",")
+		} else {
+			cc[part] = ""
+		}
+	}
+	return cc
+}
+
+// CacheExpires helper function to determine remaining time before repeating a request.
+func CacheExpires(r *http.Response) time.Time {
+	// Figure out when the cache expires.
+	var expires time.Time
+	now, err := time.Parse(time.RFC1123, r.Header.Get("date"))
+	if err != nil {
+		return time.Now()
+	}
+	respCacheControl := parseCacheControl(r.Header)
+
+	if maxAge, ok := respCacheControl["max-age"]; ok {
+		lifetime, err := time.ParseDuration(maxAge + "s")
+		if err != nil {
+			expires = now
+		}
+		expires = now.Add(lifetime)
+	} else {
+		expiresHeader := r.Header.Get("Expires")
+		if expiresHeader != "" {
+			expires, err = time.Parse(time.RFC1123, expiresHeader)
+			if err != nil {
+				expires = now
+			}
+		}
+	}
+	return expires
+}
+
+func strlen(s string) int {
+	return utf8.RuneCountInString(s)
+}
+
+// GenericSwaggerError Provides access to the body, error and model on returned errors.
+type GenericSwaggerError struct {
+	body  []byte
+	error string
+	model interface{}
+}
+
+// Error returns non-empty string if there was an error.
+func (e GenericSwaggerError) Error() string {
+	return e.error
+}
+
+// Body returns the raw bytes of the response
+func (e GenericSwaggerError) Body() []byte {
+	return e.body
+}
+
+// Model returns the unpacked model of the error
+func (e GenericSwaggerError) Model() interface{} {
+	return e.model
+}
