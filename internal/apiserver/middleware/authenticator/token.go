@@ -46,3 +46,51 @@ func (a *TokenAuthenticator) AuthenticateToken(ctx context.Context, _, token str
 		return nil, true, false, nil
 	}
 	ak, err := a.tokenRepo.GetByTokenHash(ctx, utils.Sha256Hex(token))
+	if err != nil {
+		return nil, false, false, err
+	}
+	if ak == nil || !ak.IsValid(time.Now()) {
+		return nil, false, false, nil
+	}
+	u, err := a.userRepo.GetUser(ctx, ak.UserId)
+	if err != nil {
+		return nil, false, false, err
+	}
+
+	return user.NewUserIdentity(ak.UserId, u.Username), false, true, nil
+}
+
+func parseBearerToken(r *http.Request) (token string) {
+	auth := strings.TrimSpace(r.Header.Get("Authorization"))
+	if auth == "" {
+		return
+	}
+	parts := strings.SplitN(auth, " ", 2)
+	if len(parts) != 2 || !strings.EqualFold(parts[0], "bearer") {
+		return
+	}
+	token = strings.TrimSpace(parts[1])
+	return
+}
+
+// extractTokenCredential extracts a token from the request.
+func extractTokenCredential(ctx context.Context, r *http.Request) (token string) {
+	var err error
+	token, err = utils.ParseBearerTokenFromGRPCContext(ctx)
+	if err == nil && token != "" {
+		return token
+	}
+	if r == nil {
+		return
+	}
+	token = parseBearerToken(r)
+	if token != "" {
+		return
+	}
+
+	_, password, ok := r.BasicAuth()
+	if !ok {
+		return
+	}
+	return password
+}
