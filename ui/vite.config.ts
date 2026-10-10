@@ -16,3 +16,41 @@ export default defineConfig(({ mode }) => {
     resolve: {
       dedupe: [
         'react',
+        'react-dom',
+        '@mantine/core',
+        '@mantine/hooks',
+        '@mantine/dates',
+        'dayjs',
+      ],
+    },
+    optimizeDeps: {
+      include: ['mantine-react-table'],
+    },
+    plugins: [
+      // Please make sure that '@tanstack/router-plugin' is passed before '@vitejs/plugin-react'
+      tanstackRouter({
+        target: 'react',
+        autoCodeSplitting: true,
+      }),
+      react({
+        babel: {
+          plugins: [['babel-plugin-react-compiler']],
+        },
+      }),
+      tsconfigPaths(),
+      svgr(),
+    ],
+    server: {
+      proxy: {
+        '/api': {
+          target: env.VITE_APP_API_URL,
+        },
+        '/_assets_proxy_': {
+          target: env.VITE_APP_API_URL,
+          changeOrigin: true,
+          rewrite: path => path.replace(/^\/_assets_proxy_\//, ''),
+        },
+      },
+    },
+  }
+})
