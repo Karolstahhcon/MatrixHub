@@ -169,3 +169,46 @@ async function runWithConcurrency(tasks, concurrency) {
   )
 
   await Promise.all(workers)
+
+  return results
+}
+
+async function main() {
+  const args = parseArgs(process.argv.slice(2))
+  const items = resolveItems(args)
+  const outputDir = path.resolve(args.dir)
+
+  await mkdir(outputDir, { recursive: true })
+
+  const tasks = items.map(item => () => downloadOne({
+    name: item.name,
+    outputDir,
+    url: item.url,
+  }))
+
+  const results = await runWithConcurrency(tasks, args.concurrency)
+
+  let hasError = false
+
+  for (const [i, result] of results.entries()) {
+    if (result.status === 'fulfilled') {
+      process.stdout.write(`OK  ${result.value}\n`)
+    }
+    else {
+      const message = result.reason instanceof Error
+        ? result.reason.message
+        : String(result.reason)
+      process.stderr.write(`ERR ${items[i].name}: ${message}\n`)
+      hasError = true
+    }
+  }
+
+  if (hasError) {
+    process.exit(1)
+  }
+}
+
+main().catch((error) => {
+  process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`)
+  process.exit(1)
+})

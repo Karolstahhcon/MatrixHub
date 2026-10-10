@@ -19,3 +19,25 @@ export const useProjectRoleOptions = () => {
     {
       value: ProjectRoleType.ROLE_TYPE_PROJECT_VIEWER,
       label: t('projects.detail.membersPage.role.viewer'),
+    },
+  ]
+}
+
+export const useProjectRoleDescription = () => {
+  const { t } = useTranslation()
+
+  return (
+    <Trans
+      i18nKey="projects.detail.membersPage.roleDescription.hint"
+      components={[
+        <Anchor
+          key="doc"
+          href={t('common.docs', { doc: PROJECT_MEMBERS_DOC_URL })}
+          target="_blank"
+          rel="noopener noreferrer"
+          inherit
+        />,
+      ]}
+    />
+  )
+}
