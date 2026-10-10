@@ -173,3 +173,178 @@ func TestPresetDBSkipsNonEmptyInstance(t *testing.T) {
 			if table == "registries" {
 				require.NoError(t, database.Create(&registry.Registry{Name: "existing"}).Error)
 				registries = 1
+			} else {
+				require.NoError(t, database.Create(&project.Project{Name: "existing"}).Error)
+				projects = 1
+			}
+			applied, err := NewPresetDB(database).SeedIfEmpty(context.Background(), preset.DefaultManifest())
+			require.NoError(t, err)
+			require.False(t, applied)
+			requirePresetCounts(t, database, registries, projects, 0, 0)
+		})
+	}
+}
+
+func TestPresetDBRollsBackPrimaryKeyConflict(t *testing.T) {
+	database, _ := newSQLiteRepositoryTestDatabase(t)
+	manifest := preset.DefaultManifest()
+	manifest.Registries[1].ID = manifest.Registries[0].ID
+	applied, err := NewPresetDB(database).SeedIfEmpty(context.Background(), manifest)
+	require.NoError(t, err)
+	require.False(t, applied)
+	requirePresetCounts(t, database, 0, 0, 0, 0)
+}
+
+func TestPresetDBRollsBackOtherInsertErrors(t *testing.T) {
+	for _, table := range []string{"registries", "projects", "members_roles_projects", "models", "labels", "models_labels"} {
+		t.Run(table, func(t *testing.T) {
+			database, _ := newSQLiteRepositoryTestDatabase(t)
+			require.NoError(t, database.Exec("CREATE TRIGGER fail_preset_insert BEFORE INSERT ON "+table+
+				" BEGIN SELECT RAISE(ABORT, 'injected insert failure'); END").Error)
+			applied, err := NewPresetDB(database).SeedIfEmpty(context.Background(), preset.DefaultManifest())
+			require.ErrorContains(t, err, "injected insert failure")
+			require.False(t, applied)
+			requirePresetCounts(t, database, 0, 0, 0, 0)
+			for _, labelTable := range []string{"labels", "models_labels"} {
+				var count int64
+				require.NoError(t, database.Table(labelTable).Count(&count).Error)
+				require.Zero(t, count, labelTable)
+			}
+		})
+	}
+}
+
+func TestPresetDBSeedsWithoutAdmin(t *testing.T) {
+	database, _ := newSQLiteRepositoryTestDatabase(t)
+	require.NoError(t, database.Exec("DELETE FROM members_roles_projects").Error)
+	require.NoError(t, database.Exec("DELETE FROM users WHERE username = ?", "admin").Error)
+	applied, err := NewPresetDB(database).SeedIfEmpty(context.Background(), preset.DefaultManifest())
+	require.NoError(t, err)
+	require.True(t, applied)
+	requirePresetCounts(t, database, 3, 4, 0, 13)
+}
+
+func TestPresetDBPreservesRegistrySequence(t *testing.T) {
+	for _, initialID := range []int{0, 100} {
+		t.Run(strconv.Itoa(initialID), func(t *testing.T) {
+			database, _ := newSQLiteRepositoryTestDatabase(t)
+			ctx := context.Background()
+			if initialID > 0 {
+				reg := &registry.Registry{ID: initialID, Name: "deleted"}
+				require.NoError(t, database.Create(reg).Error)
+				require.NoError(t, database.Delete(reg).Error)
+			}
+			applied, err := NewPresetDB(database).SeedIfEmpty(ctx, preset.DefaultManifest())
+			require.NoError(t, err)
+			require.True(t, applied)
+			next, err := NewRegistryRepo(database).CreateRegistry(ctx, registry.Registry{Name: "next"})
+			require.NoError(t, err)
+			require.Equal(t, max(3, initialID)+1, next.ID)
+		})
+	}
+}
+
+func TestPresetDBSeedIfEmptyRollsBackOnLookupAndManifestErrors(t *testing.T) {
+	dbErr := errors.New("database unavailable")
+	countRows := func(count int) *sqlmock.Rows {
+		return sqlmock.NewRows([]string{"count(*)"}).AddRow(count)
+	}
+	expectEmptyInstance := func(mock sqlmock.Sqlmock) {
+		mock.ExpectQuery(exactSQL("SELECT count(*) FROM `registries`")).WillReturnRows(countRows(0))
+		mock.ExpectQuery(exactSQL("SELECT count(*) FROM `projects`")).WillReturnRows(countRows(0))
+	}
+	expectAdminLookup := func(mock sqlmock.Sqlmock) *sqlmock.ExpectedQuery {
+		return mock.ExpectQuery(exactSQL("SELECT * FROM `users` WHERE username = ? LIMIT ?")).WithArgs("admin", 1)
+	}
+
+	for _, test := range []struct {
+		name     string
+		manifest *preset.Manifest
+		expect   func(sqlmock.Sqlmock)
+		wantErr  error
+		wantMsg  string
+	}{
+		{
+			name:     "registry count error",
+			manifest: &preset.Manifest{},
+			expect: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(exactSQL("SELECT count(*) FROM `registries`")).WillReturnError(dbErr)
+			},
+			wantErr: dbErr,
+		},
+		{
+			name:     "project count error",
+			manifest: &preset.Manifest{},
+			expect: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(exactSQL("SELECT count(*) FROM `registries`")).WillReturnRows(countRows(0))
+				mock.ExpectQuery(exactSQL("SELECT count(*) FROM `projects`")).WillReturnError(dbErr)
+			},
+			wantErr: dbErr,
+		},
+		{
+			name:     "administrator lookup error",
+			manifest: &preset.Manifest{},
+			expect: func(mock sqlmock.Sqlmock) {
+				expectEmptyInstance(mock)
+				expectAdminLookup(mock).WillReturnError(dbErr)
+			},
+			wantErr: dbErr,
+			wantMsg: "find preset project administrator",
+		},
+		{
+			name: "project references an unknown registry",
+			manifest: &preset.Manifest{
+				Projects: []preset.ProjectSpec{{Name: "proj", Registry: "missing"}},
+			},
+			expect: func(mock sqlmock.Sqlmock) {
+				expectEmptyInstance(mock)
+				expectAdminLookup(mock).WillReturnRows(sqlmock.NewRows([]string{"id"}))
+			},
+			wantMsg: "preset project proj references unknown registry missing",
+		},
+		{
+			name: "model references an unknown project",
+			manifest: &preset.Manifest{
+				Models: []preset.ModelSpec{{Project: "missing", Name: "model"}},
+			},
+			expect: func(mock sqlmock.Sqlmock) {
+				expectEmptyInstance(mock)
+				expectAdminLookup(mock).WillReturnRows(sqlmock.NewRows([]string{"id"}))
+			},
+			wantMsg: "preset model model references unknown project missing",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			db, mock := newMockGormDB(t)
+			mock.ExpectBegin()
+			test.expect(mock)
+			mock.ExpectRollback()
+
+			applied, err := NewPresetDB(db).SeedIfEmpty(context.Background(), test.manifest)
+
+			if test.wantErr != nil {
+				require.ErrorIs(t, err, test.wantErr)
+			}
+			if test.wantMsg != "" {
+				require.ErrorContains(t, err, test.wantMsg)
+			}
+			require.False(t, applied)
+			require.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func requirePresetCounts(t *testing.T, database *gorm.DB, registries, projects, memberships, models int64) {
+	t.Helper()
+	for table, want := range map[string]int64{
+		"registries": registries, "projects": projects, "members_roles_projects": memberships, "models": models,
+	} {
+		var count int64
+		query := database.Table(table)
+		if table == "members_roles_projects" {
+			query = query.Where("project_id IS NOT NULL")
+		}
+		require.NoError(t, query.Count(&count).Error)
+		require.Equal(t, want, count, table)
+	}
+}
