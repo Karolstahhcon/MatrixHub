@@ -47,3 +47,52 @@ export function isSdkPermissionDenied(error: unknown): boolean {
 export function isSdkNotFound(error: unknown): boolean {
   return (error as Record<string, unknown>)?.code === 5
 }
+
+// code 16 = Unauthenticated; http code = 401
+export function isSdkUnauthenticated(error: unknown): boolean {
+  return (error as Record<string, unknown>)?.code === 16
+}
+
+// ─── Access guard ─────────────────────────────────────────────────────────────
+
+interface EnsureProjectAccessOptions {
+  allowPublicRead?: boolean
+  allowedRoles?: readonly ProjectRoleType[]
+}
+
+export async function ensureProjectAccess(
+  projectId: string,
+  options?: EnsureProjectAccessOptions,
+) {
+  const {
+    allowPublicRead = false,
+    allowedRoles,
+  } = options ?? {}
+
+  const [currentUser, projectRoles] = await Promise.all([
+    queryClient.ensureQueryData(currentUserQueryOptions()),
+    queryClient.ensureQueryData(projectRolesQueryOptions()),
+  ])
+
+  if (currentUser.isAdmin) {
+    return
+  }
+
+  const role = projectRoles.projectRoles?.[projectId]
+
+  if (!role) {
+    await queryClient.ensureQueryData(projectDetailQueryOptions(projectId))
+
+    // Public projects
+    if (allowPublicRead) {
+      return
+    }
+
+    // 403
+    throw forbiddenError()
+  }
+
+  if (allowedRoles && !allowedRoles.includes(role)) {
+    throw forbiddenError()
+  }
+}
