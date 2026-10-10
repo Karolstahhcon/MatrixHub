@@ -448,3 +448,154 @@ func (x *StorageStats) String() string {
 }
 
 func (*StorageStats) ProtoMessage() {}
+
+func (x *StorageStats) ProtoReflect() protoreflect.Message {
+	mi := &file_v1alpha1_cleanup_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StorageStats.ProtoReflect.Descriptor instead.
+func (*StorageStats) Descriptor() ([]byte, []int) {
+	return file_v1alpha1_cleanup_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *StorageStats) GetTotalSizeBytes() int64 {
+	if x != nil {
+		return x.TotalSizeBytes
+	}
+	return 0
+}
+
+func (x *StorageStats) GetRepositoriesSizeBytes() int64 {
+	if x != nil {
+		return x.RepositoriesSizeBytes
+	}
+	return 0
+}
+
+func (x *StorageStats) GetLfsSizeBytes() int64 {
+	if x != nil {
+		return x.LfsSizeBytes
+	}
+	return 0
+}
+
+func (x *StorageStats) GetOrphanedSizeBytes() int64 {
+	if x != nil {
+		return x.OrphanedSizeBytes
+	}
+	return 0
+}
+
+var File_v1alpha1_cleanup_proto protoreflect.FileDescriptor
+
+const file_v1alpha1_cleanup_proto_rawDesc = "" +
+	"\n" +
+	"\x16v1alpha1/cleanup.proto\x12\x12matrixhub.v1alpha1\x1a\x1cgoogle/api/annotations.proto\"\x7f\n" +
+	"\x15PreviewCleanupRequest\x124\n" +
+	"\x16include_orphaned_repos\x18\x01 \x01(\bR\x14includeOrphanedRepos\x120\n" +
+	"\x14include_orphaned_lfs\x18\x02 \x01(\bR\x12includeOrphanedLfs\"\xe4\x01\n" +
+	"\x0eCleanupPreview\x12G\n" +
+	"\x0eorphaned_repos\x18\x01 \x03(\v2 .matrixhub.v1alpha1.OrphanedRepoR\rorphanedRepos\x12Q\n" +
+	"\x14orphaned_lfs_objects\x18\x02 \x03(\v2\x1f.matrixhub.v1alpha1.OrphanedLFSR\x12orphanedLfsObjects\x126\n" +
+	"\x17total_reclaimable_bytes\x18\x03 \x01(\x03R\x15totalReclaimableBytes\"\x9d\x01\n" +
+	"\fOrphanedRepo\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
+	"\x04type\x18\x02 \x01(\tR\x04type\x12!\n" +
+	"\fproject_name\x18\x03 \x01(\tR\vprojectName\x12#\n" +
+	"\rresource_name\x18\x04 \x01(\tR\fresourceName\x12\x1d\n" +
+	"\n" +
+	"size_bytes\x18\x05 \x01(\x03R\tsizeBytes\">\n" +
+	"\vOrphanedLFS\x12\x10\n" +
+	"\x03oid\x18\x01 \x01(\tR\x03oid\x12\x1d\n" +
+	"\n" +
+	"size_bytes\x18\x02 \x01(\x03R\tsizeBytes\"\x90\x01\n" +
+	"\x15ExecuteCleanupRequest\x120\n" +
+	"\x14clean_orphaned_repos\x18\x01 \x01(\bR\x12cleanOrphanedRepos\x12,\n" +
+	"\x12clean_orphaned_lfs\x18\x02 \x01(\bR\x10cleanOrphanedLfs\x12\x17\n" +
+	"\adry_run\x18\x03 \x01(\bR\x06dryRun\"\xb0\x01\n" +
+	"\rCleanupResult\x12#\n" +
+	"\rrepos_deleted\x18\x01 \x01(\x05R\freposDeleted\x12.\n" +
+	"\x13lfs_objects_deleted\x18\x02 \x01(\x05R\x11lfsObjectsDeleted\x122\n" +
+	"\x15space_reclaimed_bytes\x18\x03 \x01(\x03R\x13spaceReclaimedBytes\x12\x16\n" +
+	"\x06errors\x18\x04 \x03(\tR\x06errors\"\x18\n" +
+	"\x16GetStorageStatsRequest\"\xc6\x01\n" +
+	"\fStorageStats\x12(\n" +
+	"\x10total_size_bytes\x18\x01 \x01(\x03R\x0etotalSizeBytes\x126\n" +
+	"\x17repositories_size_bytes\x18\x02 \x01(\x03R\x15repositoriesSizeBytes\x12$\n" +
+	"\x0elfs_size_bytes\x18\x03 \x01(\x03R\flfsSizeBytes\x12.\n" +
+	"\x13orphaned_size_bytes\x18\x04 \x01(\x03R\x11orphanedSizeBytes2\xa7\x03\n" +
+	"\aCleanup\x12\x89\x01\n" +
+	"\x0ePreviewCleanup\x12).matrixhub.v1alpha1.PreviewCleanupRequest\x1a\".matrixhub.v1alpha1.CleanupPreview\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/api/v1alpha1/cleanup/preview\x12\x88\x01\n" +
+	"\x0eExecuteCleanup\x12).matrixhub.v1alpha1.ExecuteCleanupRequest\x1a!.matrixhub.v1alpha1.CleanupResult\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/api/v1alpha1/cleanup/execute\x12\x84\x01\n" +
+	"\x0fGetStorageStats\x12*.matrixhub.v1alpha1.GetStorageStatsRequest\x1a .matrixhub.v1alpha1.StorageStats\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/api/v1alpha1/cleanup/statsB<Z:github.com/matrixhub-ai/matrixhub/api/go/v1alpha1;v1alpha1b\x06proto3"
+
+var (
+	file_v1alpha1_cleanup_proto_rawDescOnce sync.Once
+	file_v1alpha1_cleanup_proto_rawDescData []byte
+)
+
+func file_v1alpha1_cleanup_proto_rawDescGZIP() []byte {
+	file_v1alpha1_cleanup_proto_rawDescOnce.Do(func() {
+		file_v1alpha1_cleanup_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_v1alpha1_cleanup_proto_rawDesc), len(file_v1alpha1_cleanup_proto_rawDesc)))
+	})
+	return file_v1alpha1_cleanup_proto_rawDescData
+}
+
+var file_v1alpha1_cleanup_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_v1alpha1_cleanup_proto_goTypes = []any{
+	(*PreviewCleanupRequest)(nil),  // 0: matrixhub.v1alpha1.PreviewCleanupRequest
+	(*CleanupPreview)(nil),         // 1: matrixhub.v1alpha1.CleanupPreview
+	(*OrphanedRepo)(nil),           // 2: matrixhub.v1alpha1.OrphanedRepo
+	(*OrphanedLFS)(nil),            // 3: matrixhub.v1alpha1.OrphanedLFS
+	(*ExecuteCleanupRequest)(nil),  // 4: matrixhub.v1alpha1.ExecuteCleanupRequest
+	(*CleanupResult)(nil),          // 5: matrixhub.v1alpha1.CleanupResult
+	(*GetStorageStatsRequest)(nil), // 6: matrixhub.v1alpha1.GetStorageStatsRequest
+	(*StorageStats)(nil),           // 7: matrixhub.v1alpha1.StorageStats
+}
+var file_v1alpha1_cleanup_proto_depIdxs = []int32{
+	2, // 0: matrixhub.v1alpha1.CleanupPreview.orphaned_repos:type_name -> matrixhub.v1alpha1.OrphanedRepo
+	3, // 1: matrixhub.v1alpha1.CleanupPreview.orphaned_lfs_objects:type_name -> matrixhub.v1alpha1.OrphanedLFS
+	0, // 2: matrixhub.v1alpha1.Cleanup.PreviewCleanup:input_type -> matrixhub.v1alpha1.PreviewCleanupRequest
+	4, // 3: matrixhub.v1alpha1.Cleanup.ExecuteCleanup:input_type -> matrixhub.v1alpha1.ExecuteCleanupRequest
+	6, // 4: matrixhub.v1alpha1.Cleanup.GetStorageStats:input_type -> matrixhub.v1alpha1.GetStorageStatsRequest
+	1, // 5: matrixhub.v1alpha1.Cleanup.PreviewCleanup:output_type -> matrixhub.v1alpha1.CleanupPreview
+	5, // 6: matrixhub.v1alpha1.Cleanup.ExecuteCleanup:output_type -> matrixhub.v1alpha1.CleanupResult
+	7, // 7: matrixhub.v1alpha1.Cleanup.GetStorageStats:output_type -> matrixhub.v1alpha1.StorageStats
+	5, // [5:8] is the sub-list for method output_type
+	2, // [2:5] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
+}
+
+func init() { file_v1alpha1_cleanup_proto_init() }
+func file_v1alpha1_cleanup_proto_init() {
+	if File_v1alpha1_cleanup_proto != nil {
+		return
+	}
+	type x struct{}
+	out := protoimpl.TypeBuilder{
+		File: protoimpl.DescBuilder{
+			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_v1alpha1_cleanup_proto_rawDesc), len(file_v1alpha1_cleanup_proto_rawDesc)),
+			NumEnums:      0,
+			NumMessages:   8,
+			NumExtensions: 0,
+			NumServices:   1,
+		},
+		GoTypes:           file_v1alpha1_cleanup_proto_goTypes,
+		DependencyIndexes: file_v1alpha1_cleanup_proto_depIdxs,
+		MessageInfos:      file_v1alpha1_cleanup_proto_msgTypes,
+	}.Build()
+	File_v1alpha1_cleanup_proto = out.File
+	file_v1alpha1_cleanup_proto_goTypes = nil
+	file_v1alpha1_cleanup_proto_depIdxs = nil
+}
