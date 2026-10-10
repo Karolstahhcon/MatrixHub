@@ -178,3 +178,184 @@ func (h *Handler) handleVerifyObject(w http.ResponseWriter, r *http.Request) {
 		responseJSON(w, "Size mismatch", http.StatusBadRequest)
 		return
 	}
+}
+
+const tokenExpiration = time.Hour
+
+// lfsRepresent takes a RequestVars and Meta and turns it into a Representation suitable
+// for json encoding
+func (h *Handler) lfsRepresent(ctx context.Context, op string, rv *lfsRequestVars, download, upload bool) *lfsRepresentation {
+	rep := &lfsRepresentation{
+		Oid:     rv.Oid,
+		Size:    rv.Size,
+		Actions: make(map[string]*lfsLink),
+	}
+
+	user, _ := authenticate.GetUserInfo(ctx)
+
+	if download && op == "download" {
+		link := rv.objectsLink()
+		header := map[string]string{"Accept": contentMediaType}
+		if h.tokenSignValidator != nil {
+			if token, err := h.tokenSignValidator.Sign(ctx, http.MethodGet, link, user.User, tokenExpiration); err != nil {
+				slog.WarnContext(ctx, "failed to sign token for LFS download link", "oid", rv.Oid, "error", err)
+			} else if token != "" {
+				header["Authorization"] = "Bearer " + token
+			}
+		} else if len(rv.Authorization) > 0 {
+			header["Authorization"] = rv.Authorization
+		}
+		rep.Actions["download"] = &lfsLink{Href: link, Header: header}
+	}
+
+	if upload && op == "upload" {
+		link := rv.objectsLink()
+		header := map[string]string{"Accept": contentMediaType}
+		if h.tokenSignValidator != nil {
+			if token, err := h.tokenSignValidator.Sign(ctx, http.MethodPut, link, user.User, tokenExpiration); err != nil {
+				slog.WarnContext(ctx, "failed to sign token for LFS upload link", "oid", rv.Oid, "error", err)
+			} else if token != "" {
+				header["Authorization"] = "Bearer " + token
+			}
+		} else if len(rv.Authorization) > 0 {
+			header["Authorization"] = rv.Authorization
+		}
+		rep.Actions["upload"] = &lfsLink{Href: link, Header: header}
+
+		verifyHeader := make(map[string]string)
+		verifyLink := rv.verifyLink()
+		if h.tokenSignValidator != nil {
+			if token, err := h.tokenSignValidator.Sign(ctx, http.MethodPost, verifyLink, user.User, tokenExpiration); err != nil {
+				slog.WarnContext(ctx, "failed to sign token for LFS verify link", "oid", rv.Oid, "error", err)
+			} else if token != "" {
+				verifyHeader["Authorization"] = "Bearer " + token
+			}
+		} else if len(rv.Authorization) > 0 {
+			verifyHeader["Authorization"] = rv.Authorization
+		}
+		rep.Actions["verify"] = &lfsLink{Href: verifyLink, Header: verifyHeader}
+	}
+
+	if len(rep.Actions) == 0 {
+		rep.Actions = nil
+	}
+
+	return rep
+}
+
+func unpack(r *http.Request) *lfsRequestVars {
+	vars := mux.Vars(r)
+	rv := &lfsRequestVars{
+		Repo:          vars["repo"],
+		Oid:           vars["oid"],
+		Authorization: r.Header.Get("Authorization"),
+	}
+
+	if r.Method == http.MethodPost {
+		var p lfsRequestVars
+		dec := json.NewDecoder(r.Body)
+		err := dec.Decode(&p)
+		if err != nil {
+			return rv
+		}
+
+		rv.Oid = p.Oid
+		rv.Size = p.Size
+	}
+
+	return rv
+}
+
+func unpackBatch(r *http.Request) *lfsBatchVars {
+	vars := mux.Vars(r)
+
+	var bv lfsBatchVars
+
+	dec := json.NewDecoder(r.Body)
+	err := dec.Decode(&bv)
+	if err != nil {
+		return &bv
+	}
+
+	scheme := "http"
+	if r.TLS != nil {
+		scheme = "https"
+	}
+	if fwdProto := r.Header.Get("X-Forwarded-Proto"); fwdProto != "" {
+		scheme = fwdProto
+	}
+	origin := fmt.Sprintf("%s://%s", scheme, r.Host)
+
+	for i := range len(bv.Objects) {
+		bv.Objects[i].Repo = vars["repo"]
+		bv.Objects[i].Authorization = r.Header.Get("Authorization")
+		bv.Objects[i].Origin = origin
+	}
+
+	return &bv
+}
+
+// lfsRequestVars contain variables from the HTTP request. Variables from routing, json body decoding, and
+// some headers are stored.
+type lfsRequestVars struct {
+	Origin string
+	Oid    string
+	Size   int64
+
+	Repo          string
+	Authorization string
+}
+
+func (v *lfsRequestVars) objectsLink() string {
+	return fmt.Sprintf("%s/objects/%s", v.Origin, v.Oid)
+}
+
+func (v *lfsRequestVars) verifyLink() string {
+	return fmt.Sprintf("%s/objects/%s/verify", v.Origin, v.Oid)
+}
+
+type lfsBatchVars struct {
+	Transfers []string          `json:"transfers,omitempty"`
+	Operation string            `json:"operation"`
+	Objects   []*lfsRequestVars `json:"objects"`
+}
+
+func (bv *lfsBatchVars) repoName() string {
+	if len(bv.Objects) == 0 {
+		return ""
+	}
+	return bv.Objects[0].Repo
+}
+
+type lfsBatchResponse struct {
+	Transfer string               `json:"transfer,omitempty"`
+	Objects  []*lfsRepresentation `json:"objects"`
+}
+
+// lfsRepresentation is object medata as seen by clients of the lfs server.
+type lfsRepresentation struct {
+	Oid     string              `json:"oid"`
+	Size    int64               `json:"size"`
+	Actions map[string]*lfsLink `json:"actions,omitempty"`
+	Error   *lfsObjectError     `json:"error,omitempty"`
+}
+
+type lfsObjectError struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
+// lfsLink provides a structure used to build a hypermedia representation of an HTTP lfsLink.
+type lfsLink struct {
+	Href      string            `json:"href"`
+	Header    map[string]string `json:"header,omitempty"`
+	ExpiresAt time.Time         `json:"expires_at"`
+}
+
+// metaMatcher provides a mux.MatcherFunc that only allows requests that contain
+// an Accept header with the metaMediaType
+func metaMatcher(r *http.Request, m *mux.RouteMatch) bool {
+	mediaParts := strings.Split(r.Header.Get("Accept"), ";")
+	mt := mediaParts[0]
+	return mt == metaMediaType
+}
