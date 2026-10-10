@@ -8,3 +8,8 @@
  */
 
 package v1alpha1
+
+type V1alpha1GetRegistryResponse struct {
+	// The registry information.
+	Registry *V1alpha1Registry `json:"registry,omitempty"`
+}
