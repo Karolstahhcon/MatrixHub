@@ -272,3 +272,72 @@ var _ = Describe("CurrentUser", Label("current-user"), func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(before.Items).To(HaveLen(1))
 			originalID := before.Items[0].Id
+			originalCreatedAt := before.Items[0].CreatedAt
+
+			validUntil := fmt.Sprintf("%d", time.Now().Add(time.Hour).Unix())
+			_, _, err = currentUserApi.CurrentUserCreateSSHKey(ctx, v1alpha1current_user.V1alpha1CreateSshKeyRequest{
+				Name:      "e2e-reimported-ssh-key",
+				PublicKey: publicKey,
+				ExpireAt:  validUntil,
+			})
+			Expect(err).To(HaveOccurred(), "an expired key must continue to reserve its fingerprint")
+
+			after, _, err := currentUserApi.CurrentUserListSSHKeys(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(after.Items).To(HaveLen(1))
+			Expect(after.Items[0].Id).To(Equal(originalID))
+			Expect(after.Items[0].CreatedAt).To(Equal(originalCreatedAt))
+			Expect(after.Items[0].Name).To(Equal("e2e-expired-ssh-key"))
+			Expect(after.Items[0].ExpireAt).To(Equal(expiredAt))
+		})
+	})
+
+	// ═══════════════════════════════════════════════════════════
+	// 4. ResetPassword API
+	// ═══════════════════════════════════════════════════════════
+	Context("ResetPassword API", func() {
+		It("should reset password successfully with the correct old password", Label("CU00016"), func() {
+			newPassword := "NewTest@654321"
+			_, _, err := currentUserApi.CurrentUserResetPassword(ctx, v1alpha1current_user.V1alpha1ResetPasswordRequest{
+				OldPassword: password,
+				NewPassword: newPassword,
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify the new password works for login.
+			_, err = tools.LoginUser(username, newPassword)
+			Expect(err).NotTo(HaveOccurred())
+
+			GinkgoWriter.Printf("Password reset successful for user: %s\n", username)
+		})
+
+		It("should fail to reset password with an incorrect old password", Label("CU00017"), func() {
+			_, _, err := currentUserApi.CurrentUserResetPassword(ctx, v1alpha1current_user.V1alpha1ResetPasswordRequest{
+				OldPassword: "wrong-old-password",
+				NewPassword: "NewTest@654321",
+			})
+			Expect(err).To(HaveOccurred(), "wrong old password must be rejected")
+		})
+
+		It("should fail to reset password when old and new passwords are identical", Label("CU00018"), func() {
+			_, _, err := currentUserApi.CurrentUserResetPassword(ctx, v1alpha1current_user.V1alpha1ResetPasswordRequest{
+				OldPassword: password,
+				NewPassword: password,
+			})
+			Expect(err).To(HaveOccurred(), "new password same as old must be rejected")
+		})
+	})
+
+	// ═══════════════════════════════════════════════════════════
+	// 5. GetProjectRoles API
+	// ═══════════════════════════════════════════════════════════
+	Context("GetProjectRoles API", func() {
+		It("should return an empty map for a user with no project memberships", Label("CU00019"), func() {
+			resp, _, err := currentUserApi.CurrentUserGetProjectRoles(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.ProjectRoles).To(BeEmpty())
+
+			GinkgoWriter.Printf("Project roles: %v\n", resp.ProjectRoles)
+		})
+	})
+})
