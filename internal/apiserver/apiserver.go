@@ -334,3 +334,340 @@ func (server *APIServer) initBackends(handler http.Handler) http.Handler {
 		backendhf.WithServices(server.services.Model, server.repos.Git, server.services.Authz),
 	)
 
+	gitAuthn := func() mux.MiddlewareFunc {
+		return func(next http.Handler) http.Handler {
+			next = authenticate.BasicAuthHandler(basicAuthValidator, next)
+			next = authenticate.TokenValidatorHandler(tokenValidator, next)
+			next = authenticate.AnonymousAuthenticateHandler(next)
+			return next
+		}
+	}
+
+	handler = backendlfs.NewHandler(
+		backendlfs.WithStorage(storage),
+		backendlfs.WithNext(handler),
+		backendlfs.WithMirror(sharedMirror),
+		backendlfs.WithPermissionHookFunc(permissionHookFunc),
+		backendlfs.WithLFSStorage(lfsStorage),
+		backendlfs.WithMirror(sharedMirror),
+		backendlfs.WithMiddlewares(gitAuthn()),
+	)
+
+	handler = backendhttp.NewHandler(
+		backendhttp.WithStorage(storage),
+		backendhttp.WithNext(handler),
+		backendhttp.WithMirror(sharedMirror),
+		backendhttp.WithPermissionHookFunc(permissionHookFunc),
+		backendhttp.WithPreReceiveHookFunc(preReceiveHookFunc),
+		backendhttp.WithPostReceiveHookFunc(postReceiveHookFunc),
+		backendhttp.WithMiddlewares(gitAuthn()),
+		backendhttp.WithServices(server.services.Model, server.repos.Git, server.services.Authz),
+	)
+
+	handler = authenticate.TokenSignValidatorHandler(tokenSignValidator, handler)
+
+	return handler
+}
+
+func (server *APIServer) initSSHBackend() {
+	if server.config.APIServer.SSHPort == 0 {
+		return
+	}
+
+	hostKeyPath := server.config.APIServer.SSHHostKeyPath
+
+	storage := server.gitStorage.storage
+	permissionHookFunc := server.gitHooks.permissionHookFunc
+	preReceiveHookFunc := server.gitHooks.preReceiveHookFunc
+	postReceiveHookFunc := server.gitHooks.postReceiveHookFunc
+	basicAuthValidator := server.gitAuth.basicAuthValidator
+	publicKeyValidator := server.gitAuth.publicKeyValidator
+	tokenSignValidator := server.gitAuth.tokenSignValidator
+
+	data, _ := os.ReadFile(hostKeyPath)
+	hostKeySigner, _ := hfdssh.ParseHostKeyFile(data)
+	// TODO: handle error and edge cases for host key file (e.g. file not exist, invalid format, etc.)
+
+	sshOpts := []backendssh.Option{
+		backendssh.WithStorage(storage),
+		backendssh.WithHostKey(hostKeySigner),
+		backendssh.WithMirror(server.gitStorage.sharedMirror),
+		backendssh.WithServices(server.services.Model),
+		backendssh.WithPermissionHookFunc(permissionHookFunc),
+		backendssh.WithPreReceiveHookFunc(preReceiveHookFunc),
+		backendssh.WithPostReceiveHookFunc(postReceiveHookFunc),
+		backendssh.WithLFSURL(server.config.APIServer.HostURL),
+		backendssh.WithBasicAuthValidator(basicAuthValidator),
+		backendssh.WithPublicKeyValidator(publicKeyValidator),
+		backendssh.WithTokenSignValidator(tokenSignValidator),
+	}
+
+	sshServer := backendssh.NewServer(sshOpts...)
+
+	server.sshServer = sshServer
+}
+
+type Services struct {
+	Model   model.IModelService
+	Dataset dataset.IDatasetService
+	Authz   authz.IAuthzService
+	Cleanup cleanup.ICleanupService
+}
+
+func (server *APIServer) initHandlersServicesRepos() {
+	// init repos
+	repos := repo.NewRepos(server.config,
+		server.gitStorage.storage,
+		server.gitStorage.sharedMirror,
+	)
+
+	// init permission service
+	authzService := authz.NewAuthzService(repos.Authz, repos.Project, repos.Robot)
+
+	// init domain services, add if needed
+	modelService := model.NewModelService(
+		repos.Model,
+		repos.Label,
+		repos.Git,
+		repos.Project,
+		repos.Registry,
+	)
+	datasetService := dataset.NewDatasetService(
+		repos.Dataset,
+		repos.Label,
+		repos.Git,
+	)
+	userService := user.NewUserService(repos.Session, repos.User)
+
+	logDir := ""
+	if server.config.JobServer != nil {
+		logDir = server.config.JobServer.LogDir
+	}
+	if logDir == "" {
+		logDir = filepath.Join(server.config.DataDir, "logs", "jobs")
+	}
+	logStore := logstore.NewFileLogStore(logDir)
+	canc := canceller.NewMemCanceller()
+
+	syncJobService := syncjob.NewSyncJobService(
+		repos.SyncJob,
+		repos.Registry,
+		repos.Project,
+		repos.Model,
+		repos.Dataset,
+		repos.Git,
+		modelService,
+		datasetService,
+		logStore,
+	)
+
+	// init sync policy service
+	discoveries := map[string]registrydiscovery.Discovery{
+		registrydiscovery.ProviderHuggingFace: hfdiscovery.New(),
+		registrydiscovery.ProviderMatrixHub:   mhdiscovery.New(),
+	}
+	jobGenerator := syncpolicy.NewSyncJobGenerator(
+		repos.Registry,
+		discoveries,
+		syncpolicy.LocalResourceSource{ResourceType: "model", Repo: repos.Model},
+		syncpolicy.LocalResourceSource{ResourceType: "dataset", Repo: repos.Dataset},
+	)
+	syncPolicyService := syncpolicy.NewSyncPolicyService(
+		repos.SyncPolicy,
+		repos.SyncTask,
+		syncJobService,
+		repos.Project,
+		jobGenerator,
+	)
+	// init cleanup service
+	cleanupService := cleanup.NewCleanupService(repos.Model, repos.Dataset, repos.Git)
+
+	// wire task status reporter from sync policy service to sync job service
+	syncJobService.SetOnJobDone(syncPolicyService.ReportTaskStatus)
+
+	if server.config.JobServer != nil && server.config.JobServer.Enabled {
+		jc := *server.config.JobServer
+		server.jobServer = jobserver.New(&jc, syncPolicyService, syncJobService, logStore, canc)
+		if notifier, ok := syncPolicyService.(interface{ SetOnTaskCreated(func(int) bool) }); ok {
+			notifier.SetOnTaskCreated(server.jobServer.TriggerSyncTask)
+		}
+		if notifier, ok := syncJobService.(interface{ SetOnJobCreated(func(int) bool) }); ok {
+			notifier.SetOnJobCreated(server.jobServer.TriggerSyncJob)
+		}
+	}
+
+	server.services = &Services{
+		Model:   modelService,
+		Dataset: datasetService,
+		Authz:   authzService,
+		Cleanup: cleanupService,
+	}
+
+	// init handlers
+	handlers := []handler.IHandler{
+		handler.NewLoginHandler(userService),
+		handler.NewRegistryHandler(repos.Registry),
+		handler.NewProjectHandler(repos.Project, authzService),
+		handler.NewCurrentUserHandler(repos.User, repos.AccessToken, repos.SSHKey),
+		handler.NewUserHandler(repos.User, authzService),
+		handler.NewDatasetHandler(datasetService),
+		handler.NewModelHandler(modelService, authzService),
+		handler.NewSyncPolicyHandler(syncPolicyService, syncJobService, repos.Registry, logStore, canc),
+		handler.NewCleanupHandler(cleanupService),
+		handler.NewRoleHandler(),
+		handler.NewRobotHandler(repos.Robot, repos.Project),
+		handler.NewSystemHandler(repo.NewSystemProvider(server.config)),
+	}
+
+	server.repos = repos
+	server.handlers = handlers
+}
+
+func (server *APIServer) registerRoutersAndHandlers() {
+	// healthz endpoint
+	server.engine.GET("/healthz", func(c *gin.Context) { c.String(http.StatusOK, "OK") })
+
+	// register routers
+	server.engine.Any("/api/v1alpha1/*any", gin.WrapF(server.gatewayMux.ServeHTTP))
+	server.engine.Any("/apis/v1alpha1/*any", gin.WrapF(server.gatewayMux.ServeHTTP))
+
+	// serve ui static files if staticDir is configured
+	staticDir := server.config.UI.StaticDir
+	if staticDir != "" {
+		server.engine.Static("/assets", filepath.Join(staticDir, "assets"))
+		server.engine.StaticFile("/favicon.ico", filepath.Join(staticDir, "favicon.ico"))
+	}
+
+	// SPA fallback - serve index.html for all non-API routes
+	server.engine.NoRoute(func(c *gin.Context) {
+		if strings.HasPrefix(c.Request.URL.Path, "/api") {
+			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+			return
+		}
+		if staticDir != "" {
+			c.File(filepath.Join(staticDir, "index.html"))
+			return
+		}
+		// If staticDir is not configured, return 404 for non-API routes
+		c.JSON(http.StatusNotFound, gin.H{"error": "frontend not configured"})
+	})
+
+	options := &handler.ServerOptions{
+		GatewayMux: server.gatewayMux,
+		GRPCServer: server.grpcServer,
+		GRPCAddr:   fmt.Sprintf(":%d", server.port),
+		GRPCDialOpt: []grpc.DialOption{
+			grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithDefaultCallOptions(
+				grpc.MaxCallRecvMsgSize(maxGrpcMsgSize),
+				grpc.MaxCallSendMsgSize(maxGrpcMsgSize),
+			)},
+	}
+
+	for _, h := range server.handlers {
+		h.RegisterToServer(options)
+	}
+}
+
+func (server *APIServer) Start() <-chan error {
+	// Create the main listener.
+	addr := fmt.Sprintf(":%d", server.port)
+	l, err := net.Listen("tcp", addr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	server.cmux = cmux.New(l)
+	grpcL := server.cmux.Match(cmux.HTTP2())
+	httpL := server.cmux.Match(cmux.HTTP1Fast())
+
+	errorCh := make(chan error, 1)
+	go func() {
+		log.Infof("Internal http server is listening on %s", httpL.Addr().String())
+		if err := server.httpServer.Serve(httpL); err != nil {
+			errorCh <- err
+			if errors.Is(err, http.ErrServerClosed) {
+				log.Info("http server closed")
+				return
+			}
+			log.Errorw("run http server failed", "error", err)
+		}
+	}()
+
+	go func() {
+		log.Infof("Internal grpc server is listening on %s", grpcL.Addr().String())
+		if err := server.grpcServer.Serve(grpcL); err != nil {
+			errorCh <- err
+			if errors.Is(err, grpc.ErrServerStopped) {
+				log.Info("grpc server closed")
+				return
+			}
+			log.Errorw("run grpc server failed", "error", err)
+		}
+	}()
+
+	go func() {
+		log.Infof("api server is listening on %d", server.port)
+		if err := server.cmux.Serve(); err != nil {
+			errorCh <- err
+			if errors.Is(err, cmux.ErrListenerClosed) {
+				log.Info("api server closed")
+				return
+			}
+			log.Errorw("run api server failed", "error", err)
+		}
+	}()
+
+	if server.config.APIServer.SSHPort != 0 {
+		go func() {
+			sshAddr := fmt.Sprintf(":%d", server.config.APIServer.SSHPort)
+			log.Infof("SSH protocol server is listening on %s", sshAddr)
+			if err := server.sshServer.ListenAndServe(context.Background(), sshAddr); err != nil {
+				errorCh <- err
+				log.Errorw("run SSH protocol server failed", "addr", sshAddr, "error", err)
+			}
+		}()
+	}
+
+	if server.jobServer != nil {
+		jsCtx, cancel := context.WithCancel(context.Background())
+		server.jobCancel = cancel
+		server.jobWait.Add(1)
+		go func() {
+			defer server.jobWait.Done()
+			server.jobServer.Run(jsCtx)
+		}()
+	}
+
+	return errorCh
+}
+
+func (server *APIServer) Shutdown() {
+	log.Info("api server shutdown...")
+
+	if server.jobCancel != nil {
+		server.jobCancel()
+	}
+	if server.jobServer != nil {
+		grace := server.config.JobServer.ShutdownGrace
+		if grace == 0 {
+			grace = 30 * time.Second
+		}
+		server.jobServer.Shutdown(grace)
+	}
+	server.jobWait.Wait()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	server.cmux.Close()
+
+	if err := server.httpServer.Shutdown(ctx); err != nil {
+		log.Error("shutdown error", "error", err)
+	}
+
+	server.grpcServer.GracefulStop()
+
+	if err := server.repos.Close(); err != nil {
+		log.Error("close db connection error", "error", err)
+	}
+
+}
