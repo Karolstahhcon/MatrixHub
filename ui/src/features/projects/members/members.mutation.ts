@@ -17,3 +17,23 @@ export function addMemberMutationOptions() {
     },
   })
 }
+
+export function updateMemberRoleMutationOptions() {
+  return mutationOptions({
+    mutationFn: (input: UpdateProjectMemberRoleRequest) =>
+      Projects.UpdateProjectMemberRole(input),
+    meta: {
+      invalidates: [memberKeys.lists()],
+    },
+  })
+}
+
+export function removeMembersMutationOptions() {
+  return mutationOptions({
+    mutationFn: (input: RemoveProjectMembersRequest) =>
+      Projects.RemoveProjectMembers(input),
+    meta: {
+      invalidates: [memberKeys.lists()],
+    },
+  })
+}
