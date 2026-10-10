@@ -9,3 +9,14 @@
 
 package v1alpha1
 
+// Pagination is for data paging.
+type V1alpha1Pagination struct {
+	// Total is the total number of referents.
+	Total int32 `json:"total,omitempty"`
+	// Page is current page.
+	Page int32 `json:"page,omitempty"`
+	// PageSize is the data number shown per page.
+	PageSize int32 `json:"pageSize,omitempty"`
+	// Pages is the number of pages.
+	Pages int32 `json:"pages,omitempty"`
+}
