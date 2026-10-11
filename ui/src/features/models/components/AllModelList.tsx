@@ -98,3 +98,103 @@ export function AllModelList() {
               if (sortFieldOptions.find(o => o.value === nextField)?.disabled) {
                 return
               }
+
+              startTransition(() => {
+                void navigate({
+                  replace: true,
+                  search: prev => ({
+                    ...prev,
+                    sort: nextField === 'updatedAt' ? nextField : prev.sort,
+                    order: search.order,
+                    page: 1,
+                  }),
+                })
+              })
+            }}
+            onToggleOrder={() => {
+              startTransition(() => {
+                void navigate({
+                  replace: true,
+                  search: prev => ({
+                    ...prev,
+                    order: search.order === 'desc' ? 'asc' : 'desc',
+                    page: 1,
+                  }),
+                })
+              })
+            }}
+          />
+        </SearchToolbar>
+
+        <Space h="lg" />
+
+        <Box>
+          {isLoadingError
+            ? (
+                <Alert color="red" title={t('model.list.loadFailed')}>
+                  <Button
+                    mt="sm"
+                    size="xs"
+                    variant="light"
+                    onClick={() => void refetch()}
+                  >
+                    {t('model.list.retry')}
+                  </Button>
+                </Alert>
+              )
+            : showCreatePrompt
+              ? (
+                  <Paper withBorder radius="md">
+                    <Center py="xl">
+                      <Stack align="center" gap="xs">
+                        <IconCube
+                          size={48}
+                          stroke={1.25}
+                          color="var(--mantine-primary-color-filled)"
+                        />
+                        <Text fw={600}>{t('model.list.emptyTitle')}</Text>
+                        <Text size="sm" c="dimmed">
+                          {t('model.list.emptyDescription')}
+                        </Text>
+                        <Button component={Link} to="/models/new" mt="xs">
+                          {t('model.list.create')}
+                        </Button>
+                        <Anchor
+                          href={t('common.docs', { doc: '/docs/operations/model-repo/upload-download/' })}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          size="sm"
+                        >
+                          {t('model.list.uploadGuide')}
+                        </Anchor>
+                      </Stack>
+                    </Center>
+                  </Paper>
+                )
+              : (
+                  <ResourceCardGrid
+                    loading={isLoading || isPending}
+                    skeletonCount={DEFAULT_PAGE_SIZE}
+                  >
+                    {cardElements}
+                  </ResourceCardGrid>
+                )}
+
+          <Pagination
+            total={pagination?.total ?? 0}
+            totalPages={pagination?.pages ?? 0}
+            page={search.page}
+            onPageChange={(nextPage) => {
+              void navigate({
+                search: prev => ({
+                  ...prev,
+                  page: nextPage,
+                }),
+              })
+            }}
+          />
+        </Box>
+      </Stack>
+    </Box>
+  )
+}
