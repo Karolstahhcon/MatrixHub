@@ -17,3 +17,10 @@ type V1alpha1Model struct {
 	CreatedAt string `json:"createdAt,omitempty"`
 	UpdatedAt string `json:"updatedAt,omitempty"`
 	CloneUrls *V1alpha1CloneUrls `json:"cloneUrls,omitempty"`
+	Labels []MatrixhubV1alpha1Label `json:"labels,omitempty"`
+	Project string `json:"project,omitempty"`
+	ReadmeContent string `json:"readmeContent,omitempty"`
+	Size string `json:"size,omitempty"`
+	ParameterCount string `json:"parameterCount,omitempty"`
+	Popular bool `json:"popular,omitempty"`
+}
