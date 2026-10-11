@@ -126,3 +126,132 @@ func (m *MockIModelRepo) UpdateMetadata(ctx context.Context, modelID int64, upda
 }
 
 // UpdateMetadata indicates an expected call of UpdateMetadata.
+func (mr *MockIModelRepoMockRecorder) UpdateMetadata(ctx, modelID, update any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMetadata", reflect.TypeOf((*MockIModelRepo)(nil).UpdateMetadata), ctx, modelID, update)
+}
+
+// UpdateSetting mocks base method.
+func (m *MockIModelRepo) UpdateSetting(ctx context.Context, modelID int64, update *model.SettingUpdate) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSetting", ctx, modelID, update)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateSetting indicates an expected call of UpdateSetting.
+func (mr *MockIModelRepoMockRecorder) UpdateSetting(ctx, modelID, update any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSetting", reflect.TypeOf((*MockIModelRepo)(nil).UpdateSetting), ctx, modelID, update)
+}
+
+// UpdateSyncedAt mocks base method.
+func (m *MockIModelRepo) UpdateSyncedAt(ctx context.Context, modelID int64, syncedAt *time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSyncedAt", ctx, modelID, syncedAt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateSyncedAt indicates an expected call of UpdateSyncedAt.
+func (mr *MockIModelRepoMockRecorder) UpdateSyncedAt(ctx, modelID, syncedAt any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSyncedAt", reflect.TypeOf((*MockIModelRepo)(nil).UpdateSyncedAt), ctx, modelID, syncedAt)
+}
+
+// MockILabelRepo is a mock of ILabelRepo interface.
+type MockILabelRepo struct {
+	ctrl     *gomock.Controller
+	recorder *MockILabelRepoMockRecorder
+	isgomock struct{}
+}
+
+// MockILabelRepoMockRecorder is the mock recorder for MockILabelRepo.
+type MockILabelRepoMockRecorder struct {
+	mock *MockILabelRepo
+}
+
+// NewMockILabelRepo creates a new mock instance.
+func NewMockILabelRepo(ctrl *gomock.Controller) *MockILabelRepo {
+	mock := &MockILabelRepo{ctrl: ctrl}
+	mock.recorder = &MockILabelRepoMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockILabelRepo) EXPECT() *MockILabelRepoMockRecorder {
+	return m.recorder
+}
+
+// GetByModelID mocks base method.
+func (m *MockILabelRepo) GetByModelID(ctx context.Context, modelID int64) ([]*model.Label, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByModelID", ctx, modelID)
+	ret0, _ := ret[0].([]*model.Label)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByModelID indicates an expected call of GetByModelID.
+func (mr *MockILabelRepoMockRecorder) GetByModelID(ctx, modelID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByModelID", reflect.TypeOf((*MockILabelRepo)(nil).GetByModelID), ctx, modelID)
+}
+
+// GetOrCreateByName mocks base method.
+func (m *MockILabelRepo) GetOrCreateByName(ctx context.Context, name, category, scope string) (*model.Label, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOrCreateByName", ctx, name, category, scope)
+	ret0, _ := ret[0].(*model.Label)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOrCreateByName indicates an expected call of GetOrCreateByName.
+func (mr *MockILabelRepoMockRecorder) GetOrCreateByName(ctx, name, category, scope any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrCreateByName", reflect.TypeOf((*MockILabelRepo)(nil).GetOrCreateByName), ctx, name, category, scope)
+}
+
+// ListByCategoryAndScope mocks base method.
+func (m *MockILabelRepo) ListByCategoryAndScope(ctx context.Context, category, scope string) ([]*model.Label, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListByCategoryAndScope", ctx, category, scope)
+	ret0, _ := ret[0].([]*model.Label)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListByCategoryAndScope indicates an expected call of ListByCategoryAndScope.
+func (mr *MockILabelRepoMockRecorder) ListByCategoryAndScope(ctx, category, scope any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByCategoryAndScope", reflect.TypeOf((*MockILabelRepo)(nil).ListByCategoryAndScope), ctx, category, scope)
+}
+
+// UpdateDatasetLabels mocks base method.
+func (m *MockILabelRepo) UpdateDatasetLabels(ctx context.Context, datasetID int64, labelIDs []int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateDatasetLabels", ctx, datasetID, labelIDs)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateDatasetLabels indicates an expected call of UpdateDatasetLabels.
+func (mr *MockILabelRepoMockRecorder) UpdateDatasetLabels(ctx, datasetID, labelIDs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateDatasetLabels", reflect.TypeOf((*MockILabelRepo)(nil).UpdateDatasetLabels), ctx, datasetID, labelIDs)
+}
+
+// UpdateModelLabels mocks base method.
+func (m *MockILabelRepo) UpdateModelLabels(ctx context.Context, modelID int64, labelIDs []int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateModelLabels", ctx, modelID, labelIDs)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateModelLabels indicates an expected call of UpdateModelLabels.
+func (mr *MockILabelRepoMockRecorder) UpdateModelLabels(ctx, modelID, labelIDs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateModelLabels", reflect.TypeOf((*MockILabelRepo)(nil).UpdateModelLabels), ctx, modelID, labelIDs)
+}
