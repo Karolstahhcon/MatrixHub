@@ -97,3 +97,201 @@ export function catalogModelsQueryOptions(
   return queryOptions({
     queryKey: modelKeys.listByCategory({
       search: search.q,
+      sort: search.popular ? undefined : sortParam,
+      page: search.page,
+      project: search.project,
+      labels: splitFilterCsv(search.task ?? search.library),
+      popular: search?.popular,
+    }),
+    queryFn: () => Models.ListModels({
+      search: search.popular ? undefined : search.q,
+      sort: search.popular ? undefined : sortParam,
+      project: search.project,
+      labels: splitFilterCsv(search.task ?? search.library),
+      page: search.page,
+      pageSize: search?.pageSize ?? DEFAULT_PAGE_SIZE,
+      popular: search?.popular,
+    }),
+  })
+}
+
+export function modelQueryOptions(projectId: string, modelName: string) {
+  return queryOptions({
+    queryKey: modelKeys.detail(projectId, modelName),
+    queryFn: () => Models.GetModel({
+      project: projectId,
+      name: modelName,
+    }),
+  })
+}
+
+export function modelRevisionsQueryOptions(projectId: string, modelName: string) {
+  return queryOptions({
+    queryKey: modelRevisionKeys.detail(projectId, modelName),
+    queryFn: () => Models.ListModelRevisions({
+      project: projectId,
+      name: modelName,
+    }),
+  })
+}
+
+export function modelTreeQueryOptions(
+  projectId: string,
+  modelName: string,
+  params?: Pick<GetModelTreeRequest, 'revision' | 'path'>,
+) {
+  return queryOptions({
+    queryKey: modelTreeKeys.detail(projectId, modelName, params),
+    queryFn: () => Models.GetModelTree({
+      project: projectId,
+      name: modelName,
+      ...params,
+    }),
+  })
+}
+
+export function modelBlobQueryOptions(
+  projectId: string,
+  modelName: string,
+  params?: Pick<GetModelBlobRequest, 'revision' | 'path'>,
+) {
+  return queryOptions({
+    queryKey: modelBlobKeys.detail(projectId, modelName, params),
+    queryFn: () => Models.GetModelBlob({
+      project: projectId,
+      name: modelName,
+      ...params,
+    }),
+  })
+}
+
+export function modelCommitsQueryOptions(
+  projectId: string,
+  modelName: string,
+  params: Pick<ListModelCommitsRequest, 'revision' | 'page' | 'pageSize'>,
+) {
+  const normalizedParams = {
+    ...params,
+    pageSize: params.pageSize ?? DEFAULT_PAGE_SIZE,
+  }
+
+  return queryOptions({
+    queryKey: modelKeys.commitsList(projectId, modelName, normalizedParams),
+    queryFn: () => Models.ListModelCommits({
+      project: projectId,
+      name: modelName,
+      revision: normalizedParams.revision,
+      page: normalizedParams.page,
+      pageSize: normalizedParams.pageSize,
+    }),
+  })
+}
+
+export function modelCommitQueryOptions(
+  projectId: string,
+  modelName: string,
+  commitId: string,
+) {
+  return queryOptions({
+    queryKey: modelKeys.commitDetail(projectId, modelName, commitId),
+    queryFn: () => Models.GetModelCommit({
+      project: projectId,
+      name: modelName,
+      id: commitId,
+    }),
+  })
+}
+
+// -- Custom hook --
+
+export function useModelTree(
+  projectId: string,
+  modelName: string,
+  params?: Pick<GetModelTreeRequest, 'revision' | 'path'>,
+) {
+  return useQuery({
+    ...modelTreeQueryOptions(projectId, modelName, params),
+  })
+}
+
+export function useModelBlob(
+  projectId: string,
+  modelName: string,
+  params?: Pick<GetModelBlobRequest, 'revision' | 'path'>,
+) {
+  return useQuery({
+    ...modelBlobQueryOptions(projectId, modelName, params),
+  })
+}
+
+export function useModelTaskLabels() {
+  return useQuery({
+    queryKey: modelKeys.taskLabels(),
+    queryFn: async () => {
+      const response = await Models.ListModelTaskLabels({})
+
+      return response.items ?? []
+    },
+  })
+}
+
+export function useModelLibraryLabels() {
+  return useQuery({
+    queryKey: modelKeys.libraryLabels(),
+    queryFn: async () => {
+      const response = await Models.ListModelFrameLabels({})
+
+      return response.items ?? []
+    },
+  })
+}
+
+function modelProjectsQueryOptions(permissionFilter: ProjectPermissionFilter) {
+  return queryOptions({
+    queryKey: modelKeys.projects(permissionFilter),
+    queryFn: async () => {
+      const response = await Projects.ListProjects({
+        page: 1,
+        pageSize: -1,
+        permissionFilter,
+      })
+
+      return response.projects ?? []
+    },
+  })
+}
+
+// Marketplace filter panel: any project the user can read (incl. public).
+export function useReadableModelProjects() {
+  return useQuery(modelProjectsQueryOptions(ProjectPermissionFilter.PERMISSION_FILTER_CAN_READ))
+}
+
+// Create-model page: only projects the user can push models to.
+export function useWritableModelProjects() {
+  return useQuery(modelProjectsQueryOptions(ProjectPermissionFilter.PERMISSION_FILTER_CAN_WRITE))
+}
+
+// -- Internal helpers --
+
+export function toSortParam(field?: ModelsCatalogSearch['sort'], order?: ModelsCatalogSearch['order']) {
+  if (!field || !order) {
+    return undefined
+  }
+
+  return field === 'updatedAt' && order === 'asc'
+    ? 'updated_at_asc'
+    : 'updated_at_desc'
+}
+
+export function splitFilterCsv(value: string | undefined) {
+  if (!value) {
+    return undefined
+  }
+
+  const items = value
+    .split(',')
+    .map(item => item.trim())
+    .filter(Boolean)
+
+  return items.length > 0 ? items : undefined
+}
