@@ -43,3 +43,49 @@ export function RevisionSelect({
         label: item.name as string,
         value: `tag:${item.name}`,
       })),
+    })
+  }
+
+  // Keep route params as raw revision names, but map to unique select option values.
+  const selectedRevisionValue = useMemo(() => {
+    if (!revision) {
+      return null
+    }
+
+    if (branches.find(item => item.name === revision)) {
+      return `branch:${revision}`
+    }
+
+    if (tags.find(item => item.name === revision)) {
+      return `tag:${revision}`
+    }
+
+    return null
+  }, [revision, branches, tags])
+
+  return (
+    <Select
+      w={170}
+      size="xs"
+      value={selectedRevisionValue}
+      data={revisionOptions}
+      disabled={revisionOptions.length === 0}
+      styles={{
+        input: {
+          fontSize: 'var(--mantine-font-size-sm)',
+        },
+        option: {
+          fontSize: 'var(--mantine-font-size-sm)',
+        },
+      }}
+      searchable
+      onChange={(value, option) => {
+        if (!value || !onRevisionChange) {
+          return
+        }
+
+        onRevisionChange(option.label)
+      }}
+    />
+  )
+}

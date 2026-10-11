@@ -9,3 +9,7 @@
 
 package v1alpha1
 
+type V1alpha1MemberToRemove struct {
+	MemberType *V1alpha1MemberType `json:"memberType,omitempty"`
+	MemberId int32 `json:"memberId,omitempty"`
+}
