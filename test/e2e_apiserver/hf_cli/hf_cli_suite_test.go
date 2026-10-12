@@ -18,3 +18,24 @@ import (
 	"os/exec"
 	"testing"
 
+	testenv "github.com/matrixhub-ai/matrixhub/test/e2e_apiserver/init"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+)
+
+func TestHFCLI(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "HF CLI Suite")
+}
+
+var _ = BeforeSuite(func() {
+	defer GinkgoRecover()
+	_, err := exec.LookPath("hf")
+	Expect(err).NotTo(HaveOccurred(), "hf CLI is required for the hf-cli e2e suite")
+	testenv.InitTestEnvironment()
+})
+
+var _ = AfterSuite(func() {
+	testenv.CleanupTestEnvironment()
+})
