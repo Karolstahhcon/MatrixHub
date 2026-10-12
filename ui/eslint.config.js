@@ -127,3 +127,133 @@ export default defineConfig(
       },
     },
     plugins: {
+      import: importPlugin,
+    },
+    settings: {
+      'import/resolver': {
+        typescript: {
+          alwaysTryTypes: true,
+          project: './tsconfig.json',
+        },
+      },
+    },
+    rules: {
+      // =============================================
+      // TypeScript
+      // =============================================
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+        },
+      ],
+      '@typescript-eslint/consistent-type-imports': [
+        'error',
+        {
+          prefer: 'type-imports',
+          fixStyle: 'separate-type-imports',
+        },
+      ],
+
+      '@typescript-eslint/await-thenable': 'error',
+
+      // =============================================
+      // Import
+      // =============================================
+      'import/order': [
+        'error',
+        {
+          groups: [
+            'builtin',
+            'external',
+            'internal',
+            ['parent', 'sibling'],
+            'index',
+            'type',
+          ],
+          'newlines-between': 'always',
+          alphabetize: {
+            order: 'asc',
+            caseInsensitive: true,
+          },
+        },
+      ],
+      'import/no-duplicates': 'error',
+
+      // =============================================
+      // @eslint-react: JSX Syntax
+      // =============================================
+      '@eslint-react/jsx-shorthand-fragment': 'error',
+      '@eslint-react/jsx-shorthand-boolean': 'error',
+      '@eslint-react/no-useless-fragment': 'error',
+
+      // =============================================
+      // @eslint-react: Performance Optimization
+      // =============================================
+      // Avoid literal objects for Context.Provider value
+      '@eslint-react/no-unstable-context-value': 'error',
+      // Avoid reference type literals for default props
+      '@eslint-react/no-unstable-default-props': 'error',
+
+      // =============================================
+      // @eslint-react: DOM Security
+      // =============================================
+      // target="_blank" must have rel="noreferrer noopener"
+      '@eslint-react/dom/no-unsafe-target-blank': 'error',
+      // Disallow javascript: URL
+      '@eslint-react/dom/no-script-url': 'error',
+      // Disallow unsafe sandbox combinations
+      '@eslint-react/dom/no-unsafe-iframe-sandbox': 'error',
+    },
+  },
+
+  // =============================================
+  // set runtime for specify files
+  // =============================================
+  {
+    files: ['**/*.{js,mjs,cjs}', 'vite.config.ts'],
+    languageOptions: {
+      ecmaVersion: 2024,
+      globals: globals.node,
+    },
+  },
+
+  // =============================================
+  // JSON files (strict, no comments allowed)
+  // =============================================
+  ...jsonc.configs['flat/recommended-with-json'],
+
+  // =============================================
+  // JSONC files (tsconfig, etc. - comments allowed)
+  // =============================================
+  ...jsonc.configs['flat/recommended-with-jsonc'],
+  {
+    files: ['**/*.json', '**/*.jsonc'],
+    extends: [
+      stylistic.configs.recommended,
+    ],
+    rules: {
+      'jsonc/indent': ['error', 2],
+      'jsonc/array-bracket-spacing': ['error', 'never'],
+      'jsonc/no-irregular-whitespace': 'error',
+      'jsonc/object-curly-spacing': [
+        'error',
+        'always',
+      ],
+      'jsonc/object-property-newline': 'error',
+      'jsonc/object-curly-newline': ['error', {
+        consistent: true,
+        minProperties: 2,
+        multiline: false,
+      }],
+      'jsonc/comma-style': 'error',
+    },
+  },
+  {
+    files: ['**/tsconfig*.json'],
+    rules: {
+      'jsonc/no-comments': 'off',
+    },
+  },
+)
