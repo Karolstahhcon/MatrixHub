@@ -174,3 +174,179 @@ func assertProjectNameSearchIsCaseSensitive(t *testing.T, ctx context.Context, d
 		ProjectName: createdProject.Name,
 	})
 	require.NoError(t, err)
+	datasets, total, err := NewDatasetDB(database).List(ctx, &model.Filter{
+		Search: "caseproject", Page: 1, PageSize: 20,
+	})
+	require.NoError(t, err)
+	require.Zero(t, total)
+	require.Empty(t, datasets)
+}
+
+func TestSQLiteSessionStore(t *testing.T) {
+	database, config := newSQLiteRepositoryTestDatabase(t)
+	session, err := NewSessionRepository(database, config)
+	require.NoError(t, err)
+	closer, ok := session.(interface{ Close() })
+	require.True(t, ok)
+	t.Cleanup(closer.Close)
+
+	manager := session.Manager()
+	ctx, err := manager.Load(context.Background(), "")
+	require.NoError(t, err)
+	manager.Put(ctx, "subject", "admin")
+	token, _, err := manager.Commit(ctx)
+	require.NoError(t, err)
+	require.NotEmpty(t, token)
+
+	loadedCtx, err := manager.Load(context.Background(), token)
+	require.NoError(t, err)
+	require.Equal(t, "admin", manager.GetString(loadedCtx, "subject"))
+}
+
+func assertModelUpdatesTimestamp(t *testing.T, database *gorm.DB, repository model.IModelRepo, modelID int64) {
+	t.Helper()
+	oldTimestamp := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	require.NoError(t, database.Table("models").Where("id = ?", modelID).
+		UpdateColumn("updated_at", oldTimestamp).Error)
+	readme := "# SQLite"
+	require.NoError(t, repository.UpdateMetadata(context.Background(), modelID, &model.MetadataUpdate{
+		ReadmeContent: &readme,
+	}))
+	requireTimestampAdvanced(t, database, "models", modelID, oldTimestamp)
+
+	require.NoError(t, database.Table("models").Where("id = ?", modelID).
+		UpdateColumn("updated_at", oldTimestamp).Error)
+	syncedAt := time.Now().UTC()
+	require.NoError(t, repository.UpdateSyncedAt(context.Background(), modelID, &syncedAt))
+	requireTimestampAdvanced(t, database, "models", modelID, oldTimestamp)
+}
+
+func assertCASUpdatesTimestamps(t *testing.T, database *gorm.DB) {
+	t.Helper()
+	ctx := context.Background()
+	oldTimestamp := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	result := database.Exec(`INSERT INTO sync_policies
+		(name, next_run_at, updated_at) VALUES (?, ?, ?)`, "nightly", 100, oldTimestamp)
+	require.NoError(t, result.Error)
+
+	var policy struct{ ID int }
+	require.NoError(t, database.Table("sync_policies").Select("id").Where("name = ?", "nightly").Take(&policy).Error)
+	claimed, err := NewSyncPolicyDB(database).AdvanceNextRunAtCAS(ctx, policy.ID, 100, 200, 150)
+	require.NoError(t, err)
+	require.True(t, claimed)
+	requireTimestampAdvanced(t, database, "sync_policies", int64(policy.ID), oldTimestamp)
+
+	task := &syncpolicy.SyncTask{
+		SyncPolicyID: policy.ID,
+		TriggerType:  syncpolicy.TriggerTypeManual,
+		Status:       syncpolicy.SyncTaskStatusPending,
+		UpdatedAt:    oldTimestamp,
+	}
+	require.NoError(t, database.Create(task).Error)
+	updated, err := NewSyncTaskDB(database).UpdateTaskStatusCAS(
+		ctx, task.ID, syncpolicy.SyncTaskStatusPending, syncpolicy.SyncTaskStatusRunning,
+	)
+	require.NoError(t, err)
+	require.True(t, updated)
+	requireTimestampAdvanced(t, database, "sync_tasks", int64(task.ID), oldTimestamp)
+
+	job := &syncjob.SyncJob{
+		RemoteProjectName:  "remote",
+		RemoteResourceName: "resource",
+		ResourceName:       "resource",
+		ResourceType:       "model",
+		SyncType:           "pull",
+		Status:             syncjob.SyncJobStatusPending,
+		UpdatedAt:          oldTimestamp,
+	}
+	require.NoError(t, database.Create(job).Error)
+	updated, err = NewSyncJobDB(database).UpdateJobStatusCAS(
+		ctx, job.ID, syncjob.SyncJobStatusPending, syncjob.SyncJobStatusRunning,
+	)
+	require.NoError(t, err)
+	require.True(t, updated)
+	requireTimestampAdvanced(t, database, "sync_jobs", int64(job.ID), oldTimestamp)
+}
+
+func TestRegistryRepo_UpdateAllEditableFieldsIncludingZeroValues(t *testing.T) {
+	database, _ := newSQLiteRepositoryTestDatabase(t)
+	ctx := context.Background()
+	repo := NewRegistryRepo(database)
+
+	initial := registry.Registry{
+		Name:        "upstream-hf",
+		Description: "original description",
+		URL:         "https://hf-mirror.com",
+		Type:        "REGISTRY_TYPE_HUGGINGFACE",
+		Insecure:    true,
+	}
+	initial.SetCredential(registry.NewBasicCredential("old-user", "old-password"))
+	reg, err := repo.CreateRegistry(ctx, initial)
+	require.NoError(t, err)
+
+	// PUT sends all editable fields; clearing description and credentials must persist.
+	err = repo.UpdateRegistry(ctx, registry.Registry{
+		ID:       reg.ID,
+		Name:     "updated-hf",
+		URL:      "https://huggingface.co",
+		Insecure: false,
+	})
+	require.NoError(t, err)
+
+	fetched, err := repo.GetRegistry(ctx, reg.ID)
+	require.NoError(t, err)
+	require.Equal(t, "updated-hf", fetched.Name)
+	require.Equal(t, "https://huggingface.co", fetched.URL)
+	require.Empty(t, fetched.Description)
+	require.Empty(t, fetched.CredentialType)
+	require.Empty(t, fetched.AuthInfo)
+	require.False(t, fetched.Insecure)
+	require.Equal(t, initial.Type, fetched.Type)
+}
+
+func requireTimestampAdvanced(t *testing.T, database *gorm.DB, table string, id int64, oldTimestamp time.Time) {
+	t.Helper()
+	var updatedAt time.Time
+	require.NoError(t, database.Table(table).Select("updated_at").Where("id = ?", id).Scan(&updatedAt).Error)
+	require.True(t, updatedAt.After(oldTimestamp), "%s.updated_at was not advanced", table)
+}
+
+func newSQLiteRepositoryTestDatabase(t *testing.T) (*gorm.DB, *appconfig.Config) {
+	t.Helper()
+	dataDir := t.TempDir()
+	dsn, err := db.DefaultSQLiteDSN(dataDir)
+	require.NoError(t, err)
+
+	config := &appconfig.Config{
+		DataDir: dataDir,
+		Session: appconfig.SessionConfig{
+			PersistentSessionLifetime:    24 * time.Hour,
+			PersistentSessionIdleTimeout: 12 * time.Hour,
+			NonPersistentIdleTimeout:     time.Hour,
+		},
+		Database: db.Config{
+			Driver:  db.DriverSQLite,
+			DSN:     dsn,
+			SQLPath: repositoryMigrationSQLPath(t),
+			Migrate: true,
+		},
+	}
+	database, err := db.New(config.Database)
+	require.NoError(t, err)
+	sqlDB, err := database.DB()
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		require.NoError(t, sqlDB.Close())
+	})
+
+	return database, config
+}
+
+func repositoryMigrationSQLPath(t *testing.T) string {
+	t.Helper()
+	_, currentFile, _, ok := runtime.Caller(0)
+	require.True(t, ok)
+	return filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", "db", "migrations", "sql"))
+}
