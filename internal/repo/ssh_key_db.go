@@ -19,3 +19,45 @@ import (
 	"errors"
 
 	"gorm.io/gorm"
+
+	"github.com/matrixhub-ai/matrixhub/internal/domain/user"
+)
+
+type sshKeyRepo struct {
+	db *gorm.DB
+}
+
+func (s *sshKeyRepo) GetByFingerprint(ctx context.Context, fingerprint string) (*user.SSHKey, error) {
+	var sk user.SSHKey
+	err := s.db.WithContext(ctx).Where("fingerprint = ?", fingerprint).Find(&sk).Error
+	return &sk, err
+}
+
+func (s *sshKeyRepo) ListSSHKeys(ctx context.Context, userId int) (sks []*user.SSHKey, err error) {
+	err = s.db.WithContext(ctx).Where("user_id = ?", userId).Find(&sks).Error
+	return
+}
+
+func (s *sshKeyRepo) CreateSSHKey(ctx context.Context, key user.SSHKey) error {
+	return createSSHKey(s.db.WithContext(ctx), &key)
+}
+
+func createSSHKey(tx *gorm.DB, key *user.SSHKey) error {
+	if err := tx.Create(key).Error; err != nil {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			return user.ErrSSHKeyAlreadyExists
+		}
+		return err
+	}
+	return nil
+}
+
+func (s *sshKeyRepo) DeleteSSHKey(ctx context.Context, userId, id int) error {
+	return s.db.WithContext(ctx).Where("id = ? and user_id = ?", id, userId).Delete(&user.SSHKey{}).Error
+}
+
+func NewSSHKeyRepo(db *gorm.DB) user.ISSHKeyRepo {
+	return &sshKeyRepo{
+		db: db,
+	}
+}
