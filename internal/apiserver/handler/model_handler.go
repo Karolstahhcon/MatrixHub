@@ -400,3 +400,138 @@ func (mh *ModelHandler) ListModelCommits(ctx context.Context, request *modelv1al
 
 	// Verify permission
 	if allowed, err := mh.authzService.VerifyProjectPermissionByName(ctx, request.Project, role.ModelGet); err != nil || !allowed {
+		return nil, status.Error(codes.PermissionDenied, "permission denied")
+	}
+
+	// Call service (diff parameter is ignored for now)
+	commits, total, err := mh.ms.ListModelCommits(ctx, request.Project, request.Name, request.Revision, int(request.Page), int(request.PageSize))
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
+		return nil, status.Error(codes.Internal, "failed to list commits")
+	}
+
+	// Convert to proto
+	items := make([]*modelv1alpha1.Commit, len(commits))
+	for i, c := range commits {
+		items[i] = commitToProto(c)
+	}
+
+	return &modelv1alpha1.ListModelCommitsResponse{
+		Items: items,
+		Pagination: &modelv1alpha1.Pagination{
+			Total:    int32(total),
+			Page:     request.Page,
+			PageSize: request.PageSize,
+			Pages:    utils.CalculatePages(total, request.PageSize),
+		},
+	}, nil
+}
+
+func (mh *ModelHandler) GetModelCommit(ctx context.Context, request *modelv1alpha1.GetModelCommitRequest) (*modelv1alpha1.Commit, error) {
+	// Validate request
+	if err := request.ValidateAll(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	// Verify permission
+	if allowed, err := mh.authzService.VerifyProjectPermissionByName(ctx, request.Project, role.ModelGet); err != nil || !allowed {
+		return nil, status.Error(codes.PermissionDenied, "permission denied")
+	}
+
+	// Call service
+	commit, err := mh.ms.GetModelCommit(ctx, request.Project, request.Name, request.Id)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
+		return nil, status.Error(codes.Internal, "failed to get commit")
+	}
+
+	return commitToProto(commit), nil
+}
+
+func (mh *ModelHandler) GetModelTree(ctx context.Context, request *modelv1alpha1.GetModelTreeRequest) (*modelv1alpha1.GetModelTreeResponse, error) {
+	// Validate request
+	if err := request.ValidateAll(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	// Verify permission
+	if allowed, err := mh.authzService.VerifyProjectPermissionByName(ctx, request.Project, role.ModelGet); err != nil || !allowed {
+		return nil, status.Error(codes.PermissionDenied, "permission denied")
+	}
+
+	// Call service
+	entries, err := mh.ms.GetModelTree(ctx, request.Project, request.Name, request.Revision, request.Path)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
+		return nil, status.Error(codes.Internal, "failed to get tree")
+	}
+
+	// Convert to proto
+	items := make([]*modelv1alpha1.File, len(entries))
+	for i, entry := range entries {
+		items[i] = treeEntryToProtoFile(entry)
+	}
+
+	return &modelv1alpha1.GetModelTreeResponse{
+		Items: items,
+	}, nil
+}
+
+func (mh *ModelHandler) UpdateModelSetting(ctx context.Context, request *modelv1alpha1.UpdateModelSettingRequest) (*modelv1alpha1.UpdateModelSettingResponse, error) {
+	// Validate request
+	if err := request.ValidateAll(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	// Verify permission
+	if allowed, err := mh.authzService.VerifyProjectPermissionByName(ctx, request.Project, role.ModelSetting); err != nil || !allowed {
+		return nil, status.Error(codes.PermissionDenied, "permission denied")
+	}
+
+	update := &model.SettingUpdate{}
+	if request.Popular != nil {
+		v := request.Popular.GetValue()
+		update.IsPopular = &v
+	}
+
+	err := mh.ms.UpdateModelSetting(ctx, request.Project, request.Name, update)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &modelv1alpha1.UpdateModelSettingResponse{}, nil
+}
+
+func (mh *ModelHandler) GetModelBlob(ctx context.Context, request *modelv1alpha1.GetModelBlobRequest) (*modelv1alpha1.File, error) {
+	if err := request.ValidateAll(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	// Verify permission
+	if allowed, err := mh.authzService.VerifyProjectPermissionByName(ctx, request.Project, role.ModelGet); err != nil || !allowed {
+		return nil, status.Error(codes.PermissionDenied, "permission denied")
+	}
+
+	entry, err := mh.ms.GetModelBlob(ctx, request.Project, request.Name, request.Revision, request.Path)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "does not exist") {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
+		return nil, status.Error(codes.Internal, "failed to get blob")
+	}
+
+	if entry.Type == git.FileTypeDir {
+		return nil, status.Error(codes.InvalidArgument, "path must reference a file blob")
+	}
+
+	return treeEntryToProtoFile(entry), nil
+}
