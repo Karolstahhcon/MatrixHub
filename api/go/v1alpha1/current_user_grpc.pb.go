@@ -209,3 +209,215 @@ func RegisterCurrentUserServer(s grpc.ServiceRegistrar, srv CurrentUserServer) {
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
+	s.RegisterService(&CurrentUser_ServiceDesc, srv)
+}
+
+func _CurrentUser_GetCurrentUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCurrentUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CurrentUserServer).GetCurrentUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CurrentUser_GetCurrentUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CurrentUserServer).GetCurrentUser(ctx, req.(*GetCurrentUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CurrentUser_ResetPassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResetPasswordRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CurrentUserServer).ResetPassword(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CurrentUser_ResetPassword_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CurrentUserServer).ResetPassword(ctx, req.(*ResetPasswordRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CurrentUser_ListAccessTokens_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAccessTokensRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CurrentUserServer).ListAccessTokens(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CurrentUser_ListAccessTokens_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CurrentUserServer).ListAccessTokens(ctx, req.(*ListAccessTokensRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CurrentUser_CreateAccessToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateAccessTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CurrentUserServer).CreateAccessToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CurrentUser_CreateAccessToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CurrentUserServer).CreateAccessToken(ctx, req.(*CreateAccessTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CurrentUser_DeleteAccessToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteAccessTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CurrentUserServer).DeleteAccessToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CurrentUser_DeleteAccessToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CurrentUserServer).DeleteAccessToken(ctx, req.(*DeleteAccessTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CurrentUser_GetProjectRoles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProjectRolesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CurrentUserServer).GetProjectRoles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CurrentUser_GetProjectRoles_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CurrentUserServer).GetProjectRoles(ctx, req.(*GetProjectRolesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CurrentUser_CreateSSHKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateSSHKeyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CurrentUserServer).CreateSSHKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CurrentUser_CreateSSHKey_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CurrentUserServer).CreateSSHKey(ctx, req.(*CreateSSHKeyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CurrentUser_DeleteSSHKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteSSHKeyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CurrentUserServer).DeleteSSHKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CurrentUser_DeleteSSHKey_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CurrentUserServer).DeleteSSHKey(ctx, req.(*DeleteSSHKeyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CurrentUser_ListSSHKeys_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListSSHKeysRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CurrentUserServer).ListSSHKeys(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CurrentUser_ListSSHKeys_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CurrentUserServer).ListSSHKeys(ctx, req.(*ListSSHKeysRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// CurrentUser_ServiceDesc is the grpc.ServiceDesc for CurrentUser service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var CurrentUser_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "matrixhub.v1alpha1.CurrentUser",
+	HandlerType: (*CurrentUserServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetCurrentUser",
+			Handler:    _CurrentUser_GetCurrentUser_Handler,
+		},
+		{
+			MethodName: "ResetPassword",
+			Handler:    _CurrentUser_ResetPassword_Handler,
+		},
+		{
+			MethodName: "ListAccessTokens",
+			Handler:    _CurrentUser_ListAccessTokens_Handler,
+		},
+		{
+			MethodName: "CreateAccessToken",
+			Handler:    _CurrentUser_CreateAccessToken_Handler,
+		},
+		{
+			MethodName: "DeleteAccessToken",
+			Handler:    _CurrentUser_DeleteAccessToken_Handler,
+		},
+		{
+			MethodName: "GetProjectRoles",
+			Handler:    _CurrentUser_GetProjectRoles_Handler,
+		},
+		{
+			MethodName: "CreateSSHKey",
+			Handler:    _CurrentUser_CreateSSHKey_Handler,
+		},
+		{
+			MethodName: "DeleteSSHKey",
+			Handler:    _CurrentUser_DeleteSSHKey_Handler,
+		},
+		{
+			MethodName: "ListSSHKeys",
+			Handler:    _CurrentUser_ListSSHKeys_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "v1alpha1/current_user.proto",
+}
