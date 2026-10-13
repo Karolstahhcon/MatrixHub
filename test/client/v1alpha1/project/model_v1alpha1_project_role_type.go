@@ -10,3 +10,10 @@
 package v1alpha1
 
 type V1alpha1ProjectRoleType string
+
+// List of v1alpha1ProjectRoleType
+const (
+	ADMIN_V1alpha1ProjectRoleType V1alpha1ProjectRoleType = "ROLE_TYPE_PROJECT_ADMIN"
+	EDITOR_V1alpha1ProjectRoleType V1alpha1ProjectRoleType = "ROLE_TYPE_PROJECT_EDITOR"
+	VIEWER_V1alpha1ProjectRoleType V1alpha1ProjectRoleType = "ROLE_TYPE_PROJECT_VIEWER"
+)
