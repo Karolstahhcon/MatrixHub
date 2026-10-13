@@ -49,3 +49,106 @@ function CommitHashCell({ row }: CommitCellProps) {
       <CopyValueButton
         value={commitId}
         iconSize={12}
+        color="var(--mantine-color-gray-9)"
+      />
+    </Group>
+  )
+}
+
+function CommitAuthorDateCell({ row }: CommitCellProps) {
+  const author = row.original.authorName || '-'
+  const authorDate = formatDateTime(row.original.authorDate, 'YYYY-MM-DD HH:mm:ss')
+
+  return (
+    <Text size="sm" truncate>
+      {`${author} ${authorDate}`}
+    </Text>
+  )
+}
+
+function CommitDetailCell({
+  row,
+  table,
+}: DataTableRowActionsProps<Commit>) {
+  const { t } = useTranslation()
+  const {
+    getDetailLinkProps,
+  } = table.options.meta as Pick<CommitsTableProps, 'getDetailLinkProps'>
+  const commitId = row.original.id
+
+  if (!commitId) {
+    return <Text size="sm">-</Text>
+  }
+
+  const detailLinkProps = getDetailLinkProps(row.original)
+
+  return (
+    <AnchorLink
+      size="sm"
+      underline="never"
+      {...detailLinkProps}
+    >
+      {t('shared.commitsTable.actions.detail')}
+    </AnchorLink>
+  )
+}
+
+export function CommitsTable({
+  commits,
+  pagination,
+  page,
+  loading,
+  onPageChange,
+  getDetailLinkProps,
+}: CommitsTableProps) {
+  const { t } = useTranslation()
+
+  const columns: MRT_ColumnDef<Commit>[] = [
+    {
+      id: 'message',
+      header: t('shared.commitsTable.columns.message'),
+      Cell: CommitMessageCell,
+      size: 350,
+    },
+    {
+      id: 'id',
+      header: '',
+      Cell: CommitHashCell,
+    },
+    {
+      id: 'authorDate',
+      header: '',
+      Cell: CommitAuthorDateCell,
+    },
+  ]
+
+  return (
+    <Box bdrs="md" style={{ overflow: 'hidden' }}>
+      <DataTable
+        data={commits}
+        columns={columns}
+        pagination={pagination}
+        page={page}
+        loading={loading}
+        emptyTitle={t('common.noResults')}
+        onPageChange={onPageChange}
+        enableRowActions
+        renderRowActions={CommitDetailCell}
+        displayColumnDefOptions={{
+          'mrt-row-actions': {
+            header: '',
+            size: 80,
+            minSize: 80,
+            maxSize: 80,
+            grow: false,
+          },
+        }}
+        tableOptions={{
+          meta: {
+            getDetailLinkProps,
+          },
+        }}
+      />
+    </Box>
+  )
+}
