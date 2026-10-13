@@ -24,3 +24,29 @@ import (
 const (
 	CookieName        = "token"
 	UsernameCtxKey    = "username"
+	UserIdCtxKey      = "user_id"
+	LoginAtCtxKey     = "login_at"
+	LastActiveCtxKey  = "last_active"
+	SessionVersionKey = "session_version"
+	RememberMeCtxKey  = "__rememberMe"
+
+	MaxPersistentSessionLifetime        = time.Hour * 24 * 30
+	DefaultPersistentSessionIdleTimeout = time.Hour * 24 * 7
+	DefaultSessionIdleTimeout           = time.Hour * 8
+)
+
+type SessionConfig struct {
+	PersistentSessionLifetime    time.Duration
+	PersistentSessionIdleTimeout time.Duration
+	NonPersistentIdleTimeout     time.Duration
+}
+
+//go:generate go tool mockgen -source=session.go -destination=mocks/session_repo_mock.go -package=mocks
+type ISessionRepo interface {
+	GetSessionCookie() scs.SessionCookie
+	GetSessionConfig() SessionConfig
+	LoadSession(ctx context.Context) (context.Context, error)
+	WriteSessionCookie(ctx context.Context, token string, expiry time.Time) error
+	CommitAndWriteSessionCookie(ctx context.Context) error
+	Manager() *scs.SessionManager
+}
