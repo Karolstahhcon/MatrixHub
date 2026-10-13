@@ -80,3 +80,85 @@ func NewSSHClientFixture(ctx context.Context, root string) (*SSHClientFixture, e
 	if err != nil {
 		return nil, err
 	}
+
+	host := GetSSHHost()
+	knownHostsPath := filepath.Join(root, "known_hosts")
+	var scan CommandResult
+	for {
+		attemptCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		scan = RunCommand(attemptCtx, root, nil, "ssh-keyscan", "-T", "5", "-p", strconv.Itoa(port), "-t", "rsa", host)
+		cancel()
+		if scan.Err == nil && strings.TrimSpace(scan.Stdout) != "" {
+			break
+		}
+		select {
+		case <-ctx.Done():
+			return nil, fmt.Errorf("wait for SSH server: %w; last result: %s", ctx.Err(), scan.FailureMessage())
+		case <-time.After(500 * time.Millisecond):
+		}
+	}
+	if err := os.WriteFile(knownHostsPath, []byte(scan.Stdout), 0600); err != nil {
+		return nil, err
+	}
+
+	configPath := filepath.Join(root, "ssh_config")
+	config := fmt.Sprintf("Host *\n  Port %d\n  BatchMode yes\n  IdentitiesOnly yes\n  IdentityFile %s\n  StrictHostKeyChecking yes\n  UserKnownHostsFile %s\n  LogLevel ERROR\n",
+		port, quoteSSHConfigPath(privateKeyPath), quoteSSHConfigPath(knownHostsPath))
+	if err := os.WriteFile(configPath, []byte(config), 0600); err != nil {
+		return nil, err
+	}
+
+	return &SSHClientFixture{
+		Host:           host,
+		Port:           port,
+		PrivateKeyPath: privateKeyPath,
+		PublicKey:      strings.TrimSpace(string(publicKeyBytes)),
+		ConfigPath:     configPath,
+	}, nil
+}
+
+func (f *SSHClientFixture) GitEnvironment() map[string]string {
+	return map[string]string{
+		"GIT_CONFIG_GLOBAL":   os.DevNull,
+		"GIT_CONFIG_NOSYSTEM": "1",
+		"GIT_TERMINAL_PROMPT": "0",
+		"GCM_INTERACTIVE":     "never",
+		"GIT_SSH_COMMAND":     "ssh -F " + shellQuote(f.ConfigPath),
+		"LC_ALL":              "C",
+		"SSH_AUTH_SOCK":       "",
+	}
+}
+
+func (f *SSHClientFixture) RepositoryURL(project, model string) string {
+	return fmt.Sprintf("git@%s:%s/%s.git", f.Host, project, model)
+}
+
+// HFCLIEnvironment isolates token and cache state from the developer machine.
+func HFCLIEnvironment(root, token string) map[string]string {
+	return map[string]string{
+		"HF_ENDPOINT":                  GetBaseURL(),
+		"HF_TOKEN":                     token,
+		"HF_HOME":                      filepath.Join(root, "hf"),
+		"HF_HUB_CACHE":                 filepath.Join(root, "hf", "hub"),
+		"HF_HUB_DISABLE_PROGRESS_BARS": "1",
+		"HF_HUB_DISABLE_TELEMETRY":     "1",
+		"HF_HUB_DISABLE_UPDATE_CHECK":  "1",
+		"HF_HUB_DISABLE_XET":           "1",
+		"NO_COLOR":                     "1",
+		"LC_ALL":                       "C",
+	}
+}
+
+func errorsFromCommand(result CommandResult) error {
+	return fmt.Errorf("%s", result.FailureMessage())
+}
+
+func shellQuote(value string) string {
+	return "'" + strings.ReplaceAll(value, "'", "'\\''") + "'"
+}
+
+func quoteSSHConfigPath(value string) string {
+	value = strings.ReplaceAll(value, "\\", "\\\\")
+	value = strings.ReplaceAll(value, "\"", "\\\"")
+	return "\"" + value + "\""
+}
