@@ -189,3 +189,195 @@ func (h *DatasetHandler) ListDatasets(ctx context.Context, request *datasetv1alp
 	}
 
 	// Convert to proto
+	items := make([]*datasetv1alpha1.Dataset, len(datasets))
+	for i, d := range datasets {
+		items[i] = datasetToProto(d)
+	}
+
+	// Build response
+	return &datasetv1alpha1.ListDatasetsResponse{
+		Items: items,
+		Pagination: &datasetv1alpha1.Pagination{
+			Total:    int32(total),
+			Page:     request.Page,
+			PageSize: request.PageSize,
+			Pages:    utils.CalculatePages(total, request.PageSize),
+		},
+	}, nil
+}
+
+func (h *DatasetHandler) CreateDataset(ctx context.Context, request *datasetv1alpha1.CreateDatasetRequest) (*datasetv1alpha1.CreateDatasetResponse, error) {
+	// Validate request
+	if err := request.ValidateAll(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	// Call service
+	_, err := h.ds.CreateDataset(ctx, request.Project, request.Name)
+	if err != nil {
+		if strings.Contains(err.Error(), "already exists") {
+			return nil, status.Error(codes.AlreadyExists, err.Error())
+		}
+		if strings.Contains(err.Error(), "not found") {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &datasetv1alpha1.CreateDatasetResponse{}, nil
+}
+
+func (h *DatasetHandler) DeleteDataset(ctx context.Context, request *datasetv1alpha1.DeleteDatasetRequest) (*datasetv1alpha1.DeleteDatasetResponse, error) {
+	// Validate request
+	if err := request.ValidateAll(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	// Call service
+	err := h.ds.DeleteDataset(ctx, request.Project, request.Name)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &datasetv1alpha1.DeleteDatasetResponse{}, nil
+}
+
+func (h *DatasetHandler) GetDataset(ctx context.Context, request *datasetv1alpha1.GetDatasetRequest) (*datasetv1alpha1.Dataset, error) {
+	// Validate request
+	if err := request.ValidateAll(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	// Call service
+	dataset, err := h.ds.GetDataset(ctx, request.Project, request.Name)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return datasetToProto(dataset), nil
+}
+
+func (h *DatasetHandler) ListDatasetRevisions(ctx context.Context, request *datasetv1alpha1.ListDatasetRevisionsRequest) (*datasetv1alpha1.ListDatasetRevisionsResponse, error) {
+	// Validate request
+	if err := request.ValidateAll(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	// Call service
+	revisions, err := h.ds.ListDatasetRevisions(ctx, request.Project, request.Name)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "does not exist") {
+			return nil, status.Errorf(codes.NotFound, "dataset %s not found in project %s", request.Name, request.Project)
+		}
+		return nil, status.Errorf(codes.Internal, "failed to list revisions: %v", err)
+	}
+
+	// Convert to proto and return
+	return &datasetv1alpha1.ListDatasetRevisionsResponse{
+		Items: datasetRevisionsToProto(revisions),
+	}, nil
+}
+
+func (h *DatasetHandler) ListDatasetCommits(ctx context.Context, request *datasetv1alpha1.ListDatasetCommitsRequest) (*datasetv1alpha1.ListDatasetCommitsResponse, error) {
+	// Validate request
+	if err := request.ValidateAll(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	// Call service
+	commits, total, err := h.ds.ListDatasetCommits(ctx, request.Project, request.Name, request.Revision, int(request.Page), int(request.PageSize))
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
+		return nil, status.Error(codes.Internal, "failed to list commits")
+	}
+
+	// Convert to proto
+	items := make([]*datasetv1alpha1.Commit, len(commits))
+	for i, c := range commits {
+		items[i] = datasetCommitToProto(c)
+	}
+
+	return &datasetv1alpha1.ListDatasetCommitsResponse{
+		Items: items,
+		Pagination: &datasetv1alpha1.Pagination{
+			Total:    int32(total),
+			Page:     request.Page,
+			PageSize: request.PageSize,
+			Pages:    utils.CalculatePages(total, request.PageSize),
+		},
+	}, nil
+}
+
+func (h *DatasetHandler) GetDatasetCommit(ctx context.Context, request *datasetv1alpha1.GetDatasetCommitRequest) (*datasetv1alpha1.Commit, error) {
+	// Validate request
+	if err := request.ValidateAll(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	// Call service
+	commit, err := h.ds.GetDatasetCommit(ctx, request.Project, request.Name, request.Id)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
+		return nil, status.Error(codes.Internal, "failed to get commit")
+	}
+
+	return datasetCommitToProto(commit), nil
+}
+
+func (h *DatasetHandler) GetDatasetTree(ctx context.Context, request *datasetv1alpha1.GetDatasetTreeRequest) (*datasetv1alpha1.GetDatasetTreeResponse, error) {
+	// Validate request
+	if err := request.ValidateAll(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	// Call service
+	entries, err := h.ds.GetDatasetTree(ctx, request.Project, request.Name, request.Revision, request.Path)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
+		return nil, status.Error(codes.Internal, "failed to get tree")
+	}
+
+	// Convert to proto
+	items := make([]*datasetv1alpha1.File, len(entries))
+	for i, entry := range entries {
+		items[i] = datasetTreeEntryToProtoFile(entry)
+	}
+
+	return &datasetv1alpha1.GetDatasetTreeResponse{
+		Items: items,
+	}, nil
+}
+
+func (h *DatasetHandler) GetDatasetBlob(ctx context.Context, request *datasetv1alpha1.GetDatasetBlobRequest) (*datasetv1alpha1.File, error) {
+	// Validate request
+	if err := request.ValidateAll(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	// Call service
+	entry, err := h.ds.GetDatasetBlob(ctx, request.Project, request.Name, request.Revision, request.Path)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "does not exist") {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
+		return nil, status.Error(codes.Internal, "failed to get blob")
+	}
+
+	if entry.Type == git.FileTypeDir {
+		return nil, status.Error(codes.InvalidArgument, "path must reference a file blob")
+	}
+
+	return datasetTreeEntryToProtoFile(entry), nil
+}
