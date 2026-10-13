@@ -23,3 +23,79 @@ export type User = {
 }
 
 export type CreateUserRequest = {
+  username?: string
+  password?: string
+  isAdmin?: boolean
+}
+
+export type CreateUserResponse = {
+}
+
+export type ListUsersRequest = {
+  page?: number
+  pageSize?: number
+  search?: string
+  excludeProject?: string
+}
+
+export type ListUsersResponse = {
+  users?: User[]
+  pagination?: MatrixhubV1alpha1Utils.Pagination
+}
+
+export type GetUserRequest = {
+  id?: number
+}
+
+export type GetUserResponse = {
+  id?: number
+  username?: string
+  email?: string
+  isAdmin?: boolean
+  source?: UserSource
+  createdAt?: GoogleProtobufTimestamp.Timestamp
+}
+
+export type DeleteUserRequest = {
+  id?: number
+}
+
+export type DeleteUserResponse = {
+}
+
+export type SetUserSysAdminRequest = {
+  id?: number
+  sysadminFlag?: boolean
+}
+
+export type SetUserSysAdminResponse = {
+}
+
+export type ResetUserPasswordRequest = {
+  id?: number
+  password?: string
+}
+
+export type ResetUserPasswordResponse = {
+}
+
+export class Users {
+  static ListUsers(req: ListUsersRequest, initReq?: fm.InitReq): Promise<ListUsersResponse> {
+    return fm.fetchReq<ListUsersRequest, ListUsersResponse>(`/api/v1alpha1/users?${fm.renderURLSearchParams(req, [])}`, {...initReq, method: "GET"})
+  }
+  static CreateUser(req: CreateUserRequest, initReq?: fm.InitReq): Promise<CreateUserResponse> {
+    return fm.fetchReq<CreateUserRequest, CreateUserResponse>(`/api/v1alpha1/users`, {...initReq, method: "POST", body: JSON.stringify(req, fm.replacer)})
+  }
+  static GetUser(req: GetUserRequest, initReq?: fm.InitReq): Promise<GetUserResponse> {
+    return fm.fetchReq<GetUserRequest, GetUserResponse>(`/api/v1alpha1/users/${req["id"]}?${fm.renderURLSearchParams(req, ["id"])}`, {...initReq, method: "GET"})
+  }
+  static DeleteUser(req: DeleteUserRequest, initReq?: fm.InitReq): Promise<DeleteUserResponse> {
+    return fm.fetchReq<DeleteUserRequest, DeleteUserResponse>(`/api/v1alpha1/users/${req["id"]}`, {...initReq, method: "DELETE"})
+  }
+  static ResetUserPassword(req: ResetUserPasswordRequest, initReq?: fm.InitReq): Promise<ResetUserPasswordResponse> {
+    return fm.fetchReq<ResetUserPasswordRequest, ResetUserPasswordResponse>(`/api/v1alpha1/users/${req["id"]}/reset-password`, {...initReq, method: "POST", body: JSON.stringify(req, fm.replacer)})
+  }
+  static SetUserSysAdmin(req: SetUserSysAdminRequest, initReq?: fm.InitReq): Promise<SetUserSysAdminResponse> {
+    return fm.fetchReq<SetUserSysAdminRequest, SetUserSysAdminResponse>(`/apis/v1alpha1/users/${req["id"]}/sysadmin`, {...initReq, method: "PUT", body: JSON.stringify(req, fm.replacer)})
+  }
+}
