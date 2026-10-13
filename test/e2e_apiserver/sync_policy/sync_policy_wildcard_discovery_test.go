@@ -78,3 +78,83 @@ var _ = Describe("SyncPolicy Wildcard Discovery", Label("sync-policy", "git"), f
 		})
 		Expect(err).NotTo(HaveOccurred(), "create source dataset %s/%s", source.Name, wantDataset)
 		defer func() {
+			_, _, _ = datasetsApi.DatasetsDeleteDataset(ctx, source.Name, wantDataset)
+		}()
+
+		target, err := tools.CreateProjectFixture(ctx, "e2e-wc-dst")
+		Expect(err).NotTo(HaveOccurred())
+		defer target.Cleanup(ctx)
+
+		// The registry URL is this very deployment. If discovery ignored it and
+		// went to huggingface.co, the randomly-named namespace would not exist
+		// there and no jobs would be generated.
+		registry, err := tools.CreateHuggingFaceRegistryFixture(ctx, "e2e-wc", selfURL)
+		Expect(err).NotTo(HaveOccurred())
+		defer registry.Cleanup(ctx)
+		Expect(registry.ID).To(BeNumerically(">", 0))
+
+		name := fmt.Sprintf("e2e-wildcard-discovery-%d", time.Now().UnixNano())
+		req := v1alpha1.V1alpha1CreateSyncPolicyRequest{
+			Name:        name,
+			Description: "e2e wildcard discovery honours the registry URL",
+			PolicyType:  ptrPolicyType(v1alpha1.PULL_BASE_V1alpha1SyncPolicyType),
+			TriggerType: ptrTriggerType(v1alpha1.MANUAL_V1alpha1TriggerType),
+			PullBasePolicy: &v1alpha1.V1alpha1PullBasePolicy{
+				SourceRegistryId: registry.ID,
+				// "<namespace>/*" is what turns this into a discovery-driven policy.
+				ResourceName: fmt.Sprintf("%s/*", source.Name),
+				ResourceTypes: []v1alpha1.V1alpha1ResourceType{
+					v1alpha1.MODEL_V1alpha1ResourceType,
+					v1alpha1.DATASET_V1alpha1ResourceType,
+				},
+				TargetProjectName: target.Name,
+			},
+			IsOverwrite: false,
+		}
+
+		resp, _, err := api.SyncPolicyCreateSyncPolicy(ctx, req)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp.SyncPolicy).NotTo(BeNil())
+		pid := resp.SyncPolicy.Id
+		Expect(pid).To(BeNumerically(">", 0))
+		defer func() {
+			_, _, _ = api.SyncPolicyDeleteSyncPolicy(ctx, pid)
+		}()
+
+		taskResp, _, err := api.SyncPolicyCreateSyncTask(ctx, pid)
+		Expect(err).NotTo(HaveOccurred())
+		tid := taskResp.Id
+		Expect(tid).To(BeNumerically(">", 0))
+
+		// One job per discovered repository. An empty job list is exactly the
+		// symptom of discovery hitting the wrong host, so this is the assertion
+		// that guards the regression.
+		jobs, err := waitForJobs(ctx, api, pid, tid, 2*time.Minute)
+		Expect(err).NotTo(HaveOccurred(), "no sync jobs generated — discovery did not reach the registry URL")
+
+		// For a pull job the API reports the source as "<registry>:<namespace>/<resource>".
+		discovered := make([]string, 0, len(jobs))
+		for _, job := range jobs {
+			Expect(job.Action).To(Equal("clone"))
+			Expect(job.ResourceName).To(HavePrefix(fmt.Sprintf("%s:%s/", registry.Name, source.Name)),
+				"job source should reference the namespace on the configured registry")
+			discovered = append(discovered, job.ResourceName)
+		}
+		GinkgoWriter.Printf("discovered resources: %v\n", discovered)
+
+		for _, want := range wantModels {
+			Expect(discovered).To(ContainElement(fmt.Sprintf("%s:%s/%s", registry.Name, source.Name, want)),
+				"wildcard discovery should have matched %s/%s from the registry URL", source.Name, want)
+		}
+		Expect(discovered).To(ContainElement(fmt.Sprintf("%s:%s/%s", registry.Name, source.Name, wantDataset)),
+			"wildcard discovery should have matched %s/%s from the registry URL", source.Name, wantDataset)
+		Expect(jobs).To(HaveLen(len(wantModels) + 1))
+
+		// The task itself is allowed to end in any terminal state: the pull half
+		// may fail in a sandboxed environment. Discovery is what is under test.
+		task, err := waitForTaskCompletion(ctx, api, pid, tid, 3*time.Minute)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(task).NotTo(BeNil())
+		Expect(task.TotalItems).NotTo(Equal("0"))
+	})
+})
