@@ -27,3 +27,33 @@ import (
 	"github.com/matrixhub-ai/matrixhub/internal/infra/authcodec"
 )
 
+func TestHandleWhoami(t *testing.T) {
+	t.Run("returns the authenticated user", func(t *testing.T) {
+		encoded, err := authcodec.Marshal(user.NewUserIdentity(42, "alice"))
+		require.NoError(t, err)
+		request := httptest.NewRequest(http.MethodGet, "/api/whoami-v2", nil)
+		request = request.WithContext(authenticate.WithContext(request.Context(), authenticate.UserInfo{
+			User: encoded, Email: "alice@example.com",
+		}))
+		recorder := httptest.NewRecorder()
+
+		(&Handler{}).handleWhoami(recorder, request)
+
+		require.Equal(t, http.StatusOK, recorder.Code)
+		var response whoamiResponse
+		require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+		require.Equal(t, "alice", response.Name)
+		require.Equal(t, "alice@example.com", response.Email)
+		require.Equal(t, "write", response.Auth.AccessToken.Role)
+	})
+
+	t.Run("rejects an anonymous request", func(t *testing.T) {
+		request := httptest.NewRequest(http.MethodGet, "/api/whoami-v2", nil)
+		recorder := httptest.NewRecorder()
+
+		(&Handler{}).handleWhoami(recorder, request)
+
+		require.Equal(t, http.StatusUnauthorized, recorder.Code)
+		require.JSONEq(t, `{"error":"Unauthorized"}`, recorder.Body.String())
+	})
+}
