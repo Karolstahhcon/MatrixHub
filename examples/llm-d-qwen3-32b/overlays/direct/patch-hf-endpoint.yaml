@@ -7,3 +7,6 @@ spec:
     spec:
       containers:
         - name: modelserver
+          env:
+            - name: HF_ENDPOINT
+              value: https://hf.m.daocloud.io
