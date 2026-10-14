@@ -90,3 +90,281 @@ func InitHTTPClients() error {
 			DefaultHeader: defaultHeaders,
 			HTTPClient:    httpClient,
 		}
+		v1alpha1UsersApi = v1alpha1user.NewAPIClient(userCfg).UsersApi
+
+		// Initialize CurrentUser API client
+		currentUserCfg := &v1alpha1current_user.Configuration{
+			BasePath:      baseURL,
+			DefaultHeader: defaultHeaders,
+			HTTPClient:    httpClient,
+		}
+		v1alpha1CurrentUserApi = v1alpha1current_user.NewAPIClient(currentUserCfg).CurrentUserApi
+
+		// Initialize Dataset API client
+		datasetCfg := &v1alpha1dataset.Configuration{
+			BasePath:      baseURL,
+			DefaultHeader: defaultHeaders,
+			HTTPClient:    httpClient,
+		}
+		v1alpha1DatasetsApi = v1alpha1dataset.NewAPIClient(datasetCfg).DatasetsApi
+
+		// Initialize Model API client
+		modelCfg := &v1alpha1model.Configuration{
+			BasePath:      baseURL,
+			DefaultHeader: defaultHeaders,
+			HTTPClient:    httpClient,
+		}
+		v1alpha1ModelsApi = v1alpha1model.NewAPIClient(modelCfg).ModelsApi
+
+		// Initialize Registry API client
+		registryCfg := &v1alpha1registry.Configuration{
+			BasePath:      baseURL,
+			DefaultHeader: defaultHeaders,
+			HTTPClient:    httpClient,
+		}
+		v1alpha1RegistriesApi = v1alpha1registry.NewAPIClient(registryCfg).RegistriesApi
+
+		// Initialize Robot API client
+		robotCfg := &v1alpha1robot.Configuration{
+			BasePath:      baseURL,
+			DefaultHeader: defaultHeaders,
+			HTTPClient:    httpClient,
+		}
+		v1alpha1RobotsApi = v1alpha1robot.NewAPIClient(robotCfg).RobotsApi
+
+		// Initialize SyncPolicy API client
+		syncPolicyCfg := &v1alpha1sync_policy.Configuration{
+			BasePath:      baseURL,
+			DefaultHeader: defaultHeaders,
+			HTTPClient:    httpClient,
+		}
+		v1alpha1SyncPolicyApi = v1alpha1sync_policy.NewAPIClient(syncPolicyCfg).SyncPolicyApi
+
+		// Initialize Cleanup API client
+		cleanupCfg := &v1alpha1cleanup.Configuration{
+			BasePath:      baseURL,
+			DefaultHeader: defaultHeaders,
+			HTTPClient:    httpClient,
+		}
+		v1alpha1CleanupApi = v1alpha1cleanup.NewAPIClient(cleanupCfg).CleanupApi
+
+		log.Println("HTTP clients initialized successfully")
+	})
+
+	return httpInitErr
+}
+
+// GetV1alpha1ProjectsApi returns the Projects HTTP API client
+func GetV1alpha1ProjectsApi() *v1alpha1project.ProjectsApiService {
+	if v1alpha1ProjectsApi == nil {
+		err := InitHTTPClients()
+		if err != nil {
+			panic(err)
+		}
+	}
+	return v1alpha1ProjectsApi
+}
+
+// GetV1alpha1UsersApi returns the Users HTTP API client
+func GetV1alpha1UsersApi() *v1alpha1user.UsersApiService {
+	if v1alpha1UsersApi == nil {
+		err := InitHTTPClients()
+		if err != nil {
+			panic(err)
+		}
+	}
+	return v1alpha1UsersApi
+}
+
+// GetV1alpha1CurrentUserApi returns the CurrentUser HTTP API client
+func GetV1alpha1CurrentUserApi() *v1alpha1current_user.CurrentUserApiService {
+	if v1alpha1CurrentUserApi == nil {
+		err := InitHTTPClients()
+		if err != nil {
+			panic(err)
+		}
+	}
+	return v1alpha1CurrentUserApi
+}
+
+// GetV1alpha1ModelsApi returns the Models HTTP API client
+func GetV1alpha1ModelsApi() *v1alpha1model.ModelsApiService {
+	if v1alpha1ModelsApi == nil {
+		err := InitHTTPClients()
+		if err != nil {
+			panic(err)
+		}
+	}
+	return v1alpha1ModelsApi
+}
+
+// GetV1alpha1DatasetsApi returns the Datasets HTTP API client.
+func GetV1alpha1DatasetsApi() *v1alpha1dataset.DatasetsApiService {
+	if v1alpha1DatasetsApi == nil {
+		err := InitHTTPClients()
+		if err != nil {
+			panic(err)
+		}
+	}
+	return v1alpha1DatasetsApi
+}
+
+// GetV1alpha1RegistriesApi returns the Registries HTTP API client.
+func GetV1alpha1RegistriesApi() *v1alpha1registry.RegistriesApiService {
+	if v1alpha1RegistriesApi == nil {
+		err := InitHTTPClients()
+		if err != nil {
+			panic(err)
+		}
+	}
+	return v1alpha1RegistriesApi
+}
+
+// GetV1alpha1RobotsApi returns the Robots HTTP API client.
+func GetV1alpha1RobotsApi() *v1alpha1robot.RobotsApiService {
+	if v1alpha1RobotsApi == nil {
+		err := InitHTTPClients()
+		if err != nil {
+			panic(err)
+		}
+	}
+	return v1alpha1RobotsApi
+}
+
+// GetV1alpha1SyncPolicyApi returns the SyncPolicy HTTP API client.
+func GetV1alpha1SyncPolicyApi() *v1alpha1sync_policy.SyncPolicyApiService {
+	if v1alpha1SyncPolicyApi == nil {
+		err := InitHTTPClients()
+		if err != nil {
+			panic(err)
+		}
+	}
+	return v1alpha1SyncPolicyApi
+}
+
+// GetV1alpha1CleanupApi returns the Cleanup HTTP API client.
+func GetV1alpha1CleanupApi() *v1alpha1cleanup.CleanupApiService {
+	if v1alpha1CleanupApi == nil {
+		err := InitHTTPClients()
+		if err != nil {
+			panic(err)
+		}
+	}
+	return v1alpha1CleanupApi
+}
+
+// CreateModelClientWithCookie creates a new Model API client with a specific cookie
+func CreateModelClientWithCookie(cookie string) *v1alpha1model.ModelsApiService {
+	baseURL := GetBaseURL()
+
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // #nosec G402
+			Proxy:           http.ProxyFromEnvironment,
+		},
+	}
+
+	cfg := &v1alpha1model.Configuration{
+		BasePath: baseURL,
+		DefaultHeader: map[string]string{
+			"Cookie":       cookie,
+			"Content-Type": "application/json",
+		},
+		HTTPClient: httpClient,
+	}
+
+	return v1alpha1model.NewAPIClient(cfg).ModelsApi
+}
+
+// CreateAPIClientWithCookie creates a new API client with a specific cookie
+// This is useful for testing with different users
+func CreateProjectClientWithCookie(cookie string) *v1alpha1project.ProjectsApiService {
+	baseURL := GetBaseURL()
+
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // #nosec G402
+			Proxy:           http.ProxyFromEnvironment,
+		},
+	}
+
+	cfg := &v1alpha1project.Configuration{
+		BasePath: baseURL,
+		DefaultHeader: map[string]string{
+			"Cookie":       cookie,
+			"Content-Type": "application/json",
+		},
+		HTTPClient: httpClient,
+	}
+
+	return v1alpha1project.NewAPIClient(cfg).ProjectsApi
+}
+
+// CreateCurrentUserClientWithCookie creates a new CurrentUser API client with a specific cookie
+func CreateCurrentUserClientWithCookie(cookie string) *v1alpha1current_user.CurrentUserApiService {
+	baseURL := GetBaseURL()
+
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // #nosec G402
+			Proxy:           http.ProxyFromEnvironment,
+		},
+	}
+
+	cfg := &v1alpha1current_user.Configuration{
+		BasePath: baseURL,
+		DefaultHeader: map[string]string{
+			"Cookie":       cookie,
+			"Content-Type": "application/json",
+		},
+		HTTPClient: httpClient,
+	}
+
+	return v1alpha1current_user.NewAPIClient(cfg).CurrentUserApi
+}
+
+// CreateRobotClientWithCookie creates a new Robot API client with a specific cookie.
+func CreateRobotClientWithCookie(cookie string) *v1alpha1robot.RobotsApiService {
+	baseURL := GetBaseURL()
+
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // #nosec G402
+			Proxy:           http.ProxyFromEnvironment,
+		},
+	}
+
+	cfg := &v1alpha1robot.Configuration{
+		BasePath: baseURL,
+		DefaultHeader: map[string]string{
+			"Cookie":       cookie,
+			"Content-Type": "application/json",
+		},
+		HTTPClient: httpClient,
+	}
+
+	return v1alpha1robot.NewAPIClient(cfg).RobotsApi
+}
+
+// CreateUserClientWithCookie creates a new User API client with a specific cookie
+func CreateUserClientWithCookie(cookie string) *v1alpha1user.UsersApiService {
+	baseURL := GetBaseURL()
+
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // #nosec G402
+			Proxy:           http.ProxyFromEnvironment,
+		},
+	}
+
+	cfg := &v1alpha1user.Configuration{
+		BasePath: baseURL,
+		DefaultHeader: map[string]string{
+			"Cookie":       cookie,
+			"Content-Type": "application/json",
+		},
+		HTTPClient: httpClient,
+	}
+
+	return v1alpha1user.NewAPIClient(cfg).UsersApi
+}
