@@ -30,3 +30,35 @@ export function CommitHashCard({ commitId }: CommitHashCardProps) {
         {t('shared.commitDetail.commit')}
       </Text>
       <Box
+        bdrs="sm"
+        bg="#fff"
+        style={{
+          border: '1px solid var(--mantine-color-gray-3)',
+        }}
+      >
+        <Flex align="center">
+          <Text
+            py={3}
+            pl={12}
+            pr={6}
+            size="xs"
+            c="gray.5"
+            lh={rem(16)}
+            style={{ borderRight: '1px solid var(--mantine-color-gray-3)' }}
+          >
+            {shortCommitId}
+          </Text>
+          <CopyValueButton value={shownCommitId}>
+            {({ copy }) => {
+              return (
+                <Box onClick={copy} px={8} style={{ cursor: 'pointer' }} lh={1}>
+                  <IconCopy size={12} color="var(--mantine-color-gray-6)" />
+                </Box>
+              )
+            }}
+          </CopyValueButton>
+        </Flex>
+      </Box>
+    </Group>
+  )
+}
