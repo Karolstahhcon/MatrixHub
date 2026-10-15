@@ -89,3 +89,95 @@ function ProjectActionsCell({
   } = (table.options.meta as {
     onDelete?: (project: Project) => void
   } | undefined) ?? {}
+  const projectRole = useProjectRole(row.original.name ?? '')
+  const disabled = !onDelete || !canDeleteProject(row.original, projectRole)
+
+  return (
+    <Anchor
+      component="button"
+      size="sm"
+      c={disabled ? 'dimmed' : 'red'}
+      underline={disabled ? 'never' : 'hover'}
+      disabled={disabled}
+      style={disabled ? { cursor: 'not-allowed' } : undefined}
+      onClick={() => onDelete?.(row.original)}
+    >
+      {t('projects.actions.delete')}
+    </Anchor>
+  )
+}
+
+export type ProjectsTableProps = Omit<DataTableProps<Project>, 'columns'> & {
+  onDelete?: (project: Project) => void
+}
+
+export function ProjectsTable({
+  data,
+  pagination,
+  page,
+  loading,
+  searchValue,
+  onSearchChange,
+  onDelete,
+  onPageChange,
+  toolbarExtra,
+  onRefresh,
+  ...rest
+}: ProjectsTableProps) {
+  const { t } = useTranslation()
+
+  const columns: MRT_ColumnDef<Project>[] = [
+    {
+      accessorKey: 'name',
+      header: t('projects.table.name'),
+      Cell: ProjectNameCell,
+    },
+    {
+      id: 'type',
+      enableSorting: false,
+      header: t('projects.table.visibility'),
+      Cell: ProjectVisibilityCell,
+    },
+    {
+      id: 'enabledRegistry',
+      enableSorting: false,
+      header: t('projects.table.proxy'),
+      Cell: ProjectProxyCell,
+    },
+    {
+      accessorKey: 'modelCount',
+      header: t('projects.table.modelCount'),
+    },
+    {
+      id: 'updatedAt',
+      header: t('projects.table.updatedAt'),
+      accessorFn: row => formatDateTime(row.updatedAt),
+    },
+  ]
+
+  return (
+    <DataTable<Project>
+      {...rest}
+      data={data}
+      columns={columns}
+      pagination={pagination}
+      page={page}
+      loading={loading}
+      emptyTitle={t('projects.table.empty')}
+      searchPlaceholder={t('projects.searchPlaceholder')}
+      searchValue={searchValue}
+      onSearchChange={onSearchChange}
+      toolbarExtra={toolbarExtra}
+      onPageChange={onPageChange}
+      onRefresh={onRefresh}
+      getRowId={row => String(row.name)}
+      enableRowActions
+      renderRowActions={ProjectActionsCell}
+      tableOptions={{
+        meta: {
+          onDelete,
+        },
+      }}
+    />
+  )
+}
