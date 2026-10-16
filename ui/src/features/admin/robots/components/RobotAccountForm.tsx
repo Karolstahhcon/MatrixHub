@@ -280,3 +280,286 @@ export function RobotAccountForm({
                 {field => (
                   <Radio.Group
                     label={t('routes.admin.robots.fields.expiry')}
+                    value={field.state.value}
+                    onChange={value => field.handleChange(value as RobotAccountFormValues['expiryMode'])}
+                  >
+                    <Group mt="xs">
+                      <Radio
+                        value="never"
+                        label={t('routes.admin.robots.expiry.never')}
+                      />
+                      <Radio
+                        value="days"
+                        label={t('routes.admin.robots.expiry.days')}
+                      />
+                    </Group>
+                  </Radio.Group>
+                )}
+              </form.Field>
+
+              <form.Subscribe selector={state => state.values.expiryMode}>
+                {expiryMode => expiryMode === 'days' && (
+                  <form.Field
+                    name="expireDays"
+                    validators={{
+                      onChange: ({
+                        value,
+                        fieldApi,
+                      }) => getRobotAccountFieldIssue(
+                        'expireDays',
+                        {
+                          ...fieldApi.form.state.values,
+                          expireDays: value,
+                        },
+                      ),
+                      onChangeListenTo: ['expiryMode'],
+                    }}
+                  >
+                    {field => (
+                      <NumberInput
+                        required
+                        hideControls
+                        min={1}
+                        w={160}
+                        rightSection={t('routes.admin.robots.fields.dayUnit')}
+                        rightSectionWidth={rem(38)}
+                        styles={{
+                          input: {
+                            paddingRight: rem(38),
+                          },
+                          section: {
+                            backgroundColor: 'var(--mantine-color-gray-1)',
+                            borderLeft: '1px solid var(--mantine-color-gray-3)',
+                            color: 'var(--mantine-color-gray-6)',
+                            fontSize: rem(14),
+                          },
+                        }}
+                        value={field.state.value}
+                        onChange={value => field.handleChange(typeof value === 'number' ? value : undefined)}
+                        onBlur={field.handleBlur}
+                        error={fieldError(field)}
+                      />
+                    )}
+                  </form.Field>
+                )}
+              </form.Subscribe>
+            </Stack>
+
+            {renderPermissionSection(
+              t('routes.admin.robots.sections.platformPermissions'),
+              platformPermissionCategories,
+              'platformPermissions',
+            )}
+
+            <Stack gap="md">
+              <Text fw={700}>
+                {t('routes.admin.robots.sections.projectPermissions')}
+              </Text>
+
+              <form.Field name="projectScope">
+                {field => (
+                  <Radio.Group
+                    label={t('routes.admin.robots.fields.projectScope')}
+                    required
+                    value={field.state.value}
+                    onChange={value => field.handleChange(value as RobotAccountFormValues['projectScope'])}
+                  >
+                    <Group mt="xs">
+                      <Radio
+                        value={RobotAccountProjectScope.ROBOT_ACCOUNT_PROJECT_SCOPE_ALL}
+                        label={t('routes.admin.robots.projectScopeForm.all')}
+                      />
+                      <Radio
+                        value={RobotAccountProjectScope.ROBOT_ACCOUNT_PROJECT_SCOPE_SELECTED}
+                        label={t('routes.admin.robots.projectScopeForm.selected')}
+                      />
+                    </Group>
+                  </Radio.Group>
+                )}
+              </form.Field>
+
+              <form.Subscribe selector={state => state.values.projectScope}>
+                {projectScope => projectScope === RobotAccountProjectScope.ROBOT_ACCOUNT_PROJECT_SCOPE_SELECTED && (
+                  <form.Field name="projects">
+                    {field => (
+                      <MultiSelect
+                        label={t('routes.admin.robots.fields.projects')}
+                        data={projectOptions}
+                        searchable
+                        placeholder={t('routes.admin.robots.fields.projectsPlaceholder')}
+                        nothingFoundMessage={t('common.noResults')}
+                        value={field.state.value}
+                        onChange={field.handleChange}
+                        onBlur={field.handleBlur}
+                        error={fieldError(field)}
+                        w={rem(266)}
+                      />
+                    )}
+                  </form.Field>
+                )}
+              </form.Subscribe>
+
+              {renderPermissionSection(
+                t('routes.admin.robots.sections.projectPermissionMatrix'),
+                projectPermissionCategories,
+                'projectPermissions',
+              )}
+            </Stack>
+
+            <Group justify="flex-end">
+              <Button
+                variant="default"
+                onClick={() => {
+                  void handleBack()
+                }}
+              >
+                {t('common.cancel')}
+              </Button>
+
+              <form.Subscribe selector={state => ({
+                isPristine: state.isPristine,
+                isSubmitting: state.isSubmitting,
+                values: state.values,
+              })}
+              >
+                {({
+                  isPristine,
+                  isSubmitting,
+                  values,
+                }) => (
+                  <Button
+                    type="submit"
+                    loading={isSubmitting}
+                    disabled={
+                      !robotAccountFormSchema.safeParse(values).success
+                      || (mode === 'edit' && isPristine)
+                    }
+                  >
+                    {t('common.confirm')}
+                  </Button>
+                )}
+              </form.Subscribe>
+            </Group>
+          </Stack>
+        </Box>
+      </Stack>
+
+      <RobotTokenInfoModal
+        opened={tokenOpened}
+        title={t('routes.admin.robots.tokenInfoModal.createSuccessTitle')}
+        name={createdRobotName}
+        token={createdToken}
+        onClose={() => {
+          void handleTokenClose()
+        }}
+      />
+    </>
+  )
+
+  function renderPermissionSection(
+    title: string,
+    categories: RobotPermissionCategory[],
+    fieldName: 'platformPermissions' | 'projectPermissions',
+  ) {
+    return (
+      <Stack gap="md">
+        <Text fw={700}>
+          {title}
+        </Text>
+
+        <form.Field name={fieldName}>
+          {field => (
+            <Stack gap="sm">
+              {categories.map((category) => {
+                const selectionState = permissionSelectionState(field.state.value, category)
+
+                return (
+                  <Accordion
+                    key={category.key}
+                    variant="unstyled"
+                    chevronPosition="left"
+                  >
+                    <Accordion.Item value={category.key} bd="none">
+                      <Accordion.Control
+                        px="sm"
+                        py="xs"
+                        bg="gray.0"
+                        styles={{
+                          chevron: {
+                            width: rem(16),
+                            height: rem(16),
+                          },
+                          label: {
+                            padding: 0,
+                            display: 'inline-flex',
+                          },
+                        }}
+                      >
+                        <Box
+                          display="inline-block"
+                          onClick={event => event.stopPropagation()}
+                        >
+                          <Checkbox
+                            label={category.name}
+                            checked={selectionState.checked}
+                            indeterminate={selectionState.indeterminate}
+                            onChange={(event) => {
+                              field.handleChange(
+                                nextPermissionsForCategory(
+                                  field.state.value,
+                                  category,
+                                  event.currentTarget.checked,
+                                ),
+                              )
+                            }}
+                            styles={{
+                              label: {
+                                fontWeight: 600,
+                                color: 'var(--mantine-color-text-title)',
+                              },
+                            }}
+                          />
+                        </Box>
+                      </Accordion.Control>
+
+                      <Accordion.Panel px="sm" py="sm">
+                        <SimpleGrid
+                          cols={{
+                            base: 2,
+                            sm: 3,
+                            lg: 4,
+                          }}
+                        >
+                          {category.permissions.map(permission => (
+                            <Checkbox
+                              key={permission.value}
+                              label={permission.name}
+                              checked={field.state.value.includes(permission.value)}
+                              onChange={(event) => {
+                                field.handleChange(
+                                  event.currentTarget.checked
+                                    ? Array.from(new Set([...field.state.value, permission.value]))
+                                    : field.state.value.filter((value: string) => value !== permission.value),
+                                )
+                              }}
+                            />
+                          ))}
+                        </SimpleGrid>
+                      </Accordion.Panel>
+                    </Accordion.Item>
+                  </Accordion>
+                )
+              })}
+
+              {fieldError(field) && (
+                <Text c="red" size="sm">
+                  {fieldError(field)}
+                </Text>
+              )}
+            </Stack>
+          )}
+        </form.Field>
+      </Stack>
+    )
+  }
+}
