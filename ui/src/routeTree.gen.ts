@@ -272,3 +272,825 @@ const authappProjectsProjectIdDatasetsDatasetIdCommitsRefIndexRoute =
     getParentRoute: () => authappProjectsProjectIdDatasetsDatasetIdRouteRoute,
   } as any)
 const authappProjectsProjectIdDatasetsDatasetIdCommitCommitIdIndexRoute =
+  authappProjectsProjectIdDatasetsDatasetIdCommitCommitIdIndexRouteImport.update(
+    {
+      id: '/commit/$commitId/',
+      path: '/commit/$commitId/',
+      getParentRoute: () => authappProjectsProjectIdDatasetsDatasetIdRouteRoute,
+    } as any,
+  )
+const authappProjectsProjectIdModelsModelIdTreeRefSplatRoute =
+  authappProjectsProjectIdModelsModelIdTreeRefSplatRouteImport.update({
+    id: '/tree/$ref/$',
+    path: '/tree/$ref/$',
+    getParentRoute: () => authappProjectsProjectIdModelsModelIdRouteRoute,
+  } as any)
+const authappProjectsProjectIdModelsModelIdBlobRefSplatRoute =
+  authappProjectsProjectIdModelsModelIdBlobRefSplatRouteImport.update({
+    id: '/blob/$ref/$',
+    path: '/blob/$ref/$',
+    getParentRoute: () => authappProjectsProjectIdModelsModelIdRouteRoute,
+  } as any)
+const authappProjectsProjectIdDatasetsDatasetIdTreeRefSplatRoute =
+  authappProjectsProjectIdDatasetsDatasetIdTreeRefSplatRouteImport.update({
+    id: '/tree/$ref/$',
+    path: '/tree/$ref/$',
+    getParentRoute: () => authappProjectsProjectIdDatasetsDatasetIdRouteRoute,
+  } as any)
+const authappProjectsProjectIdDatasetsDatasetIdBlobRefSplatRoute =
+  authappProjectsProjectIdDatasetsDatasetIdBlobRefSplatRouteImport.update({
+    id: '/blob/$ref/$',
+    path: '/blob/$ref/$',
+    getParentRoute: () => authappProjectsProjectIdDatasetsDatasetIdRouteRoute,
+  } as any)
+
+export interface FileRoutesByFullPath {
+  '/': typeof IndexRoute
+  '/$': typeof SplatRoute
+  '/login': typeof LoginRoute
+  '/admin': typeof authAdminRouteRouteWithChildren
+  '/profile': typeof authappProfileRouteRouteWithChildren
+  '/admin/robots': typeof authAdminRobotsRouteRouteWithChildren
+  '/admin/registries': typeof authAdminRegistriesRoute
+  '/admin/replications': typeof authAdminReplicationsRoute
+  '/admin/users': typeof authAdminUsersRoute
+  '/admin/': typeof authAdminIndexRoute
+  '/projects/$projectId': typeof authappProjectsProjectIdRouteRouteWithChildren
+  '/datasets/new': typeof authappDatasetsNewRoute
+  '/models/new': typeof authappModelsNewRoute
+  '/profile/access-token': typeof authappProfileAccessTokenRoute
+  '/profile/security': typeof authappProfileSecurityRoute
+  '/profile/ssh-keys': typeof authappProfileSshKeysRoute
+  '/admin/robots/new': typeof authAdminRobotsNewRoute
+  '/datasets/': typeof authappDatasetsIndexRoute
+  '/models/': typeof authappModelsIndexRoute
+  '/profile/': typeof authappProfileIndexRoute
+  '/projects/': typeof authappProjectsIndexRoute
+  '/admin/robots/': typeof authAdminRobotsIndexRoute
+  '/admin/replications/$replicationId/executions': typeof authAdminReplicationsReplicationIdExecutionsRoute
+  '/admin/robots/$robotId/edit': typeof authAdminRobotsRobotIdEditRoute
+  '/projects/$projectId/': typeof authappProjectsProjectIdIndexRoute
+  '/projects/$projectId/datasets/$datasetId': typeof authappProjectsProjectIdDatasetsDatasetIdRouteRouteWithChildren
+  '/projects/$projectId/models/$modelId': typeof authappProjectsProjectIdModelsModelIdRouteRouteWithChildren
+  '/admin/replications/$replicationId/executions/$executionId': typeof authAdminReplicationsReplicationIdExecutionsExecutionIdRoute
+  '/projects/$projectId/datasets/': typeof authappProjectsProjectIdDatasetsIndexRoute
+  '/projects/$projectId/members/': typeof authappProjectsProjectIdMembersIndexRoute
+  '/projects/$projectId/models/': typeof authappProjectsProjectIdModelsIndexRoute
+  '/projects/$projectId/settings/': typeof authappProjectsProjectIdSettingsIndexRoute
+  '/projects/$projectId/models/$modelId/': typeof authappProjectsProjectIdModelsModelIdIndexRoute
+  '/projects/$projectId/datasets/$datasetId/settings/': typeof authappProjectsProjectIdDatasetsDatasetIdSettingsIndexRoute
+  '/projects/$projectId/models/$modelId/settings/': typeof authappProjectsProjectIdModelsModelIdSettingsIndexRoute
+  '/projects/$projectId/datasets/$datasetId/blob/$ref/$': typeof authappProjectsProjectIdDatasetsDatasetIdBlobRefSplatRoute
+  '/projects/$projectId/datasets/$datasetId/tree/$ref/$': typeof authappProjectsProjectIdDatasetsDatasetIdTreeRefSplatRoute
+  '/projects/$projectId/models/$modelId/blob/$ref/$': typeof authappProjectsProjectIdModelsModelIdBlobRefSplatRoute
+  '/projects/$projectId/models/$modelId/tree/$ref/$': typeof authappProjectsProjectIdModelsModelIdTreeRefSplatRoute
+  '/projects/$projectId/datasets/$datasetId/commit/$commitId/': typeof authappProjectsProjectIdDatasetsDatasetIdCommitCommitIdIndexRoute
+  '/projects/$projectId/datasets/$datasetId/commits/$ref/': typeof authappProjectsProjectIdDatasetsDatasetIdCommitsRefIndexRoute
+  '/projects/$projectId/models/$modelId/commit/$commitId/': typeof authappProjectsProjectIdModelsModelIdCommitCommitIdIndexRoute
+  '/projects/$projectId/models/$modelId/commits/$ref/': typeof authappProjectsProjectIdModelsModelIdCommitsRefIndexRoute
+}
+export interface FileRoutesByTo {
+  '/': typeof IndexRoute
+  '/$': typeof SplatRoute
+  '/login': typeof LoginRoute
+  '/admin/registries': typeof authAdminRegistriesRoute
+  '/admin/replications': typeof authAdminReplicationsRoute
+  '/admin/users': typeof authAdminUsersRoute
+  '/admin': typeof authAdminIndexRoute
+  '/datasets/new': typeof authappDatasetsNewRoute
+  '/models/new': typeof authappModelsNewRoute
+  '/profile/access-token': typeof authappProfileAccessTokenRoute
+  '/profile/security': typeof authappProfileSecurityRoute
+  '/profile/ssh-keys': typeof authappProfileSshKeysRoute
+  '/admin/robots/new': typeof authAdminRobotsNewRoute
+  '/datasets': typeof authappDatasetsIndexRoute
+  '/models': typeof authappModelsIndexRoute
+  '/profile': typeof authappProfileIndexRoute
+  '/projects': typeof authappProjectsIndexRoute
+  '/admin/robots': typeof authAdminRobotsIndexRoute
+  '/admin/replications/$replicationId/executions': typeof authAdminReplicationsReplicationIdExecutionsRoute
+  '/admin/robots/$robotId/edit': typeof authAdminRobotsRobotIdEditRoute
+  '/projects/$projectId': typeof authappProjectsProjectIdIndexRoute
+  '/projects/$projectId/datasets/$datasetId': typeof authappProjectsProjectIdDatasetsDatasetIdRouteRouteWithChildren
+  '/admin/replications/$replicationId/executions/$executionId': typeof authAdminReplicationsReplicationIdExecutionsExecutionIdRoute
+  '/projects/$projectId/datasets': typeof authappProjectsProjectIdDatasetsIndexRoute
+  '/projects/$projectId/members': typeof authappProjectsProjectIdMembersIndexRoute
+  '/projects/$projectId/models': typeof authappProjectsProjectIdModelsIndexRoute
+  '/projects/$projectId/settings': typeof authappProjectsProjectIdSettingsIndexRoute
+  '/projects/$projectId/models/$modelId': typeof authappProjectsProjectIdModelsModelIdIndexRoute
+  '/projects/$projectId/datasets/$datasetId/settings': typeof authappProjectsProjectIdDatasetsDatasetIdSettingsIndexRoute
+  '/projects/$projectId/models/$modelId/settings': typeof authappProjectsProjectIdModelsModelIdSettingsIndexRoute
+  '/projects/$projectId/datasets/$datasetId/blob/$ref/$': typeof authappProjectsProjectIdDatasetsDatasetIdBlobRefSplatRoute
+  '/projects/$projectId/datasets/$datasetId/tree/$ref/$': typeof authappProjectsProjectIdDatasetsDatasetIdTreeRefSplatRoute
+  '/projects/$projectId/models/$modelId/blob/$ref/$': typeof authappProjectsProjectIdModelsModelIdBlobRefSplatRoute
+  '/projects/$projectId/models/$modelId/tree/$ref/$': typeof authappProjectsProjectIdModelsModelIdTreeRefSplatRoute
+  '/projects/$projectId/datasets/$datasetId/commit/$commitId': typeof authappProjectsProjectIdDatasetsDatasetIdCommitCommitIdIndexRoute
+  '/projects/$projectId/datasets/$datasetId/commits/$ref': typeof authappProjectsProjectIdDatasetsDatasetIdCommitsRefIndexRoute
+  '/projects/$projectId/models/$modelId/commit/$commitId': typeof authappProjectsProjectIdModelsModelIdCommitCommitIdIndexRoute
+  '/projects/$projectId/models/$modelId/commits/$ref': typeof authappProjectsProjectIdModelsModelIdCommitsRefIndexRoute
+}
+export interface FileRoutesById {
+  __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
+  '/(auth)': typeof authRouteRouteWithChildren
+  '/$': typeof SplatRoute
+  '/login': typeof LoginRoute
+  '/(auth)/(app)': typeof authappRouteRouteWithChildren
+  '/(auth)/admin': typeof authAdminRouteRouteWithChildren
+  '/(auth)/(app)/profile': typeof authappProfileRouteRouteWithChildren
+  '/(auth)/admin/robots': typeof authAdminRobotsRouteRouteWithChildren
+  '/(auth)/admin/registries': typeof authAdminRegistriesRoute
+  '/(auth)/admin/replications': typeof authAdminReplicationsRoute
+  '/(auth)/admin/users': typeof authAdminUsersRoute
+  '/(auth)/admin/': typeof authAdminIndexRoute
+  '/(auth)/(app)/projects/$projectId': typeof authappProjectsProjectIdRouteRouteWithChildren
+  '/(auth)/(app)/datasets/new': typeof authappDatasetsNewRoute
+  '/(auth)/(app)/models/new': typeof authappModelsNewRoute
+  '/(auth)/(app)/profile/access-token': typeof authappProfileAccessTokenRoute
+  '/(auth)/(app)/profile/security': typeof authappProfileSecurityRoute
+  '/(auth)/(app)/profile/ssh-keys': typeof authappProfileSshKeysRoute
+  '/(auth)/admin/robots/new': typeof authAdminRobotsNewRoute
+  '/(auth)/(app)/datasets/': typeof authappDatasetsIndexRoute
+  '/(auth)/(app)/models/': typeof authappModelsIndexRoute
+  '/(auth)/(app)/profile/': typeof authappProfileIndexRoute
+  '/(auth)/(app)/projects/': typeof authappProjectsIndexRoute
+  '/(auth)/admin/robots/': typeof authAdminRobotsIndexRoute
+  '/(auth)/admin/replications_/$replicationId/executions': typeof authAdminReplicationsReplicationIdExecutionsRoute
+  '/(auth)/admin/robots/$robotId/edit': typeof authAdminRobotsRobotIdEditRoute
+  '/(auth)/(app)/projects/$projectId/': typeof authappProjectsProjectIdIndexRoute
+  '/(auth)/(app)/projects_/$projectId/datasets/$datasetId': typeof authappProjectsProjectIdDatasetsDatasetIdRouteRouteWithChildren
+  '/(auth)/(app)/projects_/$projectId/models/$modelId': typeof authappProjectsProjectIdModelsModelIdRouteRouteWithChildren
+  '/(auth)/admin/replications_/$replicationId/executions_/$executionId': typeof authAdminReplicationsReplicationIdExecutionsExecutionIdRoute
+  '/(auth)/(app)/projects/$projectId/datasets/': typeof authappProjectsProjectIdDatasetsIndexRoute
+  '/(auth)/(app)/projects/$projectId/members/': typeof authappProjectsProjectIdMembersIndexRoute
+  '/(auth)/(app)/projects/$projectId/models/': typeof authappProjectsProjectIdModelsIndexRoute
+  '/(auth)/(app)/projects/$projectId/settings/': typeof authappProjectsProjectIdSettingsIndexRoute
+  '/(auth)/(app)/projects_/$projectId/models/$modelId/': typeof authappProjectsProjectIdModelsModelIdIndexRoute
+  '/(auth)/(app)/projects_/$projectId/datasets/$datasetId/settings/': typeof authappProjectsProjectIdDatasetsDatasetIdSettingsIndexRoute
+  '/(auth)/(app)/projects_/$projectId/models/$modelId/settings/': typeof authappProjectsProjectIdModelsModelIdSettingsIndexRoute
+  '/(auth)/(app)/projects_/$projectId/datasets/$datasetId/blob/$ref/$': typeof authappProjectsProjectIdDatasetsDatasetIdBlobRefSplatRoute
+  '/(auth)/(app)/projects_/$projectId/datasets/$datasetId/tree/$ref/$': typeof authappProjectsProjectIdDatasetsDatasetIdTreeRefSplatRoute
+  '/(auth)/(app)/projects_/$projectId/models/$modelId/blob/$ref/$': typeof authappProjectsProjectIdModelsModelIdBlobRefSplatRoute
+  '/(auth)/(app)/projects_/$projectId/models/$modelId/tree/$ref/$': typeof authappProjectsProjectIdModelsModelIdTreeRefSplatRoute
+  '/(auth)/(app)/projects_/$projectId/datasets/$datasetId/commit/$commitId/': typeof authappProjectsProjectIdDatasetsDatasetIdCommitCommitIdIndexRoute
+  '/(auth)/(app)/projects_/$projectId/datasets/$datasetId/commits/$ref/': typeof authappProjectsProjectIdDatasetsDatasetIdCommitsRefIndexRoute
+  '/(auth)/(app)/projects_/$projectId/models/$modelId/commit/$commitId/': typeof authappProjectsProjectIdModelsModelIdCommitCommitIdIndexRoute
+  '/(auth)/(app)/projects_/$projectId/models/$modelId/commits/$ref/': typeof authappProjectsProjectIdModelsModelIdCommitsRefIndexRoute
+}
+export interface FileRouteTypes {
+  fileRoutesByFullPath: FileRoutesByFullPath
+  fullPaths:
+    | '/'
+    | '/$'
+    | '/login'
+    | '/admin'
+    | '/profile'
+    | '/admin/robots'
+    | '/admin/registries'
+    | '/admin/replications'
+    | '/admin/users'
+    | '/admin/'
+    | '/projects/$projectId'
+    | '/datasets/new'
+    | '/models/new'
+    | '/profile/access-token'
+    | '/profile/security'
+    | '/profile/ssh-keys'
+    | '/admin/robots/new'
+    | '/datasets/'
+    | '/models/'
+    | '/profile/'
+    | '/projects/'
+    | '/admin/robots/'
+    | '/admin/replications/$replicationId/executions'
+    | '/admin/robots/$robotId/edit'
+    | '/projects/$projectId/'
+    | '/projects/$projectId/datasets/$datasetId'
+    | '/projects/$projectId/models/$modelId'
+    | '/admin/replications/$replicationId/executions/$executionId'
+    | '/projects/$projectId/datasets/'
+    | '/projects/$projectId/members/'
+    | '/projects/$projectId/models/'
+    | '/projects/$projectId/settings/'
+    | '/projects/$projectId/models/$modelId/'
+    | '/projects/$projectId/datasets/$datasetId/settings/'
+    | '/projects/$projectId/models/$modelId/settings/'
+    | '/projects/$projectId/datasets/$datasetId/blob/$ref/$'
+    | '/projects/$projectId/datasets/$datasetId/tree/$ref/$'
+    | '/projects/$projectId/models/$modelId/blob/$ref/$'
+    | '/projects/$projectId/models/$modelId/tree/$ref/$'
+    | '/projects/$projectId/datasets/$datasetId/commit/$commitId/'
+    | '/projects/$projectId/datasets/$datasetId/commits/$ref/'
+    | '/projects/$projectId/models/$modelId/commit/$commitId/'
+    | '/projects/$projectId/models/$modelId/commits/$ref/'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/'
+    | '/$'
+    | '/login'
+    | '/admin/registries'
+    | '/admin/replications'
+    | '/admin/users'
+    | '/admin'
+    | '/datasets/new'
+    | '/models/new'
+    | '/profile/access-token'
+    | '/profile/security'
+    | '/profile/ssh-keys'
+    | '/admin/robots/new'
+    | '/datasets'
+    | '/models'
+    | '/profile'
+    | '/projects'
+    | '/admin/robots'
+    | '/admin/replications/$replicationId/executions'
+    | '/admin/robots/$robotId/edit'
+    | '/projects/$projectId'
+    | '/projects/$projectId/datasets/$datasetId'
+    | '/admin/replications/$replicationId/executions/$executionId'
+    | '/projects/$projectId/datasets'
+    | '/projects/$projectId/members'
+    | '/projects/$projectId/models'
+    | '/projects/$projectId/settings'
+    | '/projects/$projectId/models/$modelId'
+    | '/projects/$projectId/datasets/$datasetId/settings'
+    | '/projects/$projectId/models/$modelId/settings'
+    | '/projects/$projectId/datasets/$datasetId/blob/$ref/$'
+    | '/projects/$projectId/datasets/$datasetId/tree/$ref/$'
+    | '/projects/$projectId/models/$modelId/blob/$ref/$'
+    | '/projects/$projectId/models/$modelId/tree/$ref/$'
+    | '/projects/$projectId/datasets/$datasetId/commit/$commitId'
+    | '/projects/$projectId/datasets/$datasetId/commits/$ref'
+    | '/projects/$projectId/models/$modelId/commit/$commitId'
+    | '/projects/$projectId/models/$modelId/commits/$ref'
+  id:
+    | '__root__'
+    | '/'
+    | '/(auth)'
+    | '/$'
+    | '/login'
+    | '/(auth)/(app)'
+    | '/(auth)/admin'
+    | '/(auth)/(app)/profile'
+    | '/(auth)/admin/robots'
+    | '/(auth)/admin/registries'
+    | '/(auth)/admin/replications'
+    | '/(auth)/admin/users'
+    | '/(auth)/admin/'
+    | '/(auth)/(app)/projects/$projectId'
+    | '/(auth)/(app)/datasets/new'
+    | '/(auth)/(app)/models/new'
+    | '/(auth)/(app)/profile/access-token'
+    | '/(auth)/(app)/profile/security'
+    | '/(auth)/(app)/profile/ssh-keys'
+    | '/(auth)/admin/robots/new'
+    | '/(auth)/(app)/datasets/'
+    | '/(auth)/(app)/models/'
+    | '/(auth)/(app)/profile/'
+    | '/(auth)/(app)/projects/'
+    | '/(auth)/admin/robots/'
+    | '/(auth)/admin/replications_/$replicationId/executions'
+    | '/(auth)/admin/robots/$robotId/edit'
+    | '/(auth)/(app)/projects/$projectId/'
+    | '/(auth)/(app)/projects_/$projectId/datasets/$datasetId'
+    | '/(auth)/(app)/projects_/$projectId/models/$modelId'
+    | '/(auth)/admin/replications_/$replicationId/executions_/$executionId'
+    | '/(auth)/(app)/projects/$projectId/datasets/'
+    | '/(auth)/(app)/projects/$projectId/members/'
+    | '/(auth)/(app)/projects/$projectId/models/'
+    | '/(auth)/(app)/projects/$projectId/settings/'
+    | '/(auth)/(app)/projects_/$projectId/models/$modelId/'
+    | '/(auth)/(app)/projects_/$projectId/datasets/$datasetId/settings/'
+    | '/(auth)/(app)/projects_/$projectId/models/$modelId/settings/'
+    | '/(auth)/(app)/projects_/$projectId/datasets/$datasetId/blob/$ref/$'
+    | '/(auth)/(app)/projects_/$projectId/datasets/$datasetId/tree/$ref/$'
+    | '/(auth)/(app)/projects_/$projectId/models/$modelId/blob/$ref/$'
+    | '/(auth)/(app)/projects_/$projectId/models/$modelId/tree/$ref/$'
+    | '/(auth)/(app)/projects_/$projectId/datasets/$datasetId/commit/$commitId/'
+    | '/(auth)/(app)/projects_/$projectId/datasets/$datasetId/commits/$ref/'
+    | '/(auth)/(app)/projects_/$projectId/models/$modelId/commit/$commitId/'
+    | '/(auth)/(app)/projects_/$projectId/models/$modelId/commits/$ref/'
+  fileRoutesById: FileRoutesById
+}
+export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
+  authRouteRoute: typeof authRouteRouteWithChildren
+  SplatRoute: typeof SplatRoute
+  LoginRoute: typeof LoginRoute
+}
+
+declare module '@tanstack/react-router' {
+  interface FileRoutesByPath {
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$': {
+      id: '/$'
+      path: '/$'
+      fullPath: '/$'
+      preLoaderRoute: typeof SplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(auth)': {
+      id: '/(auth)'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof authRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(auth)/admin': {
+      id: '/(auth)/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof authAdminRouteRouteImport
+      parentRoute: typeof authRouteRoute
+    }
+    '/(auth)/(app)': {
+      id: '/(auth)/(app)'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof authappRouteRouteImport
+      parentRoute: typeof authRouteRoute
+    }
+    '/(auth)/admin/': {
+      id: '/(auth)/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof authAdminIndexRouteImport
+      parentRoute: typeof authAdminRouteRoute
+    }
+    '/(auth)/admin/users': {
+      id: '/(auth)/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof authAdminUsersRouteImport
+      parentRoute: typeof authAdminRouteRoute
+    }
+    '/(auth)/admin/replications': {
+      id: '/(auth)/admin/replications'
+      path: '/replications'
+      fullPath: '/admin/replications'
+      preLoaderRoute: typeof authAdminReplicationsRouteImport
+      parentRoute: typeof authAdminRouteRoute
+    }
+    '/(auth)/admin/registries': {
+      id: '/(auth)/admin/registries'
+      path: '/registries'
+      fullPath: '/admin/registries'
+      preLoaderRoute: typeof authAdminRegistriesRouteImport
+      parentRoute: typeof authAdminRouteRoute
+    }
+    '/(auth)/admin/robots': {
+      id: '/(auth)/admin/robots'
+      path: '/robots'
+      fullPath: '/admin/robots'
+      preLoaderRoute: typeof authAdminRobotsRouteRouteImport
+      parentRoute: typeof authAdminRouteRoute
+    }
+    '/(auth)/(app)/profile': {
+      id: '/(auth)/(app)/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof authappProfileRouteRouteImport
+      parentRoute: typeof authappRouteRoute
+    }
+    '/(auth)/admin/robots/': {
+      id: '/(auth)/admin/robots/'
+      path: '/'
+      fullPath: '/admin/robots/'
+      preLoaderRoute: typeof authAdminRobotsIndexRouteImport
+      parentRoute: typeof authAdminRobotsRouteRoute
+    }
+    '/(auth)/(app)/projects/': {
+      id: '/(auth)/(app)/projects/'
+      path: '/projects'
+      fullPath: '/projects/'
+      preLoaderRoute: typeof authappProjectsIndexRouteImport
+      parentRoute: typeof authappRouteRoute
+    }
+    '/(auth)/(app)/profile/': {
+      id: '/(auth)/(app)/profile/'
+      path: '/'
+      fullPath: '/profile/'
+      preLoaderRoute: typeof authappProfileIndexRouteImport
+      parentRoute: typeof authappProfileRouteRoute
+    }
+    '/(auth)/(app)/models/': {
+      id: '/(auth)/(app)/models/'
+      path: '/models'
+      fullPath: '/models/'
+      preLoaderRoute: typeof authappModelsIndexRouteImport
+      parentRoute: typeof authappRouteRoute
+    }
+    '/(auth)/(app)/datasets/': {
+      id: '/(auth)/(app)/datasets/'
+      path: '/datasets'
+      fullPath: '/datasets/'
+      preLoaderRoute: typeof authappDatasetsIndexRouteImport
+      parentRoute: typeof authappRouteRoute
+    }
+    '/(auth)/admin/robots/new': {
+      id: '/(auth)/admin/robots/new'
+      path: '/new'
+      fullPath: '/admin/robots/new'
+      preLoaderRoute: typeof authAdminRobotsNewRouteImport
+      parentRoute: typeof authAdminRobotsRouteRoute
+    }
+    '/(auth)/(app)/profile/ssh-keys': {
+      id: '/(auth)/(app)/profile/ssh-keys'
+      path: '/ssh-keys'
+      fullPath: '/profile/ssh-keys'
+      preLoaderRoute: typeof authappProfileSshKeysRouteImport
+      parentRoute: typeof authappProfileRouteRoute
+    }
+    '/(auth)/(app)/profile/security': {
+      id: '/(auth)/(app)/profile/security'
+      path: '/security'
+      fullPath: '/profile/security'
+      preLoaderRoute: typeof authappProfileSecurityRouteImport
+      parentRoute: typeof authappProfileRouteRoute
+    }
+    '/(auth)/(app)/profile/access-token': {
+      id: '/(auth)/(app)/profile/access-token'
+      path: '/access-token'
+      fullPath: '/profile/access-token'
+      preLoaderRoute: typeof authappProfileAccessTokenRouteImport
+      parentRoute: typeof authappProfileRouteRoute
+    }
+    '/(auth)/(app)/models/new': {
+      id: '/(auth)/(app)/models/new'
+      path: '/models/new'
+      fullPath: '/models/new'
+      preLoaderRoute: typeof authappModelsNewRouteImport
+      parentRoute: typeof authappRouteRoute
+    }
+    '/(auth)/(app)/datasets/new': {
+      id: '/(auth)/(app)/datasets/new'
+      path: '/datasets/new'
+      fullPath: '/datasets/new'
+      preLoaderRoute: typeof authappDatasetsNewRouteImport
+      parentRoute: typeof authappRouteRoute
+    }
+    '/(auth)/(app)/projects/$projectId': {
+      id: '/(auth)/(app)/projects/$projectId'
+      path: '/projects/$projectId'
+      fullPath: '/projects/$projectId'
+      preLoaderRoute: typeof authappProjectsProjectIdRouteRouteImport
+      parentRoute: typeof authappRouteRoute
+    }
+    '/(auth)/(app)/projects/$projectId/': {
+      id: '/(auth)/(app)/projects/$projectId/'
+      path: '/'
+      fullPath: '/projects/$projectId/'
+      preLoaderRoute: typeof authappProjectsProjectIdIndexRouteImport
+      parentRoute: typeof authappProjectsProjectIdRouteRoute
+    }
+    '/(auth)/admin/robots/$robotId/edit': {
+      id: '/(auth)/admin/robots/$robotId/edit'
+      path: '/$robotId/edit'
+      fullPath: '/admin/robots/$robotId/edit'
+      preLoaderRoute: typeof authAdminRobotsRobotIdEditRouteImport
+      parentRoute: typeof authAdminRobotsRouteRoute
+    }
+    '/(auth)/admin/replications_/$replicationId/executions': {
+      id: '/(auth)/admin/replications_/$replicationId/executions'
+      path: '/replications/$replicationId/executions'
+      fullPath: '/admin/replications/$replicationId/executions'
+      preLoaderRoute: typeof authAdminReplicationsReplicationIdExecutionsRouteImport
+      parentRoute: typeof authAdminRouteRoute
+    }
+    '/(auth)/(app)/projects/$projectId/settings/': {
+      id: '/(auth)/(app)/projects/$projectId/settings/'
+      path: '/settings'
+      fullPath: '/projects/$projectId/settings/'
+      preLoaderRoute: typeof authappProjectsProjectIdSettingsIndexRouteImport
+      parentRoute: typeof authappProjectsProjectIdRouteRoute
+    }
+    '/(auth)/(app)/projects/$projectId/models/': {
+      id: '/(auth)/(app)/projects/$projectId/models/'
+      path: '/models'
+      fullPath: '/projects/$projectId/models/'
+      preLoaderRoute: typeof authappProjectsProjectIdModelsIndexRouteImport
+      parentRoute: typeof authappProjectsProjectIdRouteRoute
+    }
+    '/(auth)/(app)/projects/$projectId/members/': {
+      id: '/(auth)/(app)/projects/$projectId/members/'
+      path: '/members'
+      fullPath: '/projects/$projectId/members/'
+      preLoaderRoute: typeof authappProjectsProjectIdMembersIndexRouteImport
+      parentRoute: typeof authappProjectsProjectIdRouteRoute
+    }
+    '/(auth)/(app)/projects/$projectId/datasets/': {
+      id: '/(auth)/(app)/projects/$projectId/datasets/'
+      path: '/datasets'
+      fullPath: '/projects/$projectId/datasets/'
+      preLoaderRoute: typeof authappProjectsProjectIdDatasetsIndexRouteImport
+      parentRoute: typeof authappProjectsProjectIdRouteRoute
+    }
+    '/(auth)/admin/replications_/$replicationId/executions_/$executionId': {
+      id: '/(auth)/admin/replications_/$replicationId/executions_/$executionId'
+      path: '/replications/$replicationId/executions/$executionId'
+      fullPath: '/admin/replications/$replicationId/executions/$executionId'
+      preLoaderRoute: typeof authAdminReplicationsReplicationIdExecutionsExecutionIdRouteImport
+      parentRoute: typeof authAdminRouteRoute
+    }
+    '/(auth)/(app)/projects_/$projectId/models/$modelId': {
+      id: '/(auth)/(app)/projects_/$projectId/models/$modelId'
+      path: '/projects/$projectId/models/$modelId'
+      fullPath: '/projects/$projectId/models/$modelId'
+      preLoaderRoute: typeof authappProjectsProjectIdModelsModelIdRouteRouteImport
+      parentRoute: typeof authappRouteRoute
+    }
+    '/(auth)/(app)/projects_/$projectId/datasets/$datasetId': {
+      id: '/(auth)/(app)/projects_/$projectId/datasets/$datasetId'
+      path: '/projects/$projectId/datasets/$datasetId'
+      fullPath: '/projects/$projectId/datasets/$datasetId'
+      preLoaderRoute: typeof authappProjectsProjectIdDatasetsDatasetIdRouteRouteImport
+      parentRoute: typeof authappRouteRoute
+    }
+    '/(auth)/(app)/projects_/$projectId/models/$modelId/': {
+      id: '/(auth)/(app)/projects_/$projectId/models/$modelId/'
+      path: '/'
+      fullPath: '/projects/$projectId/models/$modelId/'
+      preLoaderRoute: typeof authappProjectsProjectIdModelsModelIdIndexRouteImport
+      parentRoute: typeof authappProjectsProjectIdModelsModelIdRouteRoute
+    }
+    '/(auth)/(app)/projects_/$projectId/models/$modelId/settings/': {
+      id: '/(auth)/(app)/projects_/$projectId/models/$modelId/settings/'
+      path: '/settings'
+      fullPath: '/projects/$projectId/models/$modelId/settings/'
+      preLoaderRoute: typeof authappProjectsProjectIdModelsModelIdSettingsIndexRouteImport
+      parentRoute: typeof authappProjectsProjectIdModelsModelIdRouteRoute
+    }
+    '/(auth)/(app)/projects_/$projectId/datasets/$datasetId/settings/': {
+      id: '/(auth)/(app)/projects_/$projectId/datasets/$datasetId/settings/'
+      path: '/settings'
+      fullPath: '/projects/$projectId/datasets/$datasetId/settings/'
+      preLoaderRoute: typeof authappProjectsProjectIdDatasetsDatasetIdSettingsIndexRouteImport
+      parentRoute: typeof authappProjectsProjectIdDatasetsDatasetIdRouteRoute
+    }
+    '/(auth)/(app)/projects_/$projectId/models/$modelId/commits/$ref/': {
+      id: '/(auth)/(app)/projects_/$projectId/models/$modelId/commits/$ref/'
+      path: '/commits/$ref'
+      fullPath: '/projects/$projectId/models/$modelId/commits/$ref/'
+      preLoaderRoute: typeof authappProjectsProjectIdModelsModelIdCommitsRefIndexRouteImport
+      parentRoute: typeof authappProjectsProjectIdModelsModelIdRouteRoute
+    }
+    '/(auth)/(app)/projects_/$projectId/models/$modelId/commit/$commitId/': {
+      id: '/(auth)/(app)/projects_/$projectId/models/$modelId/commit/$commitId/'
+      path: '/commit/$commitId'
+      fullPath: '/projects/$projectId/models/$modelId/commit/$commitId/'
+      preLoaderRoute: typeof authappProjectsProjectIdModelsModelIdCommitCommitIdIndexRouteImport
+      parentRoute: typeof authappProjectsProjectIdModelsModelIdRouteRoute
+    }
+    '/(auth)/(app)/projects_/$projectId/datasets/$datasetId/commits/$ref/': {
+      id: '/(auth)/(app)/projects_/$projectId/datasets/$datasetId/commits/$ref/'
+      path: '/commits/$ref'
+      fullPath: '/projects/$projectId/datasets/$datasetId/commits/$ref/'
+      preLoaderRoute: typeof authappProjectsProjectIdDatasetsDatasetIdCommitsRefIndexRouteImport
+      parentRoute: typeof authappProjectsProjectIdDatasetsDatasetIdRouteRoute
+    }
+    '/(auth)/(app)/projects_/$projectId/datasets/$datasetId/commit/$commitId/': {
+      id: '/(auth)/(app)/projects_/$projectId/datasets/$datasetId/commit/$commitId/'
+      path: '/commit/$commitId'
+      fullPath: '/projects/$projectId/datasets/$datasetId/commit/$commitId/'
+      preLoaderRoute: typeof authappProjectsProjectIdDatasetsDatasetIdCommitCommitIdIndexRouteImport
+      parentRoute: typeof authappProjectsProjectIdDatasetsDatasetIdRouteRoute
+    }
+    '/(auth)/(app)/projects_/$projectId/models/$modelId/tree/$ref/$': {
+      id: '/(auth)/(app)/projects_/$projectId/models/$modelId/tree/$ref/$'
+      path: '/tree/$ref/$'
+      fullPath: '/projects/$projectId/models/$modelId/tree/$ref/$'
+      preLoaderRoute: typeof authappProjectsProjectIdModelsModelIdTreeRefSplatRouteImport
+      parentRoute: typeof authappProjectsProjectIdModelsModelIdRouteRoute
+    }
+    '/(auth)/(app)/projects_/$projectId/models/$modelId/blob/$ref/$': {
+      id: '/(auth)/(app)/projects_/$projectId/models/$modelId/blob/$ref/$'
+      path: '/blob/$ref/$'
+      fullPath: '/projects/$projectId/models/$modelId/blob/$ref/$'
+      preLoaderRoute: typeof authappProjectsProjectIdModelsModelIdBlobRefSplatRouteImport
+      parentRoute: typeof authappProjectsProjectIdModelsModelIdRouteRoute
+    }
+    '/(auth)/(app)/projects_/$projectId/datasets/$datasetId/tree/$ref/$': {
+      id: '/(auth)/(app)/projects_/$projectId/datasets/$datasetId/tree/$ref/$'
+      path: '/tree/$ref/$'
+      fullPath: '/projects/$projectId/datasets/$datasetId/tree/$ref/$'
+      preLoaderRoute: typeof authappProjectsProjectIdDatasetsDatasetIdTreeRefSplatRouteImport
+      parentRoute: typeof authappProjectsProjectIdDatasetsDatasetIdRouteRoute
+    }
+    '/(auth)/(app)/projects_/$projectId/datasets/$datasetId/blob/$ref/$': {
+      id: '/(auth)/(app)/projects_/$projectId/datasets/$datasetId/blob/$ref/$'
+      path: '/blob/$ref/$'
+      fullPath: '/projects/$projectId/datasets/$datasetId/blob/$ref/$'
+      preLoaderRoute: typeof authappProjectsProjectIdDatasetsDatasetIdBlobRefSplatRouteImport
+      parentRoute: typeof authappProjectsProjectIdDatasetsDatasetIdRouteRoute
+    }
+  }
+}
+
+interface authappProfileRouteRouteChildren {
+  authappProfileAccessTokenRoute: typeof authappProfileAccessTokenRoute
+  authappProfileSecurityRoute: typeof authappProfileSecurityRoute
+  authappProfileSshKeysRoute: typeof authappProfileSshKeysRoute
+  authappProfileIndexRoute: typeof authappProfileIndexRoute
+}
+
+const authappProfileRouteRouteChildren: authappProfileRouteRouteChildren = {
+  authappProfileAccessTokenRoute: authappProfileAccessTokenRoute,
+  authappProfileSecurityRoute: authappProfileSecurityRoute,
+  authappProfileSshKeysRoute: authappProfileSshKeysRoute,
+  authappProfileIndexRoute: authappProfileIndexRoute,
+}
+
+const authappProfileRouteRouteWithChildren =
+  authappProfileRouteRoute._addFileChildren(authappProfileRouteRouteChildren)
+
+interface authappProjectsProjectIdRouteRouteChildren {
+  authappProjectsProjectIdIndexRoute: typeof authappProjectsProjectIdIndexRoute
+  authappProjectsProjectIdDatasetsIndexRoute: typeof authappProjectsProjectIdDatasetsIndexRoute
+  authappProjectsProjectIdMembersIndexRoute: typeof authappProjectsProjectIdMembersIndexRoute
+  authappProjectsProjectIdModelsIndexRoute: typeof authappProjectsProjectIdModelsIndexRoute
+  authappProjectsProjectIdSettingsIndexRoute: typeof authappProjectsProjectIdSettingsIndexRoute
+}
+
+const authappProjectsProjectIdRouteRouteChildren: authappProjectsProjectIdRouteRouteChildren =
+  {
+    authappProjectsProjectIdIndexRoute: authappProjectsProjectIdIndexRoute,
+    authappProjectsProjectIdDatasetsIndexRoute:
+      authappProjectsProjectIdDatasetsIndexRoute,
+    authappProjectsProjectIdMembersIndexRoute:
+      authappProjectsProjectIdMembersIndexRoute,
+    authappProjectsProjectIdModelsIndexRoute:
+      authappProjectsProjectIdModelsIndexRoute,
+    authappProjectsProjectIdSettingsIndexRoute:
+      authappProjectsProjectIdSettingsIndexRoute,
+  }
+
+const authappProjectsProjectIdRouteRouteWithChildren =
+  authappProjectsProjectIdRouteRoute._addFileChildren(
+    authappProjectsProjectIdRouteRouteChildren,
+  )
+
+interface authappProjectsProjectIdDatasetsDatasetIdRouteRouteChildren {
+  authappProjectsProjectIdDatasetsDatasetIdSettingsIndexRoute: typeof authappProjectsProjectIdDatasetsDatasetIdSettingsIndexRoute
+  authappProjectsProjectIdDatasetsDatasetIdBlobRefSplatRoute: typeof authappProjectsProjectIdDatasetsDatasetIdBlobRefSplatRoute
+  authappProjectsProjectIdDatasetsDatasetIdTreeRefSplatRoute: typeof authappProjectsProjectIdDatasetsDatasetIdTreeRefSplatRoute
+  authappProjectsProjectIdDatasetsDatasetIdCommitCommitIdIndexRoute: typeof authappProjectsProjectIdDatasetsDatasetIdCommitCommitIdIndexRoute
+  authappProjectsProjectIdDatasetsDatasetIdCommitsRefIndexRoute: typeof authappProjectsProjectIdDatasetsDatasetIdCommitsRefIndexRoute
+}
+
+const authappProjectsProjectIdDatasetsDatasetIdRouteRouteChildren: authappProjectsProjectIdDatasetsDatasetIdRouteRouteChildren =
+  {
+    authappProjectsProjectIdDatasetsDatasetIdSettingsIndexRoute:
+      authappProjectsProjectIdDatasetsDatasetIdSettingsIndexRoute,
+    authappProjectsProjectIdDatasetsDatasetIdBlobRefSplatRoute:
+      authappProjectsProjectIdDatasetsDatasetIdBlobRefSplatRoute,
+    authappProjectsProjectIdDatasetsDatasetIdTreeRefSplatRoute:
+      authappProjectsProjectIdDatasetsDatasetIdTreeRefSplatRoute,
+    authappProjectsProjectIdDatasetsDatasetIdCommitCommitIdIndexRoute:
+      authappProjectsProjectIdDatasetsDatasetIdCommitCommitIdIndexRoute,
+    authappProjectsProjectIdDatasetsDatasetIdCommitsRefIndexRoute:
+      authappProjectsProjectIdDatasetsDatasetIdCommitsRefIndexRoute,
+  }
+
+const authappProjectsProjectIdDatasetsDatasetIdRouteRouteWithChildren =
+  authappProjectsProjectIdDatasetsDatasetIdRouteRoute._addFileChildren(
+    authappProjectsProjectIdDatasetsDatasetIdRouteRouteChildren,
+  )
+
+interface authappProjectsProjectIdModelsModelIdRouteRouteChildren {
+  authappProjectsProjectIdModelsModelIdIndexRoute: typeof authappProjectsProjectIdModelsModelIdIndexRoute
+  authappProjectsProjectIdModelsModelIdSettingsIndexRoute: typeof authappProjectsProjectIdModelsModelIdSettingsIndexRoute
+  authappProjectsProjectIdModelsModelIdBlobRefSplatRoute: typeof authappProjectsProjectIdModelsModelIdBlobRefSplatRoute
+  authappProjectsProjectIdModelsModelIdTreeRefSplatRoute: typeof authappProjectsProjectIdModelsModelIdTreeRefSplatRoute
+  authappProjectsProjectIdModelsModelIdCommitCommitIdIndexRoute: typeof authappProjectsProjectIdModelsModelIdCommitCommitIdIndexRoute
+  authappProjectsProjectIdModelsModelIdCommitsRefIndexRoute: typeof authappProjectsProjectIdModelsModelIdCommitsRefIndexRoute
+}
+
+const authappProjectsProjectIdModelsModelIdRouteRouteChildren: authappProjectsProjectIdModelsModelIdRouteRouteChildren =
+  {
+    authappProjectsProjectIdModelsModelIdIndexRoute:
+      authappProjectsProjectIdModelsModelIdIndexRoute,
+    authappProjectsProjectIdModelsModelIdSettingsIndexRoute:
+      authappProjectsProjectIdModelsModelIdSettingsIndexRoute,
+    authappProjectsProjectIdModelsModelIdBlobRefSplatRoute:
+      authappProjectsProjectIdModelsModelIdBlobRefSplatRoute,
+    authappProjectsProjectIdModelsModelIdTreeRefSplatRoute:
+      authappProjectsProjectIdModelsModelIdTreeRefSplatRoute,
+    authappProjectsProjectIdModelsModelIdCommitCommitIdIndexRoute:
+      authappProjectsProjectIdModelsModelIdCommitCommitIdIndexRoute,
+    authappProjectsProjectIdModelsModelIdCommitsRefIndexRoute:
+      authappProjectsProjectIdModelsModelIdCommitsRefIndexRoute,
+  }
+
+const authappProjectsProjectIdModelsModelIdRouteRouteWithChildren =
+  authappProjectsProjectIdModelsModelIdRouteRoute._addFileChildren(
+    authappProjectsProjectIdModelsModelIdRouteRouteChildren,
+  )
+
+interface authappRouteRouteChildren {
+  authappProfileRouteRoute: typeof authappProfileRouteRouteWithChildren
+  authappProjectsProjectIdRouteRoute: typeof authappProjectsProjectIdRouteRouteWithChildren
+  authappDatasetsNewRoute: typeof authappDatasetsNewRoute
+  authappModelsNewRoute: typeof authappModelsNewRoute
+  authappDatasetsIndexRoute: typeof authappDatasetsIndexRoute
+  authappModelsIndexRoute: typeof authappModelsIndexRoute
+  authappProjectsIndexRoute: typeof authappProjectsIndexRoute
+  authappProjectsProjectIdDatasetsDatasetIdRouteRoute: typeof authappProjectsProjectIdDatasetsDatasetIdRouteRouteWithChildren
+  authappProjectsProjectIdModelsModelIdRouteRoute: typeof authappProjectsProjectIdModelsModelIdRouteRouteWithChildren
+}
+
+const authappRouteRouteChildren: authappRouteRouteChildren = {
+  authappProfileRouteRoute: authappProfileRouteRouteWithChildren,
+  authappProjectsProjectIdRouteRoute:
+    authappProjectsProjectIdRouteRouteWithChildren,
+  authappDatasetsNewRoute: authappDatasetsNewRoute,
+  authappModelsNewRoute: authappModelsNewRoute,
+  authappDatasetsIndexRoute: authappDatasetsIndexRoute,
+  authappModelsIndexRoute: authappModelsIndexRoute,
+  authappProjectsIndexRoute: authappProjectsIndexRoute,
+  authappProjectsProjectIdDatasetsDatasetIdRouteRoute:
+    authappProjectsProjectIdDatasetsDatasetIdRouteRouteWithChildren,
+  authappProjectsProjectIdModelsModelIdRouteRoute:
+    authappProjectsProjectIdModelsModelIdRouteRouteWithChildren,
+}
+
+const authappRouteRouteWithChildren = authappRouteRoute._addFileChildren(
+  authappRouteRouteChildren,
+)
+
+interface authAdminRobotsRouteRouteChildren {
+  authAdminRobotsNewRoute: typeof authAdminRobotsNewRoute
+  authAdminRobotsIndexRoute: typeof authAdminRobotsIndexRoute
+  authAdminRobotsRobotIdEditRoute: typeof authAdminRobotsRobotIdEditRoute
+}
+
+const authAdminRobotsRouteRouteChildren: authAdminRobotsRouteRouteChildren = {
+  authAdminRobotsNewRoute: authAdminRobotsNewRoute,
+  authAdminRobotsIndexRoute: authAdminRobotsIndexRoute,
+  authAdminRobotsRobotIdEditRoute: authAdminRobotsRobotIdEditRoute,
+}
+
+const authAdminRobotsRouteRouteWithChildren =
+  authAdminRobotsRouteRoute._addFileChildren(authAdminRobotsRouteRouteChildren)
+
+interface authAdminRouteRouteChildren {
+  authAdminRobotsRouteRoute: typeof authAdminRobotsRouteRouteWithChildren
+  authAdminRegistriesRoute: typeof authAdminRegistriesRoute
+  authAdminReplicationsRoute: typeof authAdminReplicationsRoute
+  authAdminUsersRoute: typeof authAdminUsersRoute
+  authAdminIndexRoute: typeof authAdminIndexRoute
+  authAdminReplicationsReplicationIdExecutionsRoute: typeof authAdminReplicationsReplicationIdExecutionsRoute
+  authAdminReplicationsReplicationIdExecutionsExecutionIdRoute: typeof authAdminReplicationsReplicationIdExecutionsExecutionIdRoute
+}
+
+const authAdminRouteRouteChildren: authAdminRouteRouteChildren = {
+  authAdminRobotsRouteRoute: authAdminRobotsRouteRouteWithChildren,
+  authAdminRegistriesRoute: authAdminRegistriesRoute,
+  authAdminReplicationsRoute: authAdminReplicationsRoute,
+  authAdminUsersRoute: authAdminUsersRoute,
+  authAdminIndexRoute: authAdminIndexRoute,
+  authAdminReplicationsReplicationIdExecutionsRoute:
+    authAdminReplicationsReplicationIdExecutionsRoute,
+  authAdminReplicationsReplicationIdExecutionsExecutionIdRoute:
+    authAdminReplicationsReplicationIdExecutionsExecutionIdRoute,
+}
+
+const authAdminRouteRouteWithChildren = authAdminRouteRoute._addFileChildren(
+  authAdminRouteRouteChildren,
+)
+
+interface authRouteRouteChildren {
+  authappRouteRoute: typeof authappRouteRouteWithChildren
+  authAdminRouteRoute: typeof authAdminRouteRouteWithChildren
+}
+
+const authRouteRouteChildren: authRouteRouteChildren = {
+  authappRouteRoute: authappRouteRouteWithChildren,
+  authAdminRouteRoute: authAdminRouteRouteWithChildren,
+}
+
+const authRouteRouteWithChildren = authRouteRoute._addFileChildren(
+  authRouteRouteChildren,
+)
+
+const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
+  authRouteRoute: authRouteRouteWithChildren,
+  SplatRoute: SplatRoute,
+  LoginRoute: LoginRoute,
+}
+export const routeTree = rootRouteImport
+  ._addFileChildren(rootRouteChildren)
+  ._addFileTypes<FileRouteTypes>()
