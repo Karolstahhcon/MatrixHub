@@ -29,3 +29,19 @@ export function DisableRobotModal({
 
   return (
     <ModalWrapper
+      title={t('routes.admin.robots.disableModal.title')}
+      type="danger"
+      size="sm"
+      opened={opened}
+      onClose={onClose}
+      confirmLoading={mutation.isPending}
+      onConfirm={handleConfirm}
+    >
+      <Text size="sm">
+        {t('routes.admin.robots.disableModal.description', {
+          name: robot.name,
+        })}
+      </Text>
+    </ModalWrapper>
+  )
+}
