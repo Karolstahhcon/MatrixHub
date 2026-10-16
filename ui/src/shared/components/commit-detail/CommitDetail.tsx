@@ -113,3 +113,118 @@ export function CommitDetail({ commit }: CommitDetailProps) {
       }
     }, DIFF_PARSE_DELAY_MS)
 
+    return () => {
+      cancelled = true
+      window.clearTimeout(loadingTimerId)
+      window.clearTimeout(parseTimerId)
+    }
+  }, [commit?.diff, t])
+
+  const openRawDiff = (diff: string) => {
+    const rawDiffUrl = URL.createObjectURL(
+      new Blob([diff], { type: 'text/plain;charset=utf-8' }),
+    )
+
+    window.open(rawDiffUrl, '_blank', 'noopener,noreferrer')
+    setTimeout(() => URL.revokeObjectURL(rawDiffUrl), RAW_DIFF_URL_REVOKE_DELAY_MS)
+  }
+
+  const handleOpenRawDiff = (event: MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault()
+    openRawDiff(commit?.diff ?? '')
+  }
+
+  const handleDiffHtmlClick = (event: MouseEvent<HTMLDivElement>) => {
+    if (!(event.target instanceof Element)) {
+      return
+    }
+
+    const link = event.target.closest<HTMLElement>('[data-commit-raw-diff-link]')
+
+    if (!link) {
+      return
+    }
+
+    event.preventDefault()
+
+    const fileIndex = Number(link.dataset.commitRawDiffLink)
+    const fileDiff = splitCommitDiff(commit?.diff ?? '')[fileIndex]
+
+    openRawDiff(fileDiff ?? commit?.diff ?? '')
+  }
+
+  return (
+    <Stack gap="sm">
+      <Paper withBorder radius="md" bg="gray.0">
+        <Stack gap="0">
+          <Group
+            justify="space-between"
+            wrap="nowrap"
+            align="center"
+            py="6"
+            px="sm"
+            style={{
+              borderBottom: '1px solid var(--mantine-color-gray-3)',
+            }}
+          >
+            <Stack gap={2}>
+              <Group gap="xs" align="center">
+                <Text size="sm" component="span">{commit?.authorName || '-'}</Text>
+                <Text size="sm" c="dimmed" component="span">
+                  <span>
+                    {t('shared.commitDetail.committedOn')}
+                  </span>
+                  <Tooltip label={authorDate} withArrow>
+                    <span>{authorDate === '-' ? '-' : dayjs(authorDate).fromNow()}</span>
+                  </Tooltip>
+                </Text>
+              </Group>
+            </Stack>
+
+            <CommitHashCard commitId={commit?.id} />
+          </Group>
+
+          <CommitMessageSection message={commit?.message} />
+        </Stack>
+      </Paper>
+
+      {
+        hasRawDiff
+          ? diffRender.loading
+            ? (
+                <Group gap="xs">
+                  <Loader size="sm" />
+                  <Text size="sm" c="dimmed">{t('shared.commitDetail.loadingDiff')}</Text>
+                </Group>
+              )
+            : (
+                <>
+                  {diffRender.hasTooManyFiles
+                    ? (
+                        <DiffLimitAlert
+                          maxFiles={MAX_FILES}
+                          onOpenRawDiff={handleOpenRawDiff}
+                        />
+                      )
+                    : null}
+
+                  {
+                    diffRender.html
+                      ? (
+                          <Box
+                            pos="relative"
+                            onClick={handleDiffHtmlClick}
+                            // diff2html returns escaped markup intended for direct rendering.
+                            // eslint-disable-next-line @eslint-react/dom/no-dangerously-set-innerhtml
+                            dangerouslySetInnerHTML={{ __html: diffRender.html }}
+                          />
+                        )
+                      : <EmptyDiffPrompt />
+                  }
+                </>
+              )
+          : <EmptyDiffPrompt />
+      }
+    </Stack>
+  )
+}
