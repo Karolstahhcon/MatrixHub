@@ -28,3 +28,34 @@ export function TaskFilterPanel({
       {({ keyword }) => {
         const filteredOptions = filterByKeyword(options, keyword)
 
+        if (!filteredOptions.length) {
+          return null
+        }
+
+        return (
+          <Group gap={8}>
+            {
+              filteredOptions.map(option => (
+                <TaskBadge
+                  task={option.name as string}
+                  component="button"
+                  key={option.id}
+                  type="button"
+                  onClick={() => onSelect(option.name as string)}
+                  styles={{
+                    root: {
+                      cursor: 'pointer',
+                      borderColor: selectedNames.includes(option.name as string)
+                        ? 'var(--mantine-primary-color-6)'
+                        : undefined,
+                    },
+                  }}
+                />
+              ))
+            }
+          </Group>
+        )
+      }}
+    </BaseFilterPanel>
+  )
+}
