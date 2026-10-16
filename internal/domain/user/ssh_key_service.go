@@ -22,3 +22,28 @@ import (
 //go:generate go tool mockgen -source=ssh_key_service.go -destination=mocks/ssh_key_service_mock.go -package=mocks
 type ISSHKeyService interface {
 	CreateSSHKey(ctx context.Context, key SSHKey) error
+}
+
+type SSHKeyService struct {
+	repo ISSHKeyRepo
+}
+
+func (s *SSHKeyService) CreateSSHKey(ctx context.Context, key SSHKey) error {
+	existing, err := s.repo.GetByFingerprint(ctx, key.Fingerprint)
+	if err != nil {
+		return err
+	}
+	if existing != nil && existing.Id != 0 {
+		if existing.IsExpired(time.Now()) {
+			return ErrSSHKeyExpired
+		}
+		return ErrSSHKeyAlreadyExists
+	}
+	return s.repo.CreateSSHKey(ctx, key)
+}
+
+func NewSSHKeyService(repo ISSHKeyRepo) ISSHKeyService {
+	return &SSHKeyService{
+		repo: repo,
+	}
+}
