@@ -64,3 +64,69 @@ func (m *MockIDatasetRepo) Delete(ctx context.Context, project, name string) err
 	ret0, _ := ret[0].(error)
 	return ret0
 }
+
+// Delete indicates an expected call of Delete.
+func (mr *MockIDatasetRepoMockRecorder) Delete(ctx, project, name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockIDatasetRepo)(nil).Delete), ctx, project, name)
+}
+
+// GetByProjectAndName mocks base method.
+func (m *MockIDatasetRepo) GetByProjectAndName(ctx context.Context, project, name string) (*dataset.Dataset, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByProjectAndName", ctx, project, name)
+	ret0, _ := ret[0].(*dataset.Dataset)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByProjectAndName indicates an expected call of GetByProjectAndName.
+func (mr *MockIDatasetRepoMockRecorder) GetByProjectAndName(ctx, project, name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByProjectAndName", reflect.TypeOf((*MockIDatasetRepo)(nil).GetByProjectAndName), ctx, project, name)
+}
+
+// List mocks base method.
+func (m *MockIDatasetRepo) List(ctx context.Context, filter *model.Filter) ([]*dataset.Dataset, int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "List", ctx, filter)
+	ret0, _ := ret[0].([]*dataset.Dataset)
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// List indicates an expected call of List.
+func (mr *MockIDatasetRepoMockRecorder) List(ctx, filter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockIDatasetRepo)(nil).List), ctx, filter)
+}
+
+// ListAllPaths mocks base method.
+func (m *MockIDatasetRepo) ListAllPaths(ctx context.Context) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListAllPaths", ctx)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListAllPaths indicates an expected call of ListAllPaths.
+func (mr *MockIDatasetRepoMockRecorder) ListAllPaths(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAllPaths", reflect.TypeOf((*MockIDatasetRepo)(nil).ListAllPaths), ctx)
+}
+
+// UpdateMetadata mocks base method.
+func (m *MockIDatasetRepo) UpdateMetadata(ctx context.Context, datasetID int64, update *dataset.MetadataUpdate) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateMetadata", ctx, datasetID, update)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateMetadata indicates an expected call of UpdateMetadata.
+func (mr *MockIDatasetRepoMockRecorder) UpdateMetadata(ctx, datasetID, update any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMetadata", reflect.TypeOf((*MockIDatasetRepo)(nil).UpdateMetadata), ctx, datasetID, update)
+}
