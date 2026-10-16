@@ -10,3 +10,16 @@ export const Route = createFileRoute(
   loader: async ({
     context, params,
   }) => {
+    const model = await context.queryClient.ensureQueryData(modelQueryOptions(params.projectId, params.modelId))
+
+    return { model }
+  },
+})
+
+function ModelDetailLayout() {
+  return (
+    <ModelDetailPage>
+      <Outlet />
+    </ModelDetailPage>
+  )
+}
