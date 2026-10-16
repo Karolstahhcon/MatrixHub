@@ -38,3 +38,43 @@ export default function Governance(): React.ReactElement {
             </p>
           </div>
 
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="bg-slate-800/30 p-8 rounded-3xl border border-slate-700/50 hover:border-slate-600/50 transition-colors">
+              <div className="text-4xl mb-4">👥</div>
+              <h3 className="text-xl font-bold text-white mb-3">
+                <Translate id="governance.rbac.title">RBAC & Multi-Tenancy</Translate>
+              </h3>
+              <p className="text-slate-400">
+                <Translate id="governance.rbac.desc">
+                  Project-based isolation with granular permissions. Integrate seamlessly with your existing LDAP/SSO providers for centralized access control.
+                </Translate>
+              </p>
+            </div>
+            <div className="bg-slate-800/30 p-8 rounded-3xl border border-slate-700/50 hover:border-slate-600/50 transition-colors">
+              <div className="text-4xl mb-4">📝</div>
+              <h3 className="text-xl font-bold text-white mb-3">
+                <Translate id="governance.audit.title">Audit & Compliance</Translate>
+              </h3>
+              <p className="text-slate-400">
+                <Translate id="governance.audit.desc">
+                  Full traceability with comprehensive logs. Track who uploaded, promoted, downloaded, or changed access rules for every model version.
+                </Translate>
+              </p>
+            </div>
+            <div className="bg-slate-800/30 p-8 rounded-3xl border border-slate-700/50 hover:border-slate-600/50 transition-colors">
+              <div className="text-4xl mb-4">🛡️</div>
+              <h3 className="text-xl font-bold text-white mb-3">
+                <Translate id="governance.integrity.title">Integrity Protection</Translate>
+              </h3>
+              <p className="text-slate-400">
+                <Translate id="governance.integrity.desc">
+                  Tag locking, release promotion workflows, built-in malware scanning, and content signing to ensure your production models remain untampered.
+                </Translate>
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </Layout>
+  );
+}
