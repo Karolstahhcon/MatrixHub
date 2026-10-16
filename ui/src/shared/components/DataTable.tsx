@@ -345,3 +345,350 @@ function usePinnedShadowContainerRef(callerRef?: MutableRefObject<HTMLDivElement
     element.addEventListener('scroll', update, { passive: true })
 
     return () => {
+      observer.disconnect()
+      element.removeEventListener('scroll', update)
+      detachCallerRef()
+    }
+  }, [callerRef])
+
+  return containerRef
+}
+
+// -- DataTable --
+export function DataTable<TData extends MRT_RowData>({
+  data,
+  columns,
+  pagination,
+  page = 1,
+  emptyTitle = '',
+  emptyDescription = '',
+  onPageChange,
+  // Selection
+  enableRowSelection = false,
+  enableSelectAll = true,
+  rowSelection,
+  onRowSelectionChange,
+  getRowId,
+  // Row actions
+  enableRowActions = false,
+  renderRowActions,
+  positionActionsColumn = 'last',
+  pinRowActions = false,
+  // Toolbar
+  searchPlaceholder,
+  searchValue,
+  onSearchChange,
+  searchToolbarProps,
+  onRefresh,
+  selectedCount,
+  onBatchDelete,
+  renderToolbar,
+  toolbarExtra,
+  // Loading
+  loading = false,
+  fetching = false,
+  renderEmptyRowsFallback,
+  // Header
+  hideTableHead = false,
+  // Display column overrides
+  displayColumnDefOptions,
+  // Escape hatch
+  tableOptions,
+}: DataTableProps<TData>) {
+  const { t } = useTranslation()
+  const {
+    columnFilterDisplayMode = 'popover',
+    defaultColumn,
+    enableColumnPinning = false,
+    enableColumnFilters = true,
+    initialState,
+    layoutMode = 'grid',
+    mantineFilterSelectProps,
+    mantineFilterTextInputProps,
+    mantinePaperProps,
+    mantineTableBodyRowProps,
+    mantineTableContainerProps,
+    mantineTableProps,
+    state: extraState,
+    ...restTableOptions
+  } = tableOptions ?? {}
+
+  const enhancedColumns = useMemo(() => withFilterTooltipLabels(columns), [columns])
+
+  // A container ref is only reachable from the static form of the prop; the
+  // function form is resolved per-render by MRT.
+  const callerContainerRef = typeof mantineTableContainerProps === 'function'
+    ? undefined
+    : mantineTableContainerProps?.ref
+
+  const containerRef = usePinnedShadowContainerRef(callerContainerRef)
+
+  const shouldPinRowActions = enableRowActions && pinRowActions
+  const actionColumnPinning = initialState?.columnPinning
+  const pinnedLeftColumns = (actionColumnPinning?.left ?? [])
+    .filter(columnId => columnId !== ROW_ACTIONS_COLUMN_ID)
+  const pinnedRightColumns = (actionColumnPinning?.right ?? [])
+    .filter(columnId => columnId !== ROW_ACTIONS_COLUMN_ID)
+  const pinnedInitialState = shouldPinRowActions
+    ? {
+        ...initialState,
+        columnPinning: {
+          ...actionColumnPinning,
+          left: positionActionsColumn === 'first'
+            ? [...pinnedLeftColumns, ROW_ACTIONS_COLUMN_ID]
+            : pinnedLeftColumns,
+          right: positionActionsColumn === 'last'
+            ? [...pinnedRightColumns, ROW_ACTIONS_COLUMN_ID]
+            : pinnedRightColumns,
+        },
+      }
+    : initialState
+  const mergedDisplayColumnDefOptions = {
+    ...(displayColumnDefOptions ?? {}),
+    'mrt-row-select': {
+      header: '',
+      // `minSize` has to be overridden too: the wrapper's `defaultColumn`
+      // minimum applies to display columns as well and would otherwise win
+      // over this size.
+      size: 44,
+      minSize: 44,
+      grow: false,
+      ...displayColumnDefOptions?.['mrt-row-select'],
+    },
+    'mrt-row-actions': {
+      header: t('shared.actions'),
+      // MRT's default is too narrow for multi-button action cells. An action
+      // column that is too narrow hides its buttons *without* widening the
+      // table, so no scrollbar appears and they become unreachable — size this
+      // to the widest action row in the feature table rather than relying on
+      // the default.
+      size: 140,
+      grow: false,
+      ...displayColumnDefOptions?.['mrt-row-actions'],
+    },
+  }
+
+  const [debouncedLoading] = useDebouncedValue(loading, 300)
+
+  const tableState = {
+    isLoading: debouncedLoading,
+    showSkeletons: debouncedLoading,
+    ...extraState,
+    ...(rowSelection !== undefined ? { rowSelection } : {}),
+  }
+
+  // Toolbar
+  const [debouncedFetching] = useDebouncedValue(fetching, 300)
+  const showRefresh = !!onRefresh
+  const debouncedRefresh = useDebouncedCallback(onRefresh ?? noop, 300)
+  const showBatchDelete = (selectedCount ?? 0) > 0 && !!onBatchDelete
+  const showSearch = !!searchPlaceholder
+  const searchPlaceholderText = typeof searchPlaceholder === 'string'
+    ? searchPlaceholder
+    : t('shared.search')
+  const showToolbar = !!(searchPlaceholder || onRefresh || showBatchDelete || toolbarExtra)
+  const defaultToolbar = showToolbar
+    ? (
+        <Box mb="sm">
+          <SearchToolbar
+            {...searchToolbarProps}
+            searchPlaceholder={showSearch ? searchPlaceholderText : undefined}
+            searchValue={searchValue}
+            onSearchChange={onSearchChange}
+            searchInputProps={{
+              maw: 360,
+              style: { flex: 1 },
+              w: '100%',
+              ...searchToolbarProps?.searchInputProps,
+            }}
+
+          >
+            {showRefresh && (
+              <ActionIcon
+                variant="transparent"
+                size="lg"
+                onClick={debouncedRefresh}
+                loading={debouncedFetching}
+                c="gray.6"
+              >
+                <IconRefresh size={24} />
+              </ActionIcon>
+            )}
+            {onBatchDelete && (
+              <Button
+                color="red"
+                variant="light"
+                disabled={!showBatchDelete}
+                leftSection={<IconTrash size={16} />}
+                onClick={onBatchDelete}
+              >
+                {!selectedCount
+                  ? t('shared.batchDelete')
+                  : t('shared.batchDeleteWithCount', { count: selectedCount })}
+              </Button>
+            )}
+
+            {toolbarExtra}
+          </SearchToolbar>
+        </Box>
+      )
+    : null
+
+  const toolbar = renderToolbar
+    ? renderToolbar(defaultToolbar)
+    : defaultToolbar
+
+  // Empty state
+  const hasEmptyTitle = hasContent(emptyTitle)
+  const hasEmptyDescription = hasContent(emptyDescription)
+  const hasCustomEmptyState = hasEmptyTitle || hasEmptyDescription
+  const renderDefaultEmptyRowsFallback = hasCustomEmptyState
+    ? () => (
+        <Center py="xl" w="100%">
+          <Stack align="center" gap="xs">
+            {hasEmptyTitle && <Text fw={500}>{emptyTitle}</Text>}
+            {hasEmptyDescription && (
+              <Text size="sm" c="dimmed">
+                {emptyDescription}
+              </Text>
+            )}
+          </Stack>
+        </Center>
+      )
+    : () => null
+  const effectiveRenderEmptyRowsFallback = renderEmptyRowsFallback ?? renderDefaultEmptyRowsFallback
+
+  // Pagination
+  const totalPages = pagination?.pages
+    ?? (
+      pagination?.total && pagination?.pageSize
+        ? Math.ceil(pagination.total / pagination.pageSize)
+        : 0
+    )
+
+  return (
+    <Stack gap={0} miw={0}>
+      {toolbar}
+
+      <MantineReactTable
+        columns={enhancedColumns}
+        data={data}
+        enableBottomToolbar={false}
+        enableTopToolbar={false}
+        enableColumnActions={false}
+        enableColumnDragging={false}
+        enableColumnOrdering={false}
+        enableDensityToggle={false}
+        enableFullScreenToggle={false}
+        enableGlobalFilterModes={false}
+        enableHiding={false}
+        enablePagination={false}
+        enableColumnFilters={enableColumnFilters}
+        enableColumnPinning={shouldPinRowActions || enableColumnPinning}
+        enableSorting={false}
+        enableTableHead={!hideTableHead}
+        columnFilterDisplayMode={columnFilterDisplayMode}
+        // `grid` layout makes per-column `size` actually apply, so wide content
+        // no longer stretches the table into a long horizontal scroll.
+        layoutMode={layoutMode}
+        defaultColumn={{
+          enableColumnFilter: false,
+          size: 160,
+          minSize: 80,
+          maxSize: 400,
+          ...defaultColumn,
+        }}
+        // Selection
+        enableRowSelection={enableRowSelection}
+        enableSelectAll={enableSelectAll}
+        onRowSelectionChange={onRowSelectionChange}
+        getRowId={getRowId}
+        // Row actions
+        enableRowActions={enableRowActions}
+        renderRowActions={renderRowActions}
+        positionActionsColumn={positionActionsColumn}
+        renderEmptyRowsFallback={effectiveRenderEmptyRowsFallback}
+        localization={{ noRecordsToDisplay: '' }}
+        // Display column overrides
+        displayColumnDefOptions={mergedDisplayColumnDefOptions}
+        // Escape hatch
+        {...restTableOptions}
+        initialState={{
+          density: 'xs',
+          ...pinnedInitialState,
+        }}
+        state={tableState}
+        mantineFilterSelectProps={args => ({
+          clearable: true,
+          comboboxProps: { withinPortal: false },
+          ...resolveTableOptionProps(mantineFilterSelectProps, args),
+        })}
+        mantineFilterTextInputProps={args => ({
+          ...resolveTableOptionProps(mantineFilterTextInputProps, args),
+        })}
+        mantinePaperProps={mergeTableOptionProps<TData, PaperProps>(
+          {
+            radius: 0,
+            shadow: 'none',
+            withBorder: false,
+            style: {
+              position: 'relative',
+              overflow: 'hidden',
+            },
+          },
+          mantinePaperProps,
+        )}
+        mantineTableContainerProps={mergeTableContainerProps<TData>(
+          {
+            ref: containerRef,
+            className: classes.container,
+            style: {
+              maxWidth: '100%',
+              overflowX: 'auto',
+            },
+          },
+          mantineTableContainerProps,
+        )}
+        mantineTableProps={mergeTableOptionProps<TData, MantineTableProps>(
+          {
+            highlightOnHover: true,
+            style: {
+              '--table-highlight-on-hover-color': 'var(--mantine-color-gray-0)',
+            },
+          },
+          mantineTableProps,
+        )}
+        mantineTableHeadCellProps={{
+          bg: 'var(--mantine-color-gray-0)',
+          style: {
+            height: 36,
+            padding: '0 var(--mantine-spacing-sm)',
+          },
+        }}
+        mantineTableBodyCellProps={{
+          style: {
+            height: 44,
+            padding: '0 var(--mantine-spacing-sm)',
+          },
+        }}
+        mantineTableBodyRowProps={(args) => {
+          const rowProps = resolveTableOptionProps(mantineTableBodyRowProps, args)
+
+          return {
+            bg: args.row.getIsSelected() ? 'var(--mantine-color-cyan-light)' : undefined,
+            ...rowProps,
+          }
+        }}
+      />
+
+      {onPageChange && (
+        <Pagination
+          total={pagination?.total ?? 0}
+          totalPages={totalPages}
+          page={page}
+          onPageChange={onPageChange}
+        />
+      )}
+    </Stack>
+  )
+}
