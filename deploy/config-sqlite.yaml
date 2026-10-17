@@ -11,3 +11,31 @@ database:
   maxOpenConns: 1
   maxIdleConns: 1
   connMaxLifetimeSeconds: 0
+  connMaxIdleSeconds: 0
+  migrate: true
+apiServer:
+  port: 3001
+  sshPort: 22
+  externalURL: ""
+jobServer:
+  enabled: true
+  shutdownGrace: 30s
+  syncPolicy:
+    pollInterval: 30s
+    maxConcurrent: 5
+    taskMaxDuration: 2h
+  syncTask:
+    pollInterval: 30s
+    maxConcurrent: 5
+    taskMaxDuration: 2h
+  syncJob:
+    pollInterval: 30s
+    maxConcurrent: 5
+    taskMaxDuration: 2h
+  logDir: ""
+ui:
+  staticDir: /app
+session:
+  persistentSessionLifetime: 720h
+  persistentSessionIdleTimeout: 168h
+  nonPersistentIdleTimeout: 8h
