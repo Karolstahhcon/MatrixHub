@@ -8,3 +8,13 @@ export function usePayloadModal<T>() {
   }
 
   const close = () => {
+    setPayload(null)
+  }
+
+  return {
+    opened: payload !== null,
+    payload,
+    open,
+    close,
+  }
+}
