@@ -21,3 +21,27 @@ export function DeleteRobotModal({
 }: DeleteRobotModalProps) {
   const { t } = useTranslation()
   const mutation = useMutation(deleteRobotAccountMutationOptions())
+
+  const handleConfirm = async () => {
+    await mutation.mutateAsync({ id: robot.id })
+    onClose()
+  }
+
+  return (
+    <ModalWrapper
+      title={t('routes.admin.robots.deleteModal.title')}
+      size="sm"
+      type="danger"
+      opened={opened}
+      onClose={onClose}
+      confirmLoading={mutation.isPending}
+      onConfirm={handleConfirm}
+    >
+      <Text size="sm">
+        {t('routes.admin.robots.deleteModal.description', {
+          name: robot.name,
+        })}
+      </Text>
+    </ModalWrapper>
+  )
+}
