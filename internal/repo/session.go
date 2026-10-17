@@ -74,3 +74,80 @@ func (s *sessionRepo) WriteSessionCookie(ctx context.Context, token string, expi
 		HttpOnly:    sessionCookie.HttpOnly,
 		Path:        sessionCookie.Path,
 		SameSite:    sessionCookie.SameSite,
+		Secure:      sessionCookie.Secure,
+		Partitioned: sessionCookie.Partitioned,
+	}
+
+	if expiry.IsZero() {
+		cookie.Expires = time.Unix(1, 0)
+		cookie.MaxAge = -1
+	} else if sessionCookie.Persist || s.Manager().GetBool(ctx, user.RememberMeCtxKey) {
+		cookie.Expires = time.Unix(expiry.Unix()+1, 0)
+		cookie.MaxAge = int(time.Until(expiry).Seconds() + 1)
+	}
+
+	return grpc.SetHeader(ctx, metadata.Pairs("set-cookie", cookie.String()))
+}
+
+func (s *sessionRepo) CommitAndWriteSessionCookie(ctx context.Context) error {
+	switch s.Manager().Status(ctx) {
+	case scs.Modified:
+		token, expiry, err := s.Manager().Commit(ctx)
+		if err != nil {
+			return err
+		}
+
+		return s.WriteSessionCookie(ctx, token, expiry)
+	default:
+		return s.WriteSessionCookie(ctx, "", time.Time{})
+	}
+
+}
+
+func (s *sessionRepo) Close() {
+	s.closeOnce.Do(s.stopCleanup)
+}
+
+func NewSessionRepository(db *gorm.DB, config *config.Config) (user.ISessionRepo, error) {
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, fmt.Errorf("get database connection for session store: %w", err)
+	}
+	store, err := newSessionStore(db.Name(), sqlDB)
+	if err != nil {
+		return nil, err
+	}
+
+	sessionConfig := user.SessionConfig{
+		PersistentSessionLifetime:    config.Session.PersistentSessionLifetime,
+		PersistentSessionIdleTimeout: config.Session.PersistentSessionIdleTimeout,
+		NonPersistentIdleTimeout:     config.Session.NonPersistentIdleTimeout,
+	}
+	sessionManager := scs.New()
+	sessionManager.Lifetime = sessionConfig.PersistentSessionLifetime
+	sessionManager.IdleTimeout = 0
+	sessionManager.Cookie.Name = user.CookieName
+	sessionManager.Cookie.HttpOnly = true
+	sessionManager.Cookie.SameSite = http.SameSiteLaxMode
+	sessionManager.Cookie.Persist = false
+	sessionManager.Store = store
+
+	return &sessionRepo{
+		SessionManager: sessionManager,
+		SessionConfig:  sessionConfig,
+		stopCleanup:    store.StopCleanup,
+	}, nil
+}
+
+func newSessionStore(driver string, sqlDB *sql.DB) (sessionStore, error) {
+	switch driver {
+	case infradb.DriverMySQL:
+		return mysqlstore.New(sqlDB), nil
+	case infradb.DriverPostgres:
+		return postgresstore.New(sqlDB), nil
+	case infradb.DriverSQLite:
+		return sqlite3store.New(sqlDB), nil
+	default:
+		return nil, fmt.Errorf("unsupported session database driver %q", driver)
+	}
+}
