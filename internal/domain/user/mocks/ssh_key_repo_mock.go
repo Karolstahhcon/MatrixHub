@@ -23,3 +23,78 @@ type MockISSHKeyRepo struct {
 	recorder *MockISSHKeyRepoMockRecorder
 	isgomock struct{}
 }
+
+// MockISSHKeyRepoMockRecorder is the mock recorder for MockISSHKeyRepo.
+type MockISSHKeyRepoMockRecorder struct {
+	mock *MockISSHKeyRepo
+}
+
+// NewMockISSHKeyRepo creates a new mock instance.
+func NewMockISSHKeyRepo(ctrl *gomock.Controller) *MockISSHKeyRepo {
+	mock := &MockISSHKeyRepo{ctrl: ctrl}
+	mock.recorder = &MockISSHKeyRepoMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockISSHKeyRepo) EXPECT() *MockISSHKeyRepoMockRecorder {
+	return m.recorder
+}
+
+// CreateSSHKey mocks base method.
+func (m *MockISSHKeyRepo) CreateSSHKey(ctx context.Context, key user.SSHKey) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateSSHKey", ctx, key)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateSSHKey indicates an expected call of CreateSSHKey.
+func (mr *MockISSHKeyRepoMockRecorder) CreateSSHKey(ctx, key any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSSHKey", reflect.TypeOf((*MockISSHKeyRepo)(nil).CreateSSHKey), ctx, key)
+}
+
+// DeleteSSHKey mocks base method.
+func (m *MockISSHKeyRepo) DeleteSSHKey(ctx context.Context, userId, id int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteSSHKey", ctx, userId, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteSSHKey indicates an expected call of DeleteSSHKey.
+func (mr *MockISSHKeyRepoMockRecorder) DeleteSSHKey(ctx, userId, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSSHKey", reflect.TypeOf((*MockISSHKeyRepo)(nil).DeleteSSHKey), ctx, userId, id)
+}
+
+// GetByFingerprint mocks base method.
+func (m *MockISSHKeyRepo) GetByFingerprint(ctx context.Context, fingerprint string) (*user.SSHKey, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByFingerprint", ctx, fingerprint)
+	ret0, _ := ret[0].(*user.SSHKey)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByFingerprint indicates an expected call of GetByFingerprint.
+func (mr *MockISSHKeyRepoMockRecorder) GetByFingerprint(ctx, fingerprint any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByFingerprint", reflect.TypeOf((*MockISSHKeyRepo)(nil).GetByFingerprint), ctx, fingerprint)
+}
+
+// ListSSHKeys mocks base method.
+func (m *MockISSHKeyRepo) ListSSHKeys(ctx context.Context, userId int) ([]*user.SSHKey, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListSSHKeys", ctx, userId)
+	ret0, _ := ret[0].([]*user.SSHKey)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListSSHKeys indicates an expected call of ListSSHKeys.
+func (mr *MockISSHKeyRepoMockRecorder) ListSSHKeys(ctx, userId any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSSHKeys", reflect.TypeOf((*MockISSHKeyRepo)(nil).ListSSHKeys), ctx, userId)
+}
