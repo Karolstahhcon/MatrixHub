@@ -6,3 +6,20 @@ export const profileKeys = {
   sshKeys: ['ssh-keys'] as const,
 }
 
+export function accessTokensQueryOptions() {
+  return queryOptions({
+    queryKey: profileKeys.accessTokens,
+    queryFn: () => CurrentUser.ListAccessTokens({}),
+  })
+}
+
+export function sshKeysQueryOptions() {
+  return queryOptions({
+    queryKey: profileKeys.sshKeys,
+    queryFn: () => CurrentUser.ListSSHKeys({}),
+  })
+}
+
+export function useAccessTokens() {
+  return useQuery(accessTokensQueryOptions())
+}
