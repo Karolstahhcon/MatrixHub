@@ -54,3 +54,115 @@ export function SecurityPage() {
     },
   )
 
+  const {
+    mutate: resetPassword, isPending,
+  } = useMutation({
+    mutationFn: (value: FormValues) =>
+      CurrentUser.ResetPassword({
+        oldPassword: value.oldPassword,
+        newPassword: value.newPassword,
+      }),
+    meta: {
+      successMessage: t('profile.passwordChanged'),
+    },
+    onSuccess: () => {
+      handleClose()
+    },
+  })
+
+  const {
+    reset, handleSubmit, Field,
+  } = useForm({
+    defaultValues: initialForm,
+    validators: {
+      onSubmit: formSchema,
+    },
+    onSubmit: ({ value }) => {
+      resetPassword(value)
+    },
+  })
+
+  const handleClose = () => {
+    close()
+    reset()
+  }
+
+  return (
+    <Stack
+      gap="md"
+      align="flex-start"
+    >
+      <PasswordInput
+        label={t('profile.password')}
+        w={200}
+        readOnly
+        disabled
+        value="********"
+      />
+
+      <Button onClick={open}>
+        {t('profile.changePassword')}
+      </Button>
+
+      <ModalWrapper
+        title={t('profile.editPassword')}
+        size="sm"
+        opened={opened}
+        onClose={handleClose}
+        onConfirm={() => handleSubmit()}
+        confirmLoading={isPending}
+      >
+        <Stack gap="md">
+          <Field
+            name="oldPassword"
+            validators={{ onChange: fieldSchemas.oldPassword }}
+          >
+            {({
+              state, handleChange,
+            }) => (
+              <PasswordInput
+                label={t('profile.oldPassword')}
+                required
+                value={state.value}
+                onChange={e => handleChange(e.currentTarget.value)}
+                error={state.meta.errors[0]?.message}
+              />
+            )}
+          </Field>
+          <Field
+            name="newPassword"
+            validators={{ onChange: fieldSchemas.newPassword }}
+          >
+            {({
+              state, handleChange,
+            }) => (
+              <PasswordInput
+                label={t('profile.newPassword')}
+                required
+                value={state.value}
+                onChange={e => handleChange(e.currentTarget.value)}
+                error={state.meta.errors[0]?.message}
+              />
+            )}
+          </Field>
+          <Field
+            name="confirmNewPassword"
+            validators={{ onChange: fieldSchemas.confirmNewPassword }}
+          >
+            {({
+              state, handleChange,
+            }) => (
+              <PasswordInput
+                label={t('profile.confirmNewPassword')}
+                required
+                value={state.value}
+                onChange={e => handleChange(e.currentTarget.value)}
+                error={state.meta.errors[0]?.message}
+              />
+            )}
+          </Field>
+        </Stack>
+      </ModalWrapper>
+    </Stack>
+  )
+}

@@ -82,3 +82,172 @@ type SyncJobConfig struct {
 	PollInterval    time.Duration `yaml:"pollInterval"`
 	MaxConcurrent   int           `yaml:"maxConcurrent"`
 	TaskMaxDuration time.Duration `yaml:"taskMaxDuration"`
+}
+
+// DefaultJobServerConfig returns production-minded defaults (enabled).
+func DefaultJobServerConfig() *JobServerConfig {
+	return &JobServerConfig{
+		Enabled:       true,
+		ShutdownGrace: 30 * time.Second,
+		SyncPolicy: SyncPolicyConfig{
+			PollInterval:    10 * time.Second,
+			MaxConcurrent:   5,
+			TaskMaxDuration: 2 * time.Hour,
+		},
+		SyncTask: SyncTaskConfig{
+			PollInterval:    5 * time.Second,
+			MaxConcurrent:   5,
+			TaskMaxDuration: 2 * time.Hour,
+		},
+		SyncJob: SyncJobConfig{
+			PollInterval:    3 * time.Second,
+			MaxConcurrent:   5,
+			TaskMaxDuration: 2 * time.Hour,
+		},
+	}
+}
+
+type APIServerConfig struct {
+	Port           int    `yaml:"port" validate:"required"`
+	SSHPort        int    `yaml:"sshPort"`
+	SSHHostKeyPath string `yaml:"sshHostKeyPath"`
+	HostURL        string `yaml:"hostURL"`
+	// ExternalURL is the externally-reachable base URL of this instance. It is
+	// surfaced to the frontend (e.g. as the `HF_ENDPOINT` for `hf` CLI snippets).
+	// Empty means "not configured" and the API returns an empty string so the
+	// UI can hide affected panels.
+	ExternalURL string `yaml:"externalURL"`
+}
+
+type UIConfig struct {
+	StaticDir string `yaml:"staticDir"`
+}
+
+type SessionConfig struct {
+	// PersistentSessionLifetime is the absolute maximum duration a persistent session
+	// (i.e. "remember me") can remain valid, regardless of activity. Once this limit
+	// is reached, the user must re-authenticate. Accepts a duration string (e.g. "720h",
+	// "30d" if your config parser supports it). Defaults to 720h (30 days).
+	PersistentSessionLifetime time.Duration `yaml:"persistentSessionLifetime"`
+	// PersistentSessionIdleTimeout is the maximum duration a persistent session
+	// can remain idle (no user activity) before it is invalidated. The idle timer
+	// resets on every authenticated request. Accepts a duration string (e.g. "168h").
+	// Defaults to 168h (7 days).
+	PersistentSessionIdleTimeout time.Duration `yaml:"persistentSessionIdleTimeout"`
+
+	// NonPersistentIdleTimeout is the maximum duration a non-persistent session (i.e. "remember me"
+	// unchecked) can remain idle before it is invalidated. Mirrors the role of
+	// PersistentSessionIdleTimeout but applies to browser-session logins only: the idle timer
+	// resets on every authenticated request, and the session is destroyed if no request is made
+	// within this window. Accepts a duration string (e.g. "8h"). Defaults to 8h.
+	NonPersistentIdleTimeout time.Duration `yaml:"nonPersistentIdleTimeout"`
+}
+
+func Init(configPath, sqlPath string) (*Config, error) {
+	v := viper.New()
+	v.SetConfigFile(configPath)
+
+	if err := v.ReadInConfig(); err != nil {
+		return nil, fmt.Errorf("failed to load config(%s): %w", configPath, err)
+	}
+
+	// v.SetEnvPrefix("MATRIXHUB")
+	// v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	// v.AutomaticEnv()
+
+	// Allow env overrides (viper will use these when present)
+	_ = v.BindEnv("database.dsn", db.MATRIXHUB_DSN_ENV)
+
+	cfg := new(Config)
+	if err := v.Unmarshal(cfg); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
+	}
+
+	if cfg.DataDir == "" {
+		log.Warn("dataDir is not set, using default ./data")
+		cfg.DataDir = "./data"
+	}
+
+	if cfg.Database.Driver == db.DriverSQLite && cfg.Database.DSN == "" {
+		sqliteDSN, err := db.DefaultSQLiteDSN(cfg.DataDir)
+		if err != nil {
+			return nil, err
+		}
+		cfg.Database.DSN = sqliteDSN
+	}
+	if cfg.Database.DSN == "" {
+		log.Warn("failed to find matrixhub dsn from env or config")
+	}
+
+	if cfg.Session.PersistentSessionLifetime == 0 {
+		cfg.Session.PersistentSessionLifetime = user.MaxPersistentSessionLifetime
+	}
+	if cfg.Session.PersistentSessionIdleTimeout == 0 {
+		cfg.Session.PersistentSessionIdleTimeout = user.DefaultPersistentSessionIdleTimeout
+	}
+	if cfg.Session.NonPersistentIdleTimeout == 0 {
+		cfg.Session.NonPersistentIdleTimeout = user.DefaultSessionIdleTimeout
+	}
+
+	if cfg.APIServer.SSHPort != 0 {
+		hostKeyPath := cfg.APIServer.SSHHostKeyPath
+		if hostKeyPath == "" {
+			absRootDir, err := filepath.Abs(cfg.DataDir)
+			if err != nil {
+				return nil, fmt.Errorf("error getting absolute path of data directory: %w", err)
+			}
+			hostKeyPath = filepath.Join(absRootDir, "ssh_host_rsa_key")
+		}
+		data, err := os.ReadFile(hostKeyPath)
+		if err != nil {
+			if !os.IsNotExist(err) {
+				return nil, fmt.Errorf("error reading SSH host key file: %w", err)
+			}
+			_, err = hfdssh.GenerateAndSaveHostKey(hostKeyPath, hfdssh.KeyTypeRSA)
+			if err != nil {
+				return nil, fmt.Errorf("error generating SSH host key: %w", err)
+			}
+			log.Infof("Generated SSH host key at %s", hostKeyPath)
+		} else {
+			_, err := hfdssh.ParseHostKeyFile(data)
+			if err != nil {
+				return nil, fmt.Errorf("error parsing SSH host key file: %w", err)
+			}
+		}
+
+		cfg.APIServer.SSHHostKeyPath = hostKeyPath
+	}
+
+	if cfg.APIServer.HostURL == "" {
+		cfg.APIServer.HostURL = fmt.Sprintf("http://localhost:%d", cfg.APIServer.Port)
+		log.Warnf("hostURL is not set, using default %s", cfg.APIServer.HostURL)
+	}
+
+	err := os.MkdirAll(cfg.DataDir, os.ModePerm)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create data directory: %w", err)
+	}
+
+	if cfg.Database.Migrate {
+		cfg.Database.SQLPath = filepath.Join(cfg.MigrationPath, sqlPath)
+	}
+	cfg.Database.Debug = cfg.Debug
+
+	if err := cfg.Validate(); err != nil {
+		return nil, fmt.Errorf("config invalid: %v", err)
+	}
+
+	return cfg, nil
+}
+
+func (config *Config) Validate() error {
+	fileInfo, err := os.Stat(config.MigrationPath)
+	if err != nil {
+		return err
+	}
+	if !fileInfo.IsDir() {
+		return fmt.Errorf("%s is not dir", fileInfo.Name())
+	}
+
+	return nil
+}
