@@ -12,3 +12,13 @@ const MantineLinkComponent = ({
 }: MartineAnchorProps & { ref?: React.RefObject<HTMLAnchorElement | null> }) => {
   return <Anchor ref={ref} {...props} />
 }
+
+const AnchorLinkComponent = createLink(MantineLinkComponent)
+
+export const AnchorLink: LinkComponent<typeof MantineLinkComponent> = (
+  props,
+) => {
+  return <AnchorLinkComponent {...props} />
+}
+
+export default AnchorLink

@@ -21,3 +21,26 @@ import (
 	"github.com/matrixhub-ai/matrixhub/internal/domain/auth"
 )
 
+type AuthMethod string
+
+const (
+	MethodCookie   AuthMethod = "cookie"
+	MethodToken    AuthMethod = "token"
+	MethodSSHKey   AuthMethod = "ssh_key"
+	MethodPassword AuthMethod = "password"
+)
+
+// HTTPAuthenticator verifies request credentials or an extracted token.
+// Both methods return (identity, next, ok, err):
+//   - (nil, true, false, nil): absent or unrecognized credentials; try the next method.
+//   - (identity, false, true, nil): authenticated with a non-nil identity.
+//   - (nil, false, false, nil): recognized but rejected credentials; stop.
+//   - (nil, false, false, err): infrastructure failure; stop.
+type HTTPAuthenticator interface {
+	Authenticate(ctx context.Context, r *http.Request) (identity auth.Identity, next, ok bool, err error)
+	AuthenticateToken(ctx context.Context, username, token string) (identity auth.Identity, next, ok bool, err error)
+}
+
+type SessionRenewer interface {
+	Renew(ctx context.Context) error
+}
