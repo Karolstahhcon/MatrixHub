@@ -17,3 +17,10 @@ grep -q -- 'Qwen/Qwen3-32B' "$direct_output"
 grep -q -- '--tensor-parallel-size=4' "$direct_output"
 grep -q -- 'nvidia.com/gpu: 4' "$direct_output"
 grep -q -- 'replicas: 1' "$direct_output"
+grep -q -- 'name: HF_ENDPOINT' "$direct_output"
+grep -q -- 'value: https://hf.m.daocloud.io' "$direct_output"
+
+grep -q -- 'name: HF_ENDPOINT' "$matrixhub_output"
+grep -q -- 'name: matrixhub-hf-endpoint' "$matrixhub_output"
+
+printf 'Rendered manifests:\n  %s\n  %s\n' "$direct_output" "$matrixhub_output"
