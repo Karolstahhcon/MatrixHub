@@ -13,3 +13,35 @@ interface EnableRobotModalProps {
   opened: boolean
   onClose: () => void
 }
+
+export function EnableRobotModal({
+  opened,
+  robot,
+  onClose,
+}: EnableRobotModalProps) {
+  const { t } = useTranslation()
+  const mutation = useMutation(enableRobotAccountMutationOptions())
+
+  const handleConfirm = async () => {
+    await mutation.mutateAsync(robot)
+    onClose()
+  }
+
+  return (
+    <ModalWrapper
+      title={t('routes.admin.robots.enableModal.title')}
+      type="info"
+      size="sm"
+      opened={opened}
+      onClose={onClose}
+      confirmLoading={mutation.isPending}
+      onConfirm={handleConfirm}
+    >
+      <Text size="sm">
+        {t('routes.admin.robots.enableModal.description', {
+          name: robot.name,
+        })}
+      </Text>
+    </ModalWrapper>
+  )
+}

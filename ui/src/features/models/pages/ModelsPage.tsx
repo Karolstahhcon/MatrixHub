@@ -20,3 +20,47 @@ export function ModelsPage() {
 
   return (
     <Flex mih="100%" justify="center" pt="lg" pb="xl">
+      <Group
+        w="100%"
+        gap="xl"
+        align="stretch"
+        wrap="nowrap"
+      >
+        <Flex
+          flex="0 0 24%"
+          wrap="nowrap"
+          pos="relative"
+          pe="xl"
+          miw={0}
+        >
+          <Box
+            flex={1}
+            miw={0}
+          >
+            <ModelsFilterPanel />
+          </Box>
+
+          <Box
+            pos="absolute"
+            top="var(--mantine-spacing-sm)"
+            bottom={0}
+            style={{
+              insetInlineEnd: 0,
+              borderInlineEnd: '1px solid var(--mantine-color-gray-3)',
+            }}
+          />
+        </Flex>
+
+        <Stack
+          flex={1}
+          miw={0}
+          gap="lg"
+        >
+          {!repositoryIsEmpty && <HotModelList />}
+
+          <AllModelList />
+        </Stack>
+      </Group>
+    </Flex>
+  )
+}
