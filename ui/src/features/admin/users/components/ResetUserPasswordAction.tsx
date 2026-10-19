@@ -62,3 +62,68 @@ function ResetUserPasswordModal({
     >
 
       <Stack gap="lg">
+        <form.Field name="password">
+          {field => (
+            <PasswordInput
+              required
+              autoComplete="new-password"
+              label={t('routes.admin.users.form.password')}
+              value={field.state.value}
+              onChange={event => field.handleChange(event.currentTarget.value)}
+              onBlur={field.handleBlur}
+              error={fieldError(field)}
+            />
+          )}
+        </form.Field>
+
+        <form.Field name="confirmPassword">
+          {field => (
+            <PasswordInput
+              required
+              autoComplete="new-password"
+              label={t('routes.admin.users.form.confirmPassword')}
+              value={field.state.value}
+              onChange={event => field.handleChange(event.currentTarget.value)}
+              onBlur={field.handleBlur}
+              error={fieldError(field)}
+            />
+          )}
+        </form.Field>
+
+      </Stack>
+    </ModalWrapper>
+  )
+}
+
+export function ResetUserPasswordAction({
+  user,
+  disabled,
+}: ResetUserPasswordActionProps) {
+  const { t } = useTranslation()
+  const [opened, {
+    open,
+    close,
+  }] = useDisclosure(false)
+
+  return (
+    <>
+      <Button
+        variant="transparent"
+        size="compact-sm"
+        color="blue"
+        disabled={disabled}
+        onClick={open}
+      >
+        {t('routes.admin.users.actions.resetPassword')}
+      </Button>
+
+      {opened && (
+        <ResetUserPasswordModal
+          opened
+          user={user}
+          onClose={close}
+        />
+      )}
+    </>
+  )
+}
