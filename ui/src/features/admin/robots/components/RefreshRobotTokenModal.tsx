@@ -163,3 +163,45 @@ export function RefreshRobotTokenModal({
                     })}
                     value={field.state.value ?? ''}
                     onChange={event => field.handleChange(event.currentTarget.value)}
+                    onBlur={field.handleBlur}
+                    error={fieldError(field)}
+                  />
+                )}
+              </form.Field>
+
+              <form.Field
+                name="confirmToken"
+                validators={{
+                  onChange: ({
+                    value,
+                    fieldApi,
+                  }) => getRefreshRobotTokenFieldIssues(
+                    'confirmToken',
+                    {
+                      ...fieldApi.form.state.values,
+                      confirmToken: value,
+                    },
+                  ),
+                  onChangeListenTo: ['token'],
+                }}
+              >
+                {field => (
+                  <PasswordInput
+                    required
+                    autoComplete="new-password"
+                    maxLength={ROBOT_TOKEN_MAX_LENGTH}
+                    label={t('routes.admin.robots.refreshTokenModal.confirmToken')}
+                    value={field.state.value ?? ''}
+                    onChange={event => field.handleChange(event.currentTarget.value)}
+                    onBlur={field.handleBlur}
+                    error={fieldError(field)}
+                  />
+                )}
+              </form.Field>
+            </>
+          )}
+        </form.Subscribe>
+      </Stack>
+    </ModalWrapper>
+  )
+}
