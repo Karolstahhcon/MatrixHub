@@ -22,3 +22,53 @@ import (
 	"github.com/matrixhub-ai/matrixhub/internal/domain/robot"
 	"github.com/matrixhub-ai/matrixhub/internal/domain/user"
 )
+
+type typedIdentity struct {
+	Type    string          `json:"type"`
+	Payload json.RawMessage `json:"payload"`
+}
+
+func Marshal(id auth.Identity) (string, error) {
+	payload, err := json.Marshal(id)
+	if err != nil {
+		return "", fmt.Errorf("marshal payload: %w", err)
+	}
+
+	env := typedIdentity{
+		Type:    id.TypeName(),
+		Payload: payload,
+	}
+
+	b, err := json.Marshal(env)
+	if err != nil {
+		return "", fmt.Errorf("marshal envelope: %w", err)
+	}
+
+	return string(b), nil
+}
+
+func Unmarshal(s string) (auth.Identity, error) {
+	var tid typedIdentity
+	if err := json.Unmarshal([]byte(s), &tid); err != nil {
+		return nil, fmt.Errorf("unmarshal typedIdentity: %w", err)
+	}
+
+	switch tid.Type {
+	case "robot":
+		var r robot.Identity
+		if err := json.Unmarshal(tid.Payload, &r); err != nil {
+			return nil, fmt.Errorf("unmarshal robot: %w", err)
+		}
+		return &r, nil
+
+	case "user":
+		var u user.Identity
+		if err := json.Unmarshal(tid.Payload, &u); err != nil {
+			return nil, fmt.Errorf("unmarshal user: %w", err)
+		}
+		return &u, nil
+
+	default:
+		return nil, fmt.Errorf("unknown identity type: %q", tid.Type)
+	}
+}
