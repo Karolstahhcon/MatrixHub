@@ -8,3 +8,14 @@ const { useLoaderData } = getRouteApi('/(auth)/(app)/projects_/$projectId/models
 
 export function ModelReadmePage() {
   const { model } = useLoaderData()
+
+  return (
+    <Box pt={20}>
+      {
+        model.readmeContent
+          ? <MarkdownViewer content={model.readmeContent} />
+          : <EmptyStatePrompt />
+      }
+    </Box>
+  )
+}
