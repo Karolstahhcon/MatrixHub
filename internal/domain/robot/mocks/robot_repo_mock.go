@@ -70,3 +70,76 @@ func (mr *MockIRobotRepoMockRecorder) DeleteRobot(ctx, id any) *gomock.Call {
 }
 
 // GetRobot mocks base method.
+func (m *MockIRobotRepo) GetRobot(ctx context.Context, id int) (*robot.Robot, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRobot", ctx, id)
+	ret0, _ := ret[0].(*robot.Robot)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRobot indicates an expected call of GetRobot.
+func (mr *MockIRobotRepoMockRecorder) GetRobot(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRobot", reflect.TypeOf((*MockIRobotRepo)(nil).GetRobot), ctx, id)
+}
+
+// GetRobotByName mocks base method.
+func (m *MockIRobotRepo) GetRobotByName(ctx context.Context, name string) (*robot.Robot, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRobotByName", ctx, name)
+	ret0, _ := ret[0].(*robot.Robot)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRobotByName indicates an expected call of GetRobotByName.
+func (mr *MockIRobotRepoMockRecorder) GetRobotByName(ctx, name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRobotByName", reflect.TypeOf((*MockIRobotRepo)(nil).GetRobotByName), ctx, name)
+}
+
+// GetRobotByTokenHash mocks base method.
+func (m *MockIRobotRepo) GetRobotByTokenHash(ctx context.Context, tokenHash string) (*robot.Robot, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRobotByTokenHash", ctx, tokenHash)
+	ret0, _ := ret[0].(*robot.Robot)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRobotByTokenHash indicates an expected call of GetRobotByTokenHash.
+func (mr *MockIRobotRepoMockRecorder) GetRobotByTokenHash(ctx, tokenHash any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRobotByTokenHash", reflect.TypeOf((*MockIRobotRepo)(nil).GetRobotByTokenHash), ctx, tokenHash)
+}
+
+// ListSystemRobots mocks base method.
+func (m *MockIRobotRepo) ListSystemRobots(ctx context.Context, page, pageSize int, search string) ([]*robot.Robot, int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListSystemRobots", ctx, page, pageSize, search)
+	ret0, _ := ret[0].([]*robot.Robot)
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// ListSystemRobots indicates an expected call of ListSystemRobots.
+func (mr *MockIRobotRepoMockRecorder) ListSystemRobots(ctx, page, pageSize, search any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSystemRobots", reflect.TypeOf((*MockIRobotRepo)(nil).ListSystemRobots), ctx, page, pageSize, search)
+}
+
+// UpdateRobot mocks base method.
+func (m *MockIRobotRepo) UpdateRobot(ctx context.Context, arg1 *robot.Robot) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateRobot", ctx, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateRobot indicates an expected call of UpdateRobot.
+func (mr *MockIRobotRepoMockRecorder) UpdateRobot(ctx, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRobot", reflect.TypeOf((*MockIRobotRepo)(nil).UpdateRobot), ctx, arg1)
+}
