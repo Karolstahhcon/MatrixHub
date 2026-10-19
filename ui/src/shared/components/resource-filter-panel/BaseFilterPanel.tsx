@@ -27,3 +27,33 @@ export function BaseFilterPanel({
   const content = children?.({ keyword }) ?? null
 
   return (
+    <Stack mt="md" gap="lg">
+      <SearchInput
+        value={keyword}
+        placeholder={searchPlaceholder}
+        onChange={setKeyword}
+        w="100%"
+      />
+
+      {loading
+        ? (
+            <Group justify="center">
+              <Loader size="sm" />
+            </Group>
+          )
+        : null}
+
+      {!loading && !content
+        ? (
+            <Group justify="center">
+              <Text c="dimmed" size="sm">
+                {t('common.noResults')}
+              </Text>
+            </Group>
+          )
+        : null}
+
+      {!loading ? content : null}
+    </Stack>
+  )
+}
