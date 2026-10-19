@@ -34,3 +34,40 @@ type BasicCredential struct {
 func (c *BasicCredential) Type() string {
 	return CredentialTypeBasic
 }
+
+func (c *BasicCredential) String() string {
+	b, err := json.Marshal(c)
+	if err != nil {
+		return "{}"
+	}
+	return string(b)
+}
+
+func (c *BasicCredential) Value() interface{} { return c }
+
+func NewBasicCredential(username, password string) ICredential {
+	return &BasicCredential{
+		Username: username,
+		Password: password,
+	}
+}
+
+func AsBasic(c ICredential) *BasicCredential {
+	if b, ok := c.(*BasicCredential); ok {
+		return b
+	}
+	return nil
+}
+
+// ParseCredentialInfo builds an ICredential from stored CredentialType and AuthInfo; returns nil when empty or unknown.
+func ParseCredentialInfo(credType, authInfo string) ICredential {
+	if credType != CredentialTypeBasic || authInfo == "" {
+		return nil
+	}
+
+	var b BasicCredential
+	if err := json.Unmarshal([]byte(authInfo), &b); err != nil {
+		return nil
+	}
+	return &b
+}
