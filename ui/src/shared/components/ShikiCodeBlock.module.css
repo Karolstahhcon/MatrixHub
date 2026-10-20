@@ -35,3 +35,41 @@
 }
 
 .fallback,
+.shiki :global(pre.shiki) {
+  margin: 0;
+  padding: var(--mantine-spacing-sm) var(--mantine-spacing-md);
+  font-size: var(--mantine-font-size-sm);
+  line-height: var(--mantine-line-height-md);
+  overflow-x: auto;
+  border-radius: 0;
+}
+
+.fallback {
+  background: var(--app-color-gray-10);
+  white-space: pre;
+}
+
+.shiki :global(pre.shiki code) {
+  background: transparent;
+  padding: 0;
+  white-space: pre;
+  font-family: var(--mantine-font-family-monospace);
+}
+
+/*
+ * Shiki emits both palettes as per-token variables on <pre> and each <span>.
+ * The active scheme is chosen at the element itself (custom properties resolve
+ * where they are declared), and the <pre> background is mirrored onto .root as
+ * --shiki-light-bg and --shiki-dark-bg so chrome like the copy button can reuse it.
+ */
+.shiki :global(pre.shiki),
+.shiki :global(pre.shiki span) {
+  color: var(--shiki-light);
+  background-color: var(--shiki-light-bg);
+}
+
+:global([data-mantine-color-scheme='dark']) .shiki :global(pre.shiki),
+:global([data-mantine-color-scheme='dark']) .shiki :global(pre.shiki span) {
+  color: var(--shiki-dark);
+  background-color: var(--shiki-dark-bg);
+}
