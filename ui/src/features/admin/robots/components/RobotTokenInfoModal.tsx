@@ -30,3 +30,68 @@ function TokenInfoRow({
   label,
   value,
   copyable,
+}: TokenInfoRowProps) {
+  return (
+    <Group gap="lg" wrap="nowrap">
+      <Text size="sm" c="dimmed">
+        {label}
+      </Text>
+
+      <Group gap="sm" align="center" wrap="nowrap">
+        <Text
+          size="sm"
+          style={{ wordBreak: 'break-all' }}
+        >
+          {value}
+        </Text>
+
+        {copyable && (
+          <CopyValueButton
+            value={value}
+            iconSize={16}
+          />
+        )}
+      </Group>
+    </Group>
+  )
+}
+
+export function RobotTokenInfoModal({
+  opened,
+  title,
+  name,
+  token,
+  onClose,
+}: RobotTokenInfoModalProps) {
+  const { t } = useTranslation()
+
+  return (
+    <ModalWrapper
+      title={title}
+      size="md"
+      type="success"
+      opened={opened}
+      onClose={onClose}
+      footer={false}
+    >
+      <Stack gap="md">
+        <Alert
+          lh={rem(20)}
+          icon={<IconInfoCircle size={20} />}
+        >
+          {t('routes.admin.robots.tokenInfoModal.copyOnce')}
+        </Alert>
+
+        <TokenInfoRow
+          label={t('routes.admin.robots.tokenInfoModal.name')}
+          value={name}
+        />
+        <TokenInfoRow
+          label={t('routes.admin.robots.tokenInfoModal.token')}
+          value={token}
+          copyable
+        />
+      </Stack>
+    </ModalWrapper>
+  )
+}
