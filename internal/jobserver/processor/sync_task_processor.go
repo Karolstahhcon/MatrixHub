@@ -27,3 +27,33 @@ import (
 type syncTaskProcessor struct {
 	*processor
 }
+
+func NewSyncTaskProcessor(cfg config.SyncTaskConfig, svc syncpolicy.ISyncPolicyService) Adapter {
+	if cfg.MaxConcurrent <= 0 {
+		cfg.MaxConcurrent = 5
+	}
+	if cfg.PollInterval <= 0 {
+		cfg.PollInterval = 5 * time.Second
+	}
+	if cfg.TaskMaxDuration <= 0 {
+		cfg.TaskMaxDuration = 2 * time.Hour
+	}
+	execute := func(ctx context.Context, taskID int, triggerType int) error {
+		return svc.ExecuteSyncTask(ctx, taskID)
+	}
+	pollDueFn := func(ctx context.Context, nowMs int64) ([]job.DueJob, error) {
+		return svc.ClaimPendingSyncTasks(ctx, nowMs)
+	}
+	p := newProcessor(ProcessorSyncTask, cfg.PollInterval, cfg.MaxConcurrent, cfg.TaskMaxDuration, execute, pollDueFn)
+	if claimer, ok := svc.(interface {
+		ClaimPendingSyncTask(ctx context.Context, taskID int) (job.DueJob, bool, error)
+	}); ok {
+		p.claimOne = claimer.ClaimPendingSyncTask
+	}
+	if releaser, ok := svc.(interface {
+		ReleaseSyncTaskClaim(ctx context.Context, taskID int) error
+	}); ok {
+		p.release = releaser.ReleaseSyncTaskClaim
+	}
+	return &syncTaskProcessor{processor: p}
+}
