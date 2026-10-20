@@ -142,3 +142,39 @@ func (s *AuthzService) VerifyProjectPermissionByName(ctx context.Context, projec
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, nil
+		}
+		return false, err
+	}
+	return s.verifyProjectPermission(ctx, prj, perm)
+}
+
+// VerifyProjectPermission verifies project-level permission
+func (s *AuthzService) VerifyProjectPermission(ctx context.Context, projectID int, perm role.Permission) (bool, error) {
+	project, err := s.projectRepo.GetProjectByID(ctx, projectID)
+	if err != nil {
+		return false, err
+	}
+	return s.verifyProjectPermission(ctx, project, perm)
+}
+
+func (s *AuthzService) verifyProjectPermission(ctx context.Context, project *project.Project, perm role.Permission) (bool, error) {
+	if project.IsPublic() && (perm == role.ProjectGet || perm == role.ModelGet || perm == role.ModelPull || perm == role.DatasetGet || perm == role.DatasetPull) {
+		return true, nil
+	}
+	identity, ok := auth.IdentityFromContext(ctx)
+	if !ok {
+		return false, nil
+	}
+	permissions, err := s.getPermissions(ctx, identity, project.ID)
+	if err != nil {
+		return false, err
+	}
+
+	// Check if there's matching permission using regex
+	return role.MatchPermissions(permissions, perm), nil
+}
+
+// GetUserAccessibleProjectIDs gets all project IDs where the user has membership
+func (s *AuthzService) GetUserAccessibleProjectIDs(ctx context.Context, userID int) ([]int, error) {
+	return s.authzRepo.GetUserAccessibleProjectIDs(ctx, userID)
+}
