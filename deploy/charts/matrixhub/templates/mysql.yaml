@@ -44,3 +44,49 @@ spec:
       labels:
         app: {{ include "matrixhub.fullname" . }}-mysql
     spec:
+      {{- include "matrixhub.imagePullSecrets" . | nindent 6 }}
+      containers:
+        - name: mysql
+          image: {{ include "matrixhub.mysql.image" . }}
+          imagePullPolicy: {{ .Values.mysql.pullPolicy }}
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 1024Mi
+            requests:
+              cpu: 100m
+              memory: 512Mi
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "matrixhub.fullname" . }}-mysql-secret
+                  key: mysql-root-password
+            - name: MYSQL_DATABASE
+              value: matrixhub
+            - name: MYSQL_USER
+              value: matrixhub
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "matrixhub.fullname" . }}-mysql-secret
+                  key: mysql-root-password
+          ports:
+            - containerPort: 3306
+              name: mysql
+          volumeMounts:
+            - name: mysql-persistent-storage
+              mountPath: /var/lib/mysql
+  volumeClaimTemplates:
+    - metadata:
+        name: mysql-persistent-storage
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ .Values.mysql.persistence.size }}
+        {{- if .Values.mysql.persistence.storageClass }}
+        storageClassName: {{ .Values.mysql.persistence.storageClass }}
+        {{- end }}
+{{- end }}

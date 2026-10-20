@@ -45,3 +45,146 @@ export function ProjectMembersPage() {
   // Modal states
   const [addOpened, addHandlers] = useDisclosure(false)
   const [editOpened, editHandlers] = useDisclosure(false)
+  const [removeOpened, removeHandlers] = useDisclosure(false)
+  const [batchRemoveOpened, batchRemoveHandlers] = useDisclosure(false)
+
+  const [processMember, setProcessMember] = useState<ProjectMember | null>(null)
+
+  const handleSearchChange = (value: string) => {
+    if (value === search.q) {
+      return
+    }
+
+    setRowSelection({})
+    void navigate({
+      replace: true,
+      search: prev => ({
+        ...prev,
+        page: 1,
+        q: value,
+      }),
+    })
+  }
+
+  const handlePageChange = (page: number) => {
+    setRowSelection({})
+    void navigate({
+      search: prev => ({
+        ...prev,
+        page,
+      }),
+    })
+  }
+
+  const handleRefresh = () => {
+    setRowSelection({})
+    void refetch()
+  }
+
+  const selectedMembers = members.filter((m) => {
+    const key = `${m.memberType}:${m.memberId}`
+
+    return !!rowSelection[key]
+  })
+
+  const handleEditMember = (member: ProjectMember) => {
+    setProcessMember(member)
+    editHandlers.open()
+  }
+
+  const handleRemoveMember = (member: ProjectMember) => {
+    setProcessMember(member)
+    removeHandlers.open()
+  }
+
+  const handleBatchRemove = () => {
+    if (selectedMembers.length === 0) {
+      return
+    }
+    batchRemoveHandlers.open()
+  }
+
+  const handleBatchRemoveClose = () => {
+    batchRemoveHandlers.close()
+    setRowSelection({})
+    void refetch()
+  }
+
+  const handleRemoveClose = () => {
+    removeHandlers.close()
+    setRowSelection({})
+    void refetch()
+  }
+
+  const handleAddClose = () => {
+    addHandlers.close()
+    void refetch()
+  }
+
+  const handleEditClose = () => {
+    editHandlers.close()
+    void refetch()
+  }
+
+  return (
+    <Box py="lg">
+      <MembersTable
+        data={members}
+        pagination={pagination}
+        page={search.page}
+        loading={isLoading}
+        fetching={isFetching}
+        searchValue={search.q}
+        onSearchChange={handleSearchChange}
+        onRefresh={handleRefresh}
+        currentRole={currentRole}
+        currentUsername={currentUser?.username}
+        onEditRole={handleEditMember}
+        onRemove={handleRemoveMember}
+        onBatchDelete={isAdmin ? handleBatchRemove : undefined}
+        rowSelection={rowSelection}
+        onRowSelectionChange={setRowSelection}
+        onPageChange={handlePageChange}
+        selectedCount={selectedMembers.length}
+        enableRowSelection={isAdmin}
+        toolbarExtra={isAdmin
+          ? (
+              <Button
+                leftSection={<IconPlus size={16} />}
+                onClick={addHandlers.open}
+              >
+                {t('projects.detail.membersPage.addMember')}
+              </Button>
+            )
+          : undefined}
+      />
+
+      <AddMemberModal
+        opened={addOpened}
+        onClose={handleAddClose}
+        projectId={projectId}
+      />
+
+      <EditRoleModal
+        opened={editOpened}
+        onClose={handleEditClose}
+        projectId={projectId}
+        member={processMember}
+      />
+
+      <RemoveMemberModal
+        opened={removeOpened}
+        onClose={handleRemoveClose}
+        projectId={projectId}
+        members={processMember ? [processMember] : []}
+      />
+
+      <RemoveMemberModal
+        opened={batchRemoveOpened}
+        onClose={handleBatchRemoveClose}
+        projectId={projectId}
+        members={selectedMembers}
+      />
+    </Box>
+  )
+}
