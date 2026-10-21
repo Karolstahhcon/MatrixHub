@@ -65,3 +65,137 @@ func (c *cleanupClient) ExecuteCleanup(ctx context.Context, in *ExecuteCleanupRe
 }
 
 func (c *cleanupClient) GetStorageStats(ctx context.Context, in *GetStorageStatsRequest, opts ...grpc.CallOption) (*StorageStats, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(StorageStats)
+	err := c.cc.Invoke(ctx, Cleanup_GetStorageStats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// CleanupServer is the server API for Cleanup service.
+// All implementations should embed UnimplementedCleanupServer
+// for forward compatibility.
+type CleanupServer interface {
+	// Preview orphaned data (dry-run)
+	PreviewCleanup(context.Context, *PreviewCleanupRequest) (*CleanupPreview, error)
+	// Execute cleanup
+	ExecuteCleanup(context.Context, *ExecuteCleanupRequest) (*CleanupResult, error)
+	// Get storage statistics
+	GetStorageStats(context.Context, *GetStorageStatsRequest) (*StorageStats, error)
+}
+
+// UnimplementedCleanupServer should be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedCleanupServer struct{}
+
+func (UnimplementedCleanupServer) PreviewCleanup(context.Context, *PreviewCleanupRequest) (*CleanupPreview, error) {
+	return nil, status.Error(codes.Unimplemented, "method PreviewCleanup not implemented")
+}
+func (UnimplementedCleanupServer) ExecuteCleanup(context.Context, *ExecuteCleanupRequest) (*CleanupResult, error) {
+	return nil, status.Error(codes.Unimplemented, "method ExecuteCleanup not implemented")
+}
+func (UnimplementedCleanupServer) GetStorageStats(context.Context, *GetStorageStatsRequest) (*StorageStats, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetStorageStats not implemented")
+}
+func (UnimplementedCleanupServer) testEmbeddedByValue() {}
+
+// UnsafeCleanupServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to CleanupServer will
+// result in compilation errors.
+type UnsafeCleanupServer interface {
+	mustEmbedUnimplementedCleanupServer()
+}
+
+func RegisterCleanupServer(s grpc.ServiceRegistrar, srv CleanupServer) {
+	// If the following call panics, it indicates UnimplementedCleanupServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&Cleanup_ServiceDesc, srv)
+}
+
+func _Cleanup_PreviewCleanup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PreviewCleanupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CleanupServer).PreviewCleanup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Cleanup_PreviewCleanup_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CleanupServer).PreviewCleanup(ctx, req.(*PreviewCleanupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Cleanup_ExecuteCleanup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ExecuteCleanupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CleanupServer).ExecuteCleanup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Cleanup_ExecuteCleanup_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CleanupServer).ExecuteCleanup(ctx, req.(*ExecuteCleanupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Cleanup_GetStorageStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetStorageStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CleanupServer).GetStorageStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Cleanup_GetStorageStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CleanupServer).GetStorageStats(ctx, req.(*GetStorageStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// Cleanup_ServiceDesc is the grpc.ServiceDesc for Cleanup service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var Cleanup_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "matrixhub.v1alpha1.Cleanup",
+	HandlerType: (*CleanupServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "PreviewCleanup",
+			Handler:    _Cleanup_PreviewCleanup_Handler,
+		},
+		{
+			MethodName: "ExecuteCleanup",
+			Handler:    _Cleanup_ExecuteCleanup_Handler,
+		},
+		{
+			MethodName: "GetStorageStats",
+			Handler:    _Cleanup_GetStorageStats_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "v1alpha1/cleanup.proto",
+}
