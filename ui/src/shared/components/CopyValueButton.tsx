@@ -33,3 +33,39 @@ export function CopyValueButton({
 }: CopyValueButtonProps) {
   const { t } = useTranslation()
 
+  return (
+    <CopyButton value={value} timeout={timeout}>
+      {({
+        copied,
+        copy,
+      }) => {
+        return (
+          <Tooltip
+            withArrow
+            label={copied ? t('shared.copyValueButton.copied') : t('shared.copyValueButton.copy')}
+          >
+            {
+              children
+                ? children({
+                    copied,
+                    copy,
+                  })
+                : (
+                    <ActionIcon
+                      size="sm"
+                      variant="subtle"
+                      color={color}
+                      onClick={copy}
+                      className={iconClassName}
+                      aria-label={copied ? t('shared.copyValueButton.copied') : t('shared.copyValueButton.copy')}
+                    >
+                      <IconCopy size={iconSize} />
+                    </ActionIcon>
+                  )
+            }
+          </Tooltip>
+        )
+      }}
+    </CopyButton>
+  )
+}
