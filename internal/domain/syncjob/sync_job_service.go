@@ -150,3 +150,307 @@ func (sjs *SyncJobService) ClaimPendingSyncJobs(ctx context.Context, _ int64) ([
 	var out []job.DueJob
 	for _, j := range candidates {
 		claimed, err := sjs.syncJobRepo.UpdateJobStatusCAS(ctx, j.ID, SyncJobStatusPending, SyncJobStatusRunning)
+		if err != nil {
+			return nil, err
+		}
+		if !claimed {
+			continue
+		}
+		out = append(out, job.DueJob{
+			ID:          j.ID,
+			PolicyID:    0,
+			TriggerType: 0,
+			FireAtMs:    time.Now().UnixMilli(),
+		})
+	}
+	return out, nil
+}
+
+// ClaimPendingSyncJob atomically claims a specific job requested by a creation trigger.
+func (sjs *SyncJobService) ClaimPendingSyncJob(ctx context.Context, jobID int) (job.DueJob, bool, error) {
+	syncJob, err := sjs.syncJobRepo.GetSyncJob(ctx, jobID)
+	if err != nil {
+		return job.DueJob{}, false, err
+	}
+	if syncJob.Status != SyncJobStatusPending {
+		return job.DueJob{}, false, nil
+	}
+	claimed, err := sjs.syncJobRepo.UpdateJobStatusCAS(ctx, syncJob.ID, SyncJobStatusPending, SyncJobStatusRunning)
+	if err != nil || !claimed {
+		return job.DueJob{}, claimed, err
+	}
+	return job.DueJob{ID: syncJob.ID, FireAtMs: time.Now().UnixMilli()}, true, nil
+}
+
+// ReleaseSyncJobClaim returns a job that did not start executing to pending.
+func (sjs *SyncJobService) ReleaseSyncJobClaim(ctx context.Context, jobID int) error {
+	_, err := sjs.syncJobRepo.UpdateJobStatusCAS(ctx, jobID, SyncJobStatusRunning, SyncJobStatusPending)
+	return err
+}
+
+// ExecuteSyncJobWithLog executes a sync job with logging and status reporting.
+func (sjs *SyncJobService) ExecuteSyncJobWithLog(ctx context.Context, jobID int) error {
+	syncJob, err := sjs.syncJobRepo.GetSyncJob(ctx, jobID)
+	if err != nil {
+		return err
+	}
+
+	var logWriter io.WriteCloser
+	if sjs.logStore != nil {
+		logWriter, err = sjs.logStore.Writer(jobID)
+		if err != nil {
+			log.Errorw("open job log failed", "jobID", jobID, "error", err)
+		}
+	}
+	if logWriter != nil {
+		defer func() { _ = logWriter.Close() }()
+	}
+
+	// 如果 job 已被外部停止（例如用户手动停止 task），跳过执行
+	if syncJob.Status == SyncJobStatusStopped {
+		if logWriter != nil {
+			_, _ = fmt.Fprintln(logWriter, "[INFO] Job was stopped before execution started, skipping")
+		}
+		syncJob.CompletedTimestamp = time.Now().Unix()
+		if updateErr := sjs.syncJobRepo.UpdateSyncJob(ctx, syncJob); updateErr != nil {
+			log.Errorw("update sync job status failed", "jobID", jobID, "error", updateErr)
+		}
+		if sjs.onJobDone != nil {
+			if repErr := sjs.onJobDone(ctx, syncJob.SyncTaskID); repErr != nil {
+				log.Errorw("report task status failed", "taskID", syncJob.SyncTaskID, "error", repErr)
+			}
+		}
+		return nil
+	}
+
+	err = sjs.executeGitJob(ctx, syncJob, logWriter)
+
+	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			syncJob.Status = SyncJobStatusStopped
+		} else {
+			syncJob.Status = SyncJobStatusFailed
+		}
+		if logWriter != nil {
+			_, _ = fmt.Fprintf(logWriter, "\n[ERROR] %v\n", err)
+		}
+	} else {
+		syncJob.Status = SyncJobStatusSucceeded
+	}
+	syncJob.CompletedTimestamp = time.Now().Unix()
+
+	if updateErr := sjs.syncJobRepo.UpdateSyncJob(ctx, syncJob); updateErr != nil {
+		log.Errorw("update sync job status failed", "jobID", jobID, "error", updateErr)
+	}
+
+	if sjs.onJobDone != nil {
+		if repErr := sjs.onJobDone(ctx, syncJob.SyncTaskID); repErr != nil {
+			log.Errorw("report task status failed", "taskID", syncJob.SyncTaskID, "error", repErr)
+		}
+	}
+
+	return err
+}
+
+func (sjs *SyncJobService) executeGitJob(ctx context.Context, syncJob *SyncJob, logWriter io.Writer) error {
+	reg, err := sjs.registryRepo.GetRegistry(ctx, syncJob.RemoteRegistryID)
+	if err != nil {
+		return fmt.Errorf("get registry(id=%d): %w", syncJob.RemoteRegistryID, err)
+	}
+	if logWriter != nil {
+		_, _ = fmt.Fprintf(logWriter, "[INFO] job start, id=%d, registry=%s (id=%d), resource_type=%s\n",
+			syncJob.ID, reg.URL, syncJob.RemoteRegistryID, syncJob.ResourceType)
+		var sourceProject, sourceResource, targetProject, targetResource string
+		if syncJob.SyncType == "push" {
+			sourceProject, sourceResource = syncJob.ProjectName, syncJob.ResourceName
+			targetProject, targetResource = syncJob.RemoteProjectName, syncJob.RemoteResourceName
+		} else {
+			sourceProject, sourceResource = syncJob.RemoteProjectName, syncJob.RemoteResourceName
+			targetProject, targetResource = syncJob.ProjectName, syncJob.ResourceName
+		}
+		_, _ = fmt.Fprintf(logWriter, "[INFO] source=%s/%s -> target=%s/%s, sync_type=%s\n",
+			sourceProject, sourceResource, targetProject, targetResource, syncJob.SyncType)
+	}
+
+	switch syncJob.SyncType {
+	case "pull":
+		return sjs.executePullJob(ctx, syncJob, reg, logWriter)
+	case "push":
+		return sjs.executePushJob(ctx, syncJob, reg, logWriter)
+	default:
+		return fmt.Errorf("unknown sync type: %s", syncJob.SyncType)
+	}
+}
+
+func (sjs *SyncJobService) executePullJob(ctx context.Context, syncJob *SyncJob, reg *registry.Registry, logWriter io.Writer) error {
+	prj, err := sjs.projectRepo.GetProjectByName(ctx, syncJob.ProjectName)
+	if err != nil {
+		if logWriter != nil {
+			_, _ = fmt.Fprintf(logWriter, "[INFO] project %s not found, creating new project\n", syncJob.ProjectName)
+		}
+		prj = &project.Project{
+			Name: syncJob.ProjectName,
+			Type: project.ProjectTypePublic,
+		}
+		prj, err = sjs.projectRepo.CreateProject(ctx, prj)
+		if err != nil {
+			return fmt.Errorf("create project(%s): %w", syncJob.ProjectName, err)
+		}
+		if logWriter != nil {
+			_, _ = fmt.Fprintf(logWriter, "[INFO] created project %s (id=%d)\n", prj.Name, prj.ID)
+		}
+	}
+	gr := &git.GitRepository{
+		RemoteRegistryURL:  reg.URL,
+		RemoteProjectName:  syncJob.RemoteProjectName,
+		RemoteResourceName: syncJob.RemoteResourceName,
+		ProjectName:        syncJob.ProjectName,
+		ResourceName:       syncJob.ResourceName,
+		ResourceType:       syncJob.ResourceType,
+		LogWriter:          logWriter,
+	}
+	if reg.GetCredential() != nil {
+		if bc := registry.AsBasic(reg.GetCredential()); bc != nil {
+			gr.Credential = &git.BasicCredential{
+				Username: bc.Username,
+				Password: bc.Password,
+			}
+		}
+	}
+	if err = sjs.ensureLocalResource(ctx, syncJob, prj, logWriter); err != nil {
+		return err
+	}
+
+	if err = sjs.gitRepo.PullFromRemote(ctx, gr); err != nil {
+		return err
+	}
+	if logWriter != nil {
+		_, _ = fmt.Fprintf(logWriter, "[INFO] pull completed\n")
+	}
+
+	// Git content alone is not enough: README, size and labels live in the
+	// database and are only refreshed by an explicit metadata sync.
+	if err = sjs.syncResourceMetadata(ctx, syncJob); err != nil {
+		return err
+	}
+	if logWriter != nil {
+		_, _ = fmt.Fprintf(logWriter, "[INFO] metadata refreshed\n")
+	}
+
+	if logWriter != nil {
+		_, _ = fmt.Fprintf(logWriter, "[INFO] job completed successfully\n")
+	}
+	return nil
+}
+
+// ensureLocalResource creates the local database record for the synced
+// resource when it does not exist yet.
+func (sjs *SyncJobService) ensureLocalResource(ctx context.Context, syncJob *SyncJob, prj *project.Project, logWriter io.Writer) error {
+	if syncJob.ResourceType == resourceTypeDataset {
+		ds, _ := sjs.datasetRepo.GetByProjectAndName(ctx, syncJob.ProjectName, syncJob.ResourceName)
+		if ds != nil {
+			if logWriter != nil {
+				_, _ = fmt.Fprintf(logWriter, "[INFO] dataset exists, pulling from remote\n")
+			}
+			return nil
+		}
+		if logWriter != nil {
+			_, _ = fmt.Fprintf(logWriter, "[INFO] dataset not found, creating dataset record and cloning from remote\n")
+		}
+		created, err := sjs.datasetRepo.Create(ctx, &dataset.Dataset{
+			Name:        syncJob.ResourceName,
+			ProjectID:   prj.ID,
+			ProjectName: syncJob.ProjectName,
+		})
+		if err != nil {
+			return err
+		}
+		if logWriter != nil {
+			_, _ = fmt.Fprintf(logWriter, "[INFO] created dataset record (id=%d)\n", created.ID)
+		}
+		return nil
+	}
+
+	mod, _ := sjs.modelRepo.GetByProjectAndName(ctx, syncJob.ProjectName, syncJob.ResourceName)
+	if mod != nil {
+		if logWriter != nil {
+			_, _ = fmt.Fprintf(logWriter, "[INFO] model exists, pulling from remote\n")
+		}
+		return nil
+	}
+	if logWriter != nil {
+		_, _ = fmt.Fprintf(logWriter, "[INFO] model not found, creating model record and cloning from remote\n")
+	}
+	created, err := sjs.modelRepo.Create(ctx, &model.Model{
+		Name:        syncJob.ResourceName,
+		ProjectID:   prj.ID,
+		ProjectName: syncJob.ProjectName,
+	})
+	if err != nil {
+		return err
+	}
+	if logWriter != nil {
+		_, _ = fmt.Fprintf(logWriter, "[INFO] created model record (id=%d)\n", created.ID)
+	}
+	return nil
+}
+
+// syncResourceMetadata refreshes the database metadata of the synced resource
+// from the freshly pulled Git repository.
+func (sjs *SyncJobService) syncResourceMetadata(ctx context.Context, syncJob *SyncJob) error {
+	syncer := sjs.modelMetadata
+	if syncJob.ResourceType == resourceTypeDataset {
+		syncer = sjs.datasetMeta
+	}
+	if syncer == nil {
+		return nil
+	}
+	if err := syncer.SyncMetadata(ctx, syncJob.ProjectName, syncJob.ResourceName); err != nil {
+		return fmt.Errorf("sync metadata for %s %s/%s: %w",
+			syncJob.ResourceType, syncJob.ProjectName, syncJob.ResourceName, err)
+	}
+	return nil
+}
+
+func (sjs *SyncJobService) executePushJob(ctx context.Context, syncJob *SyncJob, reg *registry.Registry, logWriter io.Writer) error {
+	if syncJob.ResourceType == resourceTypeDataset {
+		ds, err := sjs.datasetRepo.GetByProjectAndName(ctx, syncJob.ProjectName, syncJob.ResourceName)
+		if err != nil || ds == nil {
+			return fmt.Errorf("local dataset %s/%s not found: %w", syncJob.ProjectName, syncJob.ResourceName, err)
+		}
+	} else {
+		mod, err := sjs.modelRepo.GetByProjectAndName(ctx, syncJob.ProjectName, syncJob.ResourceName)
+		if err != nil || mod == nil {
+			return fmt.Errorf("local model %s/%s not found: %w", syncJob.ProjectName, syncJob.ResourceName, err)
+		}
+	}
+
+	gr := &git.GitRepository{
+		RemoteRegistryURL:  reg.URL,
+		RemoteProjectName:  syncJob.RemoteProjectName,
+		RemoteResourceName: syncJob.RemoteResourceName,
+		ProjectName:        syncJob.ProjectName,
+		ResourceName:       syncJob.ResourceName,
+		ResourceType:       syncJob.ResourceType,
+		LogWriter:          logWriter,
+	}
+	if reg.GetCredential() != nil {
+		if bc := registry.AsBasic(reg.GetCredential()); bc != nil {
+			gr.Credential = &git.BasicCredential{
+				Username: bc.Username,
+				Password: bc.Password,
+			}
+		}
+	}
+
+	if logWriter != nil {
+		_, _ = fmt.Fprintf(logWriter, "[INFO] pushing to remote registry\n")
+	}
+	if err := sjs.gitRepo.PushToRemote(ctx, gr); err != nil {
+		return err
+	}
+	if logWriter != nil {
+		_, _ = fmt.Fprintf(logWriter, "[INFO] push completed\n")
+	}
+	return nil
+}
