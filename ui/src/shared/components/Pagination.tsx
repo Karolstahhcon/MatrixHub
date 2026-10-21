@@ -38,3 +38,23 @@ export function Pagination({
     return null
   }
 
+  const totalLabelDisplay = totalLabel ?? t('shared.total', { count: total })
+
+  return (
+    <Group justify="space-between" px="sm" py="xs">
+      <Text size="sm" fw={600} c="gray.6" lh="sm" {...totalLabelProps}>
+        {totalLabelDisplay}
+      </Text>
+      <MantinePagination
+        {...paginationProps}
+        value={page}
+        onChange={(nextPage) => {
+          startTransition(() => {
+            onPageChange(nextPage)
+          })
+        }}
+        total={totalPages}
+      />
+    </Group>
+  )
+}
