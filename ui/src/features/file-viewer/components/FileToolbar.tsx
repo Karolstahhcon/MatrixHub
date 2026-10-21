@@ -65,3 +65,71 @@ export function FileToolbar({
                 ff="monospace"
                 px={6}
                 py={2}
+                bg="var(--mantine-color-gray-light)"
+                style={{
+                  borderRadius: 'var(--mantine-radius-sm)',
+                  flexShrink: 0,
+                }}
+              >
+                {file.commit.id.slice(0, 7).toUpperCase()}
+              </Text>
+            )
+          : null}
+      </Group>
+
+      {/* Right side: toggle + meta + download */}
+      <Group gap="md" wrap="nowrap">
+        {isMarkdown
+          ? (
+              <SegmentedControl
+                size="xs"
+                color="cyan"
+                value={viewMode}
+                onChange={v => onViewModeChange?.(v as ViewMode)}
+                data={[
+                  {
+                    label: t('file-viewer.preview'),
+                    value: 'preview',
+                  },
+                  {
+                    label: t('file-viewer.code'),
+                    value: 'code',
+                  },
+                ]}
+              />
+            )
+          : null}
+
+        {file.commit?.committerDate
+          ? (
+              <Group gap={4} wrap="nowrap">
+                <IconClock size={14} color="var(--mantine-color-dimmed)" />
+                <Text size="xs" truncate>
+                  {t('common.updatedAt')}
+                  {' : '}
+                  {formatDateTime(file.commit.committerDate)}
+                </Text>
+              </Group>
+            )
+          : null}
+
+        {file.url
+          ? (
+              <Anchor
+                href={file.url}
+                download
+                underline="never"
+                size="xs"
+              >
+                <Text size="xs">{t('file-viewer.download')}</Text>
+              </Anchor>
+            )
+          : null}
+
+        <Text size="xs">
+          {formatStorageSize(file.size)}
+        </Text>
+      </Group>
+    </Group>
+  )
+}
