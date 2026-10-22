@@ -50,3 +50,162 @@ function useRoleLabel() {
     switch (role) {
       case ProjectRoleType.ROLE_TYPE_PROJECT_ADMIN:
         return t('projects.detail.membersPage.role.admin')
+      case ProjectRoleType.ROLE_TYPE_PROJECT_EDITOR:
+        return t('projects.detail.membersPage.role.editor')
+      case ProjectRoleType.ROLE_TYPE_PROJECT_VIEWER:
+        return t('projects.detail.membersPage.role.viewer')
+      default:
+        return '-'
+    }
+  }
+}
+
+function MemberTypeCell({ row }: MemberCellProps) {
+  const { t } = useTranslation()
+  const memberType = row.original.memberType
+
+  const label = memberType === MemberType.MEMBER_TYPE_GROUP
+    ? t('projects.detail.membersPage.memberType.group')
+    : t('projects.detail.membersPage.memberType.user')
+
+  return (
+    <Text
+      size="sm"
+      c={memberType === MemberType.MEMBER_TYPE_GROUP ? 'dimmed' : undefined}
+    >
+      {label}
+    </Text>
+  )
+}
+
+function RoleTypeCell({ row }: MemberCellProps) {
+  const getRoleLabel = useRoleLabel()
+
+  return (
+    <Text size="sm">
+      {getRoleLabel(row.original.role)}
+    </Text>
+  )
+}
+
+function ActionsCell({
+  row, table,
+}: DataTableRowActionsProps<ProjectMember>) {
+  const { t } = useTranslation()
+  const meta = table.options.meta as {
+    currentUsername?: string
+    onEditRole?: (member: ProjectMember) => void
+    onRemove?: (member: ProjectMember) => void
+  } | undefined
+
+  const isSelf = meta?.currentUsername === row.original.memberName
+
+  return (
+    <Group gap="md" wrap="nowrap">
+      <Anchor
+        component="button"
+        type="button"
+        size="sm"
+        c={isSelf ? 'dimmed' : undefined}
+        style={isSelf ? { cursor: 'not-allowed' } : undefined}
+        onClick={isSelf ? undefined : () => meta?.onEditRole?.(row.original)}
+      >
+        {t('projects.detail.membersPage.actions.editRole')}
+      </Anchor>
+      <Anchor
+        component="button"
+        type="button"
+        size="sm"
+        c={isSelf ? 'dimmed' : 'red'}
+        style={isSelf ? { cursor: 'not-allowed' } : undefined}
+        onClick={isSelf ? undefined : () => meta?.onRemove?.(row.original)}
+      >
+        {t('projects.detail.membersPage.actions.remove')}
+      </Anchor>
+    </Group>
+  )
+}
+
+export function MembersTable({
+  data,
+  pagination,
+  page,
+  loading,
+  searchValue,
+  onSearchChange,
+  onRefresh,
+  currentRole,
+  currentUsername,
+  onEditRole,
+  onRemove,
+  onBatchDelete,
+  rowSelection,
+  onRowSelectionChange,
+  onPageChange,
+  selectedCount,
+  toolbarExtra,
+  ...rest
+}: MembersTableProps) {
+  const {
+    t,
+  } = useTranslation()
+
+  const isAdmin = currentRole === ProjectRoleType.ROLE_TYPE_PROJECT_ADMIN
+
+  const columns: MRT_ColumnDef<ProjectMember>[] = [
+    {
+      accessorKey: 'memberName',
+      header: t('projects.detail.membersPage.table.name'),
+      Cell: MemberNameCell,
+    },
+    {
+      id: 'memberType',
+      header: t('projects.detail.membersPage.table.memberType'),
+      Cell: MemberTypeCell,
+    },
+    {
+      id: 'role',
+      header: t('projects.detail.membersPage.table.roleType'),
+      Cell: RoleTypeCell,
+    },
+  ]
+
+  return (
+    <DataTable
+      {...rest}
+      data={data}
+      columns={columns}
+      pagination={pagination}
+      page={page}
+      loading={loading}
+      emptyTitle={t('projects.detail.membersPage.table.empty')}
+      searchPlaceholder={t('projects.detail.membersPage.searchPlaceholder')}
+      searchValue={searchValue}
+      onSearchChange={onSearchChange}
+      onRefresh={onRefresh}
+      onBatchDelete={onBatchDelete}
+      selectedCount={selectedCount}
+      toolbarExtra={toolbarExtra}
+      onPageChange={onPageChange}
+      rowSelection={rowSelection}
+      onRowSelectionChange={onRowSelectionChange}
+      getRowId={row => `${row.memberType}:${row.memberId}`}
+      enableRowActions={isAdmin}
+      renderRowActions={ActionsCell}
+      displayColumnDefOptions={{
+        // "Edit Permission" + "Remove"; the wrapper default clips them.
+        'mrt-row-actions': { size: 200 },
+      }}
+      tableOptions={{
+        enableBatchRowSelection: true,
+        enableMultiRowSelection: true,
+        meta: {
+          currentRole,
+          currentUsername,
+          onEditRole,
+          onRemove,
+        },
+      }}
+    />
+  )
+}
