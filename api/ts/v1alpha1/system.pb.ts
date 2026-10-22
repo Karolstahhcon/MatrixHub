@@ -9,3 +9,15 @@ export type GetSystemConfigRequest = {
 }
 
 export type SystemConfig = {
+  endpoints?: Endpoints
+}
+
+export type Endpoints = {
+  hfBase?: string
+}
+
+export class SystemService {
+  static GetSystemConfig(req: GetSystemConfigRequest, initReq?: fm.InitReq): Promise<SystemConfig> {
+    return fm.fetchReq<GetSystemConfigRequest, SystemConfig>(`/api/v1alpha1/system/config?${fm.renderURLSearchParams(req, [])}`, {...initReq, method: "GET"})
+  }
+}
