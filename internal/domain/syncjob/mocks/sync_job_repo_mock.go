@@ -51,3 +51,109 @@ func (m *MockISyncJobRepo) CreateSyncJob(ctx context.Context, syncJob *syncjob.S
 
 // CreateSyncJob indicates an expected call of CreateSyncJob.
 func (mr *MockISyncJobRepoMockRecorder) CreateSyncJob(ctx, syncJob any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSyncJob", reflect.TypeOf((*MockISyncJobRepo)(nil).CreateSyncJob), ctx, syncJob)
+}
+
+// CreateSyncJobs mocks base method.
+func (m *MockISyncJobRepo) CreateSyncJobs(ctx context.Context, syncJobs []*syncjob.SyncJob) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateSyncJobs", ctx, syncJobs)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateSyncJobs indicates an expected call of CreateSyncJobs.
+func (mr *MockISyncJobRepoMockRecorder) CreateSyncJobs(ctx, syncJobs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSyncJobs", reflect.TypeOf((*MockISyncJobRepo)(nil).CreateSyncJobs), ctx, syncJobs)
+}
+
+// DeleteSyncJob mocks base method.
+func (m *MockISyncJobRepo) DeleteSyncJob(ctx context.Context, id int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteSyncJob", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteSyncJob indicates an expected call of DeleteSyncJob.
+func (mr *MockISyncJobRepoMockRecorder) DeleteSyncJob(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSyncJob", reflect.TypeOf((*MockISyncJobRepo)(nil).DeleteSyncJob), ctx, id)
+}
+
+// GetSyncJob mocks base method.
+func (m *MockISyncJobRepo) GetSyncJob(ctx context.Context, id int) (*syncjob.SyncJob, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSyncJob", ctx, id)
+	ret0, _ := ret[0].(*syncjob.SyncJob)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSyncJob indicates an expected call of GetSyncJob.
+func (mr *MockISyncJobRepoMockRecorder) GetSyncJob(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSyncJob", reflect.TypeOf((*MockISyncJobRepo)(nil).GetSyncJob), ctx, id)
+}
+
+// ListSyncJobsByTaskID mocks base method.
+func (m *MockISyncJobRepo) ListSyncJobsByTaskID(ctx context.Context, taskID, page, pageSize int, status syncjob.SyncJobStatus, resourceType string) ([]*syncjob.SyncJob, int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListSyncJobsByTaskID", ctx, taskID, page, pageSize, status, resourceType)
+	ret0, _ := ret[0].([]*syncjob.SyncJob)
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// ListSyncJobsByTaskID indicates an expected call of ListSyncJobsByTaskID.
+func (mr *MockISyncJobRepoMockRecorder) ListSyncJobsByTaskID(ctx, taskID, page, pageSize, status, resourceType any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSyncJobsByTaskID", reflect.TypeOf((*MockISyncJobRepo)(nil).ListSyncJobsByTaskID), ctx, taskID, page, pageSize, status, resourceType)
+}
+
+// SelectPendingJobs mocks base method.
+func (m *MockISyncJobRepo) SelectPendingJobs(ctx context.Context, limit int) ([]*syncjob.SyncJob, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SelectPendingJobs", ctx, limit)
+	ret0, _ := ret[0].([]*syncjob.SyncJob)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SelectPendingJobs indicates an expected call of SelectPendingJobs.
+func (mr *MockISyncJobRepoMockRecorder) SelectPendingJobs(ctx, limit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SelectPendingJobs", reflect.TypeOf((*MockISyncJobRepo)(nil).SelectPendingJobs), ctx, limit)
+}
+
+// UpdateJobStatusCAS mocks base method.
+func (m *MockISyncJobRepo) UpdateJobStatusCAS(ctx context.Context, jobID int, fromStatus, toStatus syncjob.SyncJobStatus) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateJobStatusCAS", ctx, jobID, fromStatus, toStatus)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateJobStatusCAS indicates an expected call of UpdateJobStatusCAS.
+func (mr *MockISyncJobRepoMockRecorder) UpdateJobStatusCAS(ctx, jobID, fromStatus, toStatus any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateJobStatusCAS", reflect.TypeOf((*MockISyncJobRepo)(nil).UpdateJobStatusCAS), ctx, jobID, fromStatus, toStatus)
+}
+
+// UpdateSyncJob mocks base method.
+func (m *MockISyncJobRepo) UpdateSyncJob(ctx context.Context, syncJob *syncjob.SyncJob) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSyncJob", ctx, syncJob)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateSyncJob indicates an expected call of UpdateSyncJob.
+func (mr *MockISyncJobRepoMockRecorder) UpdateSyncJob(ctx, syncJob any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSyncJob", reflect.TypeOf((*MockISyncJobRepo)(nil).UpdateSyncJob), ctx, syncJob)
+}
