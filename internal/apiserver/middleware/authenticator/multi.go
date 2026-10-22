@@ -31,3 +31,36 @@ func NewMultiAuthenticator(auths ...HTTPAuthenticator) *MultiAuthenticator {
 	}
 }
 
+func (m *MultiAuthenticator) Authenticate(ctx context.Context, r *http.Request) (succeeded HTTPAuthenticator, identity auth.Identity, next, ok bool, err error) {
+	for _, auth := range m.authenticators {
+		identity, next, ok, err := auth.Authenticate(ctx, r)
+		if err != nil {
+			return nil, nil, false, false, err
+		}
+		if ok {
+			return auth, identity, false, true, nil
+		}
+		if !next {
+			return nil, nil, false, false, nil
+		}
+	}
+
+	return nil, nil, true, false, nil
+}
+
+func (m *MultiAuthenticator) AuthenticateToken(ctx context.Context, username, token string) (succeeded HTTPAuthenticator, identity auth.Identity, next, ok bool, err error) {
+	for _, auth := range m.authenticators {
+		identity, next, ok, err := auth.AuthenticateToken(ctx, username, token)
+		if err != nil {
+			return nil, nil, false, false, err
+		}
+		if ok {
+			return auth, identity, false, true, nil
+		}
+		if !next {
+			return nil, nil, false, false, nil
+		}
+	}
+
+	return nil, nil, true, false, nil
+}
