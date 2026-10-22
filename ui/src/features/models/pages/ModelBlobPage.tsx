@@ -23,3 +23,80 @@ export function ModelBlobPage() {
   } = useParams()
 
   const {
+    data: file, isLoading: isFileLoading, error: fileError,
+  } = useModelBlob(projectId, modelId, {
+    revision,
+    path,
+  })
+  // hook calls needs to be unconditional, but it returns empty state when file is undefined
+  const {
+    content, isLoading: isContentLoading, error: contentError,
+  } = useFileContent(file)
+
+  let body: React.ReactNode
+
+  if (fileError) {
+    body = (
+      <Stack gap="md">
+        <Alert variant="light" color="red" title="Error" icon={<IconInfoCircle />}>
+          {fileError instanceof Error || 'message' in fileError ? fileError.message : String(fileError)}
+        </Alert>
+      </Stack>
+    )
+  } else if (isFileLoading) {
+    body = (
+      <Center p="xl"><Loader /></Center>
+    )
+  } else if (!file) {
+    body = (
+      <Alert variant="light" color="yellow">No file found.</Alert>
+    )
+  } else {
+    body = (
+      <Stack gap="md">
+        <FileViewer
+          file={file}
+          content={content}
+          loading={isContentLoading}
+          error={contentError}
+        />
+      </Stack>
+    )
+  }
+
+  return (
+    <Box pt="sm">
+      <Flex
+        justify="space-between"
+        align="center"
+        mb="md"
+        wrap="nowrap"
+      >
+        <Group gap="md" wrap="nowrap">
+          <ModelRevisionSelect
+            projectId={projectId}
+            modelId={modelId}
+            revision={revision}
+          />
+
+          <PathBreadcrumbs
+            name={modelId}
+            treePath={path}
+            copyValue={path}
+            getPathLinkProps={nextPath => linkOptions({
+              to: '/projects/$projectId/models/$modelId/tree/$ref/$',
+              params: {
+                projectId,
+                modelId,
+                ref: revision,
+                _splat: nextPath,
+              },
+            })}
+          />
+        </Group>
+      </Flex>
+
+      {body}
+    </Box>
+  )
+}

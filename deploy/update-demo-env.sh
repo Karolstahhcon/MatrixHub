@@ -36,3 +36,42 @@ chmod 600 "${env_tmp}"
 
 awk \
   -v image_tag="${image_tag}" \
+  -v root_password="${root_password_candidate}" \
+  -v app_password="${app_password_candidate}" '
+  /^MYSQL_ROOT_PASSWORD=/ {
+    if (!root_seen) {
+      print
+      root_seen = 1
+    }
+    next
+  }
+  /^MYSQL_PASSWORD=/ {
+    if (!app_seen) {
+      print
+      app_seen = 1
+    }
+    next
+  }
+  /^MATRIXHUB_IMAGE_TAG=/ {
+    if (!tag_seen) {
+      print "MATRIXHUB_IMAGE_TAG=" image_tag
+      tag_seen = 1
+    }
+    next
+  }
+  { print }
+  END {
+    if (!root_seen) {
+      print "MYSQL_ROOT_PASSWORD=" root_password
+    }
+    if (!app_seen) {
+      print "MYSQL_PASSWORD=" app_password
+    }
+    if (!tag_seen) {
+      print "MATRIXHUB_IMAGE_TAG=" image_tag
+    }
+  }
+' "${env_source}" > "${env_tmp}"
+
+mv "${env_tmp}" .env
+trap - EXIT
