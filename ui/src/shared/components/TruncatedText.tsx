@@ -39,3 +39,45 @@ export function TruncatedText({
   onMouseEnter,
   ...textProps
 }: TruncatedTextProps) {
+  const contentRef = useRef<HTMLDivElement>(null)
+  const [overflowing, setOverflowing] = useState(false)
+
+  // Composed rather than passed straight to `Text`, so a caller-provided
+  // `onMouseEnter` cannot replace the overflow check and silently disable the
+  // tooltip.
+  const handleMouseEnter = (event: MouseEvent<HTMLDivElement>) => {
+    const element = contentRef.current
+
+    if (element) {
+      setOverflowing(element.scrollWidth > element.clientWidth)
+    }
+
+    onMouseEnter?.(event)
+  }
+
+  const content = (
+    <Text
+      ref={contentRef}
+      size="sm"
+      truncate="end"
+      {...textProps}
+      onMouseEnter={handleMouseEnter}
+    >
+      {children ?? value}
+    </Text>
+  )
+
+  return (
+    <Tooltip
+      label={tooltipLabel ?? value}
+      disabled={!overflowing}
+      multiline
+      maw={480}
+      withArrow
+      openDelay={200}
+      {...tooltipProps}
+    >
+      {content}
+    </Tooltip>
+  )
+}
