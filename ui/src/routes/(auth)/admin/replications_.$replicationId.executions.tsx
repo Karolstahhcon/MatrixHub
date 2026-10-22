@@ -20,3 +20,47 @@ export const Route = createFileRoute(
 )({
   validateSearch: replicationExecutionsSearchSchema,
   search: {
+    middlewares: [stripSearchParams(replicationExecutionsSearchDefaults)],
+  },
+  loaderDeps: ({ search }) => ({ search }),
+  loader: async ({
+    context,
+    deps: { search },
+    params: { replicationId },
+  }) => {
+    const syncPolicyId = parseReplicationId(replicationId)
+
+    await context.queryClient.ensureQueryData(replicationDetailQueryOptions(syncPolicyId))
+    context.queryClient.prefetchQuery(replicationExecutionsQueryOptions(syncPolicyId, search))
+  },
+  component: RouteComponent,
+})
+
+function RouteComponent() {
+  const { t } = useTranslation()
+  const { replicationId } = Route.useParams()
+  const syncPolicyId = parseReplicationId(replicationId)
+  const { data: syncPolicy } = useSuspenseQuery(replicationDetailQueryOptions(syncPolicyId))
+
+  return (
+    <>
+      <AdminPageHeader
+        icon={IconAffiliate}
+        items={[
+          {
+            label: t('admin.replications'),
+            linkProps: { to: '/admin/replications' },
+          },
+          {
+            label: t('routes.admin.replications.executions.breadcrumb', {
+              name: getReplicationDisplayName(syncPolicy),
+            }),
+          },
+        ]}
+      />
+      <AdminPageLayout>
+        <ReplicationExecutionsPage />
+      </AdminPageLayout>
+    </>
+  )
+}
