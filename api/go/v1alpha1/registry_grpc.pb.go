@@ -152,3 +152,158 @@ func (UnimplementedRegistriesServer) testEmbeddedByValue() {}
 type UnsafeRegistriesServer interface {
 	mustEmbedUnimplementedRegistriesServer()
 }
+
+func RegisterRegistriesServer(s grpc.ServiceRegistrar, srv RegistriesServer) {
+	// If the following call panics, it indicates UnimplementedRegistriesServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&Registries_ServiceDesc, srv)
+}
+
+func _Registries_ListRegistries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListRegistriesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RegistriesServer).ListRegistries(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Registries_ListRegistries_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RegistriesServer).ListRegistries(ctx, req.(*ListRegistriesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Registries_GetRegistry_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRegistryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RegistriesServer).GetRegistry(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Registries_GetRegistry_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RegistriesServer).GetRegistry(ctx, req.(*GetRegistryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Registries_CreateRegistry_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateRegistryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RegistriesServer).CreateRegistry(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Registries_CreateRegistry_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RegistriesServer).CreateRegistry(ctx, req.(*CreateRegistryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Registries_UpdateRegistry_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateRegistryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RegistriesServer).UpdateRegistry(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Registries_UpdateRegistry_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RegistriesServer).UpdateRegistry(ctx, req.(*UpdateRegistryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Registries_DeleteRegistry_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteRegistryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RegistriesServer).DeleteRegistry(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Registries_DeleteRegistry_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RegistriesServer).DeleteRegistry(ctx, req.(*DeleteRegistryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Registries_PingRegistry_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PingRegistryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RegistriesServer).PingRegistry(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Registries_PingRegistry_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RegistriesServer).PingRegistry(ctx, req.(*PingRegistryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// Registries_ServiceDesc is the grpc.ServiceDesc for Registries service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var Registries_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "matrixhub.v1alpha1.Registries",
+	HandlerType: (*RegistriesServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ListRegistries",
+			Handler:    _Registries_ListRegistries_Handler,
+		},
+		{
+			MethodName: "GetRegistry",
+			Handler:    _Registries_GetRegistry_Handler,
+		},
+		{
+			MethodName: "CreateRegistry",
+			Handler:    _Registries_CreateRegistry_Handler,
+		},
+		{
+			MethodName: "UpdateRegistry",
+			Handler:    _Registries_UpdateRegistry_Handler,
+		},
+		{
+			MethodName: "DeleteRegistry",
+			Handler:    _Registries_DeleteRegistry_Handler,
+		},
+		{
+			MethodName: "PingRegistry",
+			Handler:    _Registries_PingRegistry_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "v1alpha1/registry.proto",
+}
