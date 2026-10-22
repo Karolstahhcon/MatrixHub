@@ -51,3 +51,56 @@ func (r *syncTaskDB) GetSyncTask(ctx context.Context, id int) (*syncpolicy.SyncT
 
 // UpdateSyncTask updates a sync task
 func (r *syncTaskDB) UpdateSyncTask(ctx context.Context, task *syncpolicy.SyncTask) error {
+	return r.db.WithContext(ctx).Save(task).Error
+}
+
+// DeleteSyncTask deletes a sync task by ID
+func (r *syncTaskDB) DeleteSyncTask(ctx context.Context, id int) error {
+	return r.db.WithContext(ctx).Delete(&syncpolicy.SyncTask{}, id).Error
+}
+
+// ListSyncTasksByPolicyID lists sync tasks by policy ID with pagination
+func (r *syncTaskDB) ListSyncTasksByPolicyID(ctx context.Context, policyID int, page, pageSize int, status syncpolicy.SyncTaskStatus) ([]*syncpolicy.SyncTask, int64, error) {
+	var tasks []*syncpolicy.SyncTask
+	var total int64
+
+	query := r.db.WithContext(ctx).Model(&syncpolicy.SyncTask{}).
+		Where("sync_policy_id = ?", policyID)
+
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * pageSize
+	if err := query.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&tasks).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return tasks, total, nil
+}
+
+// SelectPendingTasks returns tasks with status = pending.
+func (r *syncTaskDB) SelectPendingTasks(ctx context.Context, limit int) ([]*syncpolicy.SyncTask, error) {
+	var rows []*syncpolicy.SyncTask
+	err := r.db.WithContext(ctx).
+		Where("status = ?", syncpolicy.SyncTaskStatusPending).
+		Order("created_at ASC").
+		Limit(limit).
+		Find(&rows).Error
+	return rows, err
+}
+
+// UpdateTaskStatusCAS atomically updates task status from fromStatus to toStatus.
+func (r *syncTaskDB) UpdateTaskStatusCAS(ctx context.Context, taskID int, fromStatus, toStatus syncpolicy.SyncTaskStatus) (bool, error) {
+	res := r.db.WithContext(ctx).
+		Model(&syncpolicy.SyncTask{}).
+		Where("id = ? AND status = ?", taskID, fromStatus).
+		Update("status", toStatus)
+	if res.Error != nil {
+		return false, res.Error
+	}
+	return res.RowsAffected == 1, nil
+}
+
+// Ensure syncTaskDB implements ISyncTaskRepo
+var _ syncpolicy.ISyncTaskRepo = (*syncTaskDB)(nil)
