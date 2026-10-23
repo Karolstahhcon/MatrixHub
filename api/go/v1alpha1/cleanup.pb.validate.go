@@ -471,3 +471,477 @@ func (m OrphanedLFSMultiError) AllErrors() []error { return m }
 
 // OrphanedLFSValidationError is the validation error returned by
 // OrphanedLFS.Validate if the designated constraints aren't met.
+type OrphanedLFSValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e OrphanedLFSValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e OrphanedLFSValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e OrphanedLFSValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e OrphanedLFSValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e OrphanedLFSValidationError) ErrorName() string { return "OrphanedLFSValidationError" }
+
+// Error satisfies the builtin error interface
+func (e OrphanedLFSValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sOrphanedLFS.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = OrphanedLFSValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = OrphanedLFSValidationError{}
+
+// Validate checks the field values on ExecuteCleanupRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ExecuteCleanupRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ExecuteCleanupRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ExecuteCleanupRequestMultiError, or nil if none found.
+func (m *ExecuteCleanupRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ExecuteCleanupRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for CleanOrphanedRepos
+
+	// no validation rules for CleanOrphanedLfs
+
+	// no validation rules for DryRun
+
+	if len(errors) > 0 {
+		return ExecuteCleanupRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// ExecuteCleanupRequestMultiError is an error wrapping multiple validation
+// errors returned by ExecuteCleanupRequest.ValidateAll() if the designated
+// constraints aren't met.
+type ExecuteCleanupRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ExecuteCleanupRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ExecuteCleanupRequestMultiError) AllErrors() []error { return m }
+
+// ExecuteCleanupRequestValidationError is the validation error returned by
+// ExecuteCleanupRequest.Validate if the designated constraints aren't met.
+type ExecuteCleanupRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ExecuteCleanupRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ExecuteCleanupRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ExecuteCleanupRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ExecuteCleanupRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ExecuteCleanupRequestValidationError) ErrorName() string {
+	return "ExecuteCleanupRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ExecuteCleanupRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sExecuteCleanupRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ExecuteCleanupRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ExecuteCleanupRequestValidationError{}
+
+// Validate checks the field values on CleanupResult with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *CleanupResult) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on CleanupResult with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in CleanupResultMultiError, or
+// nil if none found.
+func (m *CleanupResult) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *CleanupResult) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for ReposDeleted
+
+	// no validation rules for LfsObjectsDeleted
+
+	// no validation rules for SpaceReclaimedBytes
+
+	if len(errors) > 0 {
+		return CleanupResultMultiError(errors)
+	}
+
+	return nil
+}
+
+// CleanupResultMultiError is an error wrapping multiple validation errors
+// returned by CleanupResult.ValidateAll() if the designated constraints
+// aren't met.
+type CleanupResultMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m CleanupResultMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m CleanupResultMultiError) AllErrors() []error { return m }
+
+// CleanupResultValidationError is the validation error returned by
+// CleanupResult.Validate if the designated constraints aren't met.
+type CleanupResultValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e CleanupResultValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e CleanupResultValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e CleanupResultValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e CleanupResultValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e CleanupResultValidationError) ErrorName() string { return "CleanupResultValidationError" }
+
+// Error satisfies the builtin error interface
+func (e CleanupResultValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sCleanupResult.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = CleanupResultValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = CleanupResultValidationError{}
+
+// Validate checks the field values on GetStorageStatsRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetStorageStatsRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetStorageStatsRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetStorageStatsRequestMultiError, or nil if none found.
+func (m *GetStorageStatsRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetStorageStatsRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(errors) > 0 {
+		return GetStorageStatsRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetStorageStatsRequestMultiError is an error wrapping multiple validation
+// errors returned by GetStorageStatsRequest.ValidateAll() if the designated
+// constraints aren't met.
+type GetStorageStatsRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetStorageStatsRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetStorageStatsRequestMultiError) AllErrors() []error { return m }
+
+// GetStorageStatsRequestValidationError is the validation error returned by
+// GetStorageStatsRequest.Validate if the designated constraints aren't met.
+type GetStorageStatsRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetStorageStatsRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetStorageStatsRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetStorageStatsRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetStorageStatsRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetStorageStatsRequestValidationError) ErrorName() string {
+	return "GetStorageStatsRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetStorageStatsRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetStorageStatsRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetStorageStatsRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetStorageStatsRequestValidationError{}
+
+// Validate checks the field values on StorageStats with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *StorageStats) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on StorageStats with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in StorageStatsMultiError, or
+// nil if none found.
+func (m *StorageStats) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *StorageStats) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for TotalSizeBytes
+
+	// no validation rules for RepositoriesSizeBytes
+
+	// no validation rules for LfsSizeBytes
+
+	// no validation rules for OrphanedSizeBytes
+
+	if len(errors) > 0 {
+		return StorageStatsMultiError(errors)
+	}
+
+	return nil
+}
+
+// StorageStatsMultiError is an error wrapping multiple validation errors
+// returned by StorageStats.ValidateAll() if the designated constraints aren't met.
+type StorageStatsMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m StorageStatsMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m StorageStatsMultiError) AllErrors() []error { return m }
+
+// StorageStatsValidationError is the validation error returned by
+// StorageStats.Validate if the designated constraints aren't met.
+type StorageStatsValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e StorageStatsValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e StorageStatsValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e StorageStatsValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e StorageStatsValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e StorageStatsValidationError) ErrorName() string { return "StorageStatsValidationError" }
+
+// Error satisfies the builtin error interface
+func (e StorageStatsValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sStorageStats.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = StorageStatsValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = StorageStatsValidationError{}
