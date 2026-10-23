@@ -20,3 +20,25 @@ export function usersQueryOptions(search: UsersSearch) {
   return queryOptions({
     queryKey: adminUserKeys.list(search),
     queryFn: async () => {
+      const response = await Users.ListUsers({
+        page: search.page,
+        pageSize: DEFAULT_USERS_PAGE_SIZE,
+        search: search.query,
+      })
+
+      return {
+        users: response.users ?? [],
+        pagination: response.pagination,
+      }
+    },
+  })
+}
+
+// -- Custom hook --
+
+export function useUsers(search: UsersSearch) {
+  return useQuery({
+    ...usersQueryOptions(search),
+    placeholderData: keepPreviousData,
+  })
+}
