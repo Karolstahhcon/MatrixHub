@@ -47,3 +47,53 @@
     "actions": "Actions",
     "empty": "No registries found"
   },
+  "status": {
+    "healthy": "Healthy",
+    "unhealthy": "Unhealthy"
+  },
+  "insecure": {
+    "verified": "Verified",
+    "unverified": "Unverified"
+  },
+  "credential": {
+    "basic": "basic"
+  },
+  "actions": {
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "createModal": {
+    "title": "Create Registry"
+  },
+  "editModal": {
+    "title": "Edit Registry"
+  },
+  "deleteModal": {
+    "title": "Delete Registry",
+    "description": "Are you sure you want to delete registry {{name}}?"
+  },
+  "switchProviderModal": {
+    "title": "Switch Provider",
+    "description": "The current URL has been modified and may not apply after switching providers. Keep it?",
+    "clearAndSwitch": "Clear and Switch",
+    "keepAndSwitch": "Keep and Switch"
+  },
+  "validation": {
+    "nameLength": "Registry name must be {{min}}-{{max}} characters",
+    "urlRequired": "Registry base URL is required",
+    "urlInvalid": "Please enter a valid URL"
+  },
+  "notifications": {
+    "createSuccess": "Registry created",
+    "createError": "Failed to create registry",
+    "updateSuccess": "Registry updated",
+    "updateError": "Failed to update registry",
+    "deleteSuccess": "Registry deleted",
+    "deleteError": "Failed to delete registry",
+    "pingSuccess": "Connection test succeeded",
+    "pingError": "Connection test failed"
+  },
+  "errors": {
+    "missingRegistryId": "Registry ID is missing"
+  }
+}

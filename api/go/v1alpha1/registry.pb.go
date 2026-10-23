@@ -631,3 +631,636 @@ func (x *CreateRegistryRequest) GetBasic() *RegistryBasicCredential {
 			return x.Basic
 		}
 	}
+	return nil
+}
+
+func (x *CreateRegistryRequest) GetInsecure() bool {
+	if x != nil {
+		return x.Insecure
+	}
+	return false
+}
+
+type isCreateRegistryRequest_Credential interface {
+	isCreateRegistryRequest_Credential()
+}
+
+type CreateRegistryRequest_Basic struct {
+	// Basic authentication credentials for the registry.
+	Basic *RegistryBasicCredential `protobuf:"bytes,20,opt,name=basic,proto3,oneof"`
+}
+
+func (*CreateRegistryRequest_Basic) isCreateRegistryRequest_Credential() {}
+
+type CreateRegistryResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The created registry.
+	Registry      *Registry `protobuf:"bytes,1,opt,name=registry,proto3" json:"registry,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateRegistryResponse) Reset() {
+	*x = CreateRegistryResponse{}
+	mi := &file_v1alpha1_registry_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateRegistryResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateRegistryResponse) ProtoMessage() {}
+
+func (x *CreateRegistryResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1alpha1_registry_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateRegistryResponse.ProtoReflect.Descriptor instead.
+func (*CreateRegistryResponse) Descriptor() ([]byte, []int) {
+	return file_v1alpha1_registry_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *CreateRegistryResponse) GetRegistry() *Registry {
+	if x != nil {
+		return x.Registry
+	}
+	return nil
+}
+
+type UpdateRegistryRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Unique identifier for the registry
+	Id int32 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Name of the registry
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	// Description of the registry
+	// +optional
+	Description string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	// URL of the registry
+	Url string `protobuf:"bytes,5,opt,name=url,proto3" json:"url,omitempty"`
+	// Credential information (oneof, currently only supports basic)
+	//
+	// Types that are valid to be assigned to Credential:
+	//
+	//	*UpdateRegistryRequest_Basic
+	Credential isUpdateRegistryRequest_Credential `protobuf_oneof:"credential"`
+	// Whether to allow insecure connections (e.g., skip TLS verification)
+	Insecure      bool `protobuf:"varint,6,opt,name=insecure,proto3" json:"insecure,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateRegistryRequest) Reset() {
+	*x = UpdateRegistryRequest{}
+	mi := &file_v1alpha1_registry_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateRegistryRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateRegistryRequest) ProtoMessage() {}
+
+func (x *UpdateRegistryRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1alpha1_registry_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateRegistryRequest.ProtoReflect.Descriptor instead.
+func (*UpdateRegistryRequest) Descriptor() ([]byte, []int) {
+	return file_v1alpha1_registry_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *UpdateRegistryRequest) GetId() int32 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *UpdateRegistryRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *UpdateRegistryRequest) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *UpdateRegistryRequest) GetUrl() string {
+	if x != nil {
+		return x.Url
+	}
+	return ""
+}
+
+func (x *UpdateRegistryRequest) GetCredential() isUpdateRegistryRequest_Credential {
+	if x != nil {
+		return x.Credential
+	}
+	return nil
+}
+
+func (x *UpdateRegistryRequest) GetBasic() *RegistryBasicCredential {
+	if x != nil {
+		if x, ok := x.Credential.(*UpdateRegistryRequest_Basic); ok {
+			return x.Basic
+		}
+	}
+	return nil
+}
+
+func (x *UpdateRegistryRequest) GetInsecure() bool {
+	if x != nil {
+		return x.Insecure
+	}
+	return false
+}
+
+type isUpdateRegistryRequest_Credential interface {
+	isUpdateRegistryRequest_Credential()
+}
+
+type UpdateRegistryRequest_Basic struct {
+	// Basic authentication credentials for the registry.
+	Basic *RegistryBasicCredential `protobuf:"bytes,20,opt,name=basic,proto3,oneof"`
+}
+
+func (*UpdateRegistryRequest_Basic) isUpdateRegistryRequest_Credential() {}
+
+type UpdateRegistryResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The updated registry.
+	Registry      *Registry `protobuf:"bytes,1,opt,name=registry,proto3" json:"registry,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateRegistryResponse) Reset() {
+	*x = UpdateRegistryResponse{}
+	mi := &file_v1alpha1_registry_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateRegistryResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateRegistryResponse) ProtoMessage() {}
+
+func (x *UpdateRegistryResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1alpha1_registry_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateRegistryResponse.ProtoReflect.Descriptor instead.
+func (*UpdateRegistryResponse) Descriptor() ([]byte, []int) {
+	return file_v1alpha1_registry_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *UpdateRegistryResponse) GetRegistry() *Registry {
+	if x != nil {
+		return x.Registry
+	}
+	return nil
+}
+
+type DeleteRegistryRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Unique identifier for the registry to delete. Required.
+	Id            int32 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteRegistryRequest) Reset() {
+	*x = DeleteRegistryRequest{}
+	mi := &file_v1alpha1_registry_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteRegistryRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteRegistryRequest) ProtoMessage() {}
+
+func (x *DeleteRegistryRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1alpha1_registry_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteRegistryRequest.ProtoReflect.Descriptor instead.
+func (*DeleteRegistryRequest) Descriptor() ([]byte, []int) {
+	return file_v1alpha1_registry_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *DeleteRegistryRequest) GetId() int32 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+type DeleteRegistryResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteRegistryResponse) Reset() {
+	*x = DeleteRegistryResponse{}
+	mi := &file_v1alpha1_registry_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteRegistryResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteRegistryResponse) ProtoMessage() {}
+
+func (x *DeleteRegistryResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1alpha1_registry_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteRegistryResponse.ProtoReflect.Descriptor instead.
+func (*DeleteRegistryResponse) Descriptor() ([]byte, []int) {
+	return file_v1alpha1_registry_proto_rawDescGZIP(), []int{11}
+}
+
+type PingRegistryRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Type of registry (e.g., huggingface, etc.)
+	Type RegistryType `protobuf:"varint,4,opt,name=type,proto3,enum=matrixhub.v1alpha1.RegistryType" json:"type,omitempty"`
+	// URL of the registry
+	Url string `protobuf:"bytes,5,opt,name=url,proto3" json:"url,omitempty"`
+	// Credential information (oneof, currently only supports basic)
+	//
+	// Types that are valid to be assigned to Credential:
+	//
+	//	*PingRegistryRequest_Basic
+	Credential isPingRegistryRequest_Credential `protobuf_oneof:"credential"`
+	// Whether to allow insecure connections (e.g., skip TLS verification)
+	Insecure      bool `protobuf:"varint,6,opt,name=insecure,proto3" json:"insecure,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PingRegistryRequest) Reset() {
+	*x = PingRegistryRequest{}
+	mi := &file_v1alpha1_registry_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PingRegistryRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PingRegistryRequest) ProtoMessage() {}
+
+func (x *PingRegistryRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1alpha1_registry_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PingRegistryRequest.ProtoReflect.Descriptor instead.
+func (*PingRegistryRequest) Descriptor() ([]byte, []int) {
+	return file_v1alpha1_registry_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *PingRegistryRequest) GetType() RegistryType {
+	if x != nil {
+		return x.Type
+	}
+	return RegistryType_REGISTRY_TYPE_UNSPECIFIED
+}
+
+func (x *PingRegistryRequest) GetUrl() string {
+	if x != nil {
+		return x.Url
+	}
+	return ""
+}
+
+func (x *PingRegistryRequest) GetCredential() isPingRegistryRequest_Credential {
+	if x != nil {
+		return x.Credential
+	}
+	return nil
+}
+
+func (x *PingRegistryRequest) GetBasic() *RegistryBasicCredential {
+	if x != nil {
+		if x, ok := x.Credential.(*PingRegistryRequest_Basic); ok {
+			return x.Basic
+		}
+	}
+	return nil
+}
+
+func (x *PingRegistryRequest) GetInsecure() bool {
+	if x != nil {
+		return x.Insecure
+	}
+	return false
+}
+
+type isPingRegistryRequest_Credential interface {
+	isPingRegistryRequest_Credential()
+}
+
+type PingRegistryRequest_Basic struct {
+	// Basic authentication credentials for the registry.
+	Basic *RegistryBasicCredential `protobuf:"bytes,20,opt,name=basic,proto3,oneof"`
+}
+
+func (*PingRegistryRequest_Basic) isPingRegistryRequest_Credential() {}
+
+type PingRegistryResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PingRegistryResponse) Reset() {
+	*x = PingRegistryResponse{}
+	mi := &file_v1alpha1_registry_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PingRegistryResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PingRegistryResponse) ProtoMessage() {}
+
+func (x *PingRegistryResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1alpha1_registry_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PingRegistryResponse.ProtoReflect.Descriptor instead.
+func (*PingRegistryResponse) Descriptor() ([]byte, []int) {
+	return file_v1alpha1_registry_proto_rawDescGZIP(), []int{13}
+}
+
+var File_v1alpha1_registry_proto protoreflect.FileDescriptor
+
+const file_v1alpha1_registry_proto_rawDesc = "" +
+	"\n" +
+	"\x17v1alpha1/registry.proto\x12\x12matrixhub.v1alpha1\x1a\x14v1alpha1/utils.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb9\x03\n" +
+	"\bRegistry\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x05R\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\x124\n" +
+	"\x04type\x18\x04 \x01(\x0e2 .matrixhub.v1alpha1.RegistryTypeR\x04type\x12\x10\n" +
+	"\x03url\x18\x05 \x01(\tR\x03url\x12C\n" +
+	"\x05basic\x18\x14 \x01(\v2+.matrixhub.v1alpha1.RegistryBasicCredentialH\x00R\x05basic\x12\x1a\n" +
+	"\binsecure\x18\x06 \x01(\bR\binsecure\x12:\n" +
+	"\x06status\x18\a \x01(\x0e2\".matrixhub.v1alpha1.RegistryStatusR\x06status\x129\n" +
+	"\n" +
+	"created_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"\n" +
+	"updated_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAtB\f\n" +
+	"\n" +
+	"credential\"Q\n" +
+	"\x17RegistryBasicCredential\x12\x1a\n" +
+	"\busername\x18\x01 \x01(\tR\busername\x12\x1a\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword\"`\n" +
+	"\x15ListRegistriesRequest\x12\x12\n" +
+	"\x04page\x18\x01 \x01(\x05R\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\x12\x16\n" +
+	"\x06search\x18\x03 \x01(\tR\x06search\"\x96\x01\n" +
+	"\x16ListRegistriesResponse\x12<\n" +
+	"\n" +
+	"registries\x18\x01 \x03(\v2\x1c.matrixhub.v1alpha1.RegistryR\n" +
+	"registries\x12>\n" +
+	"\n" +
+	"pagination\x18\x02 \x01(\v2\x1e.matrixhub.v1alpha1.PaginationR\n" +
+	"pagination\"$\n" +
+	"\x12GetRegistryRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x05R\x02id\"O\n" +
+	"\x13GetRegistryResponse\x128\n" +
+	"\bregistry\x18\x01 \x01(\v2\x1c.matrixhub.v1alpha1.RegistryR\bregistry\"\x84\x02\n" +
+	"\x15CreateRegistryRequest\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\x124\n" +
+	"\x04type\x18\x04 \x01(\x0e2 .matrixhub.v1alpha1.RegistryTypeR\x04type\x12\x10\n" +
+	"\x03url\x18\x05 \x01(\tR\x03url\x12C\n" +
+	"\x05basic\x18\x14 \x01(\v2+.matrixhub.v1alpha1.RegistryBasicCredentialH\x00R\x05basic\x12\x1a\n" +
+	"\binsecure\x18\x06 \x01(\bR\binsecureB\f\n" +
+	"\n" +
+	"credential\"R\n" +
+	"\x16CreateRegistryResponse\x128\n" +
+	"\bregistry\x18\x01 \x01(\v2\x1c.matrixhub.v1alpha1.RegistryR\bregistry\"\xde\x01\n" +
+	"\x15UpdateRegistryRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x05R\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\x12\x10\n" +
+	"\x03url\x18\x05 \x01(\tR\x03url\x12C\n" +
+	"\x05basic\x18\x14 \x01(\v2+.matrixhub.v1alpha1.RegistryBasicCredentialH\x00R\x05basic\x12\x1a\n" +
+	"\binsecure\x18\x06 \x01(\bR\binsecureB\f\n" +
+	"\n" +
+	"credential\"R\n" +
+	"\x16UpdateRegistryResponse\x128\n" +
+	"\bregistry\x18\x01 \x01(\v2\x1c.matrixhub.v1alpha1.RegistryR\bregistry\"'\n" +
+	"\x15DeleteRegistryRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x05R\x02id\"\x18\n" +
+	"\x16DeleteRegistryResponse\"\xcc\x01\n" +
+	"\x13PingRegistryRequest\x124\n" +
+	"\x04type\x18\x04 \x01(\x0e2 .matrixhub.v1alpha1.RegistryTypeR\x04type\x12\x10\n" +
+	"\x03url\x18\x05 \x01(\tR\x03url\x12C\n" +
+	"\x05basic\x18\x14 \x01(\v2+.matrixhub.v1alpha1.RegistryBasicCredentialH\x00R\x05basic\x12\x1a\n" +
+	"\binsecure\x18\x06 \x01(\bR\binsecureB\f\n" +
+	"\n" +
+	"credential\"\x16\n" +
+	"\x14PingRegistryResponse*i\n" +
+	"\fRegistryType\x12\x1d\n" +
+	"\x19REGISTRY_TYPE_UNSPECIFIED\x10\x00\x12\x1d\n" +
+	"\x19REGISTRY_TYPE_HUGGINGFACE\x10\x01\x12\x1b\n" +
+	"\x17REGISTRY_TYPE_MATRIXHUB\x10\x02*m\n" +
+	"\x0eRegistryStatus\x12\x1f\n" +
+	"\x1bREGISTRY_STATUS_UNSPECIFIED\x10\x00\x12\x1b\n" +
+	"\x17REGISTRY_STATUS_HEALTHY\x10\x01\x12\x1d\n" +
+	"\x19REGISTRY_STATUS_UNHEALTHY\x10\x022\xe2\x06\n" +
+	"\n" +
+	"Registries\x12\x89\x01\n" +
+	"\x0eListRegistries\x12).matrixhub.v1alpha1.ListRegistriesRequest\x1a*.matrixhub.v1alpha1.ListRegistriesResponse\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/api/v1alpha1/registries\x12\x85\x01\n" +
+	"\vGetRegistry\x12&.matrixhub.v1alpha1.GetRegistryRequest\x1a'.matrixhub.v1alpha1.GetRegistryResponse\"%\x82\xd3\xe4\x93\x02\x1f\x12\x1d/api/v1alpha1/registries/{id}\x12\x8c\x01\n" +
+	"\x0eCreateRegistry\x12).matrixhub.v1alpha1.CreateRegistryRequest\x1a*.matrixhub.v1alpha1.CreateRegistryResponse\"#\x82\xd3\xe4\x93\x02\x1d:\x01*\"\x18/api/v1alpha1/registries\x12\x91\x01\n" +
+	"\x0eUpdateRegistry\x12).matrixhub.v1alpha1.UpdateRegistryRequest\x1a*.matrixhub.v1alpha1.UpdateRegistryResponse\"(\x82\xd3\xe4\x93\x02\":\x01*\x1a\x1d/api/v1alpha1/registries/{id}\x12\x8e\x01\n" +
+	"\x0eDeleteRegistry\x12).matrixhub.v1alpha1.DeleteRegistryRequest\x1a*.matrixhub.v1alpha1.DeleteRegistryResponse\"%\x82\xd3\xe4\x93\x02\x1f*\x1d/api/v1alpha1/registries/{id}\x12\x8b\x01\n" +
+	"\fPingRegistry\x12'.matrixhub.v1alpha1.PingRegistryRequest\x1a(.matrixhub.v1alpha1.PingRegistryResponse\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/api/v1alpha1/registries/pingB<Z:github.com/matrixhub-ai/matrixhub/api/go/v1alpha1;v1alpha1b\x06proto3"
+
+var (
+	file_v1alpha1_registry_proto_rawDescOnce sync.Once
+	file_v1alpha1_registry_proto_rawDescData []byte
+)
+
+func file_v1alpha1_registry_proto_rawDescGZIP() []byte {
+	file_v1alpha1_registry_proto_rawDescOnce.Do(func() {
+		file_v1alpha1_registry_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_v1alpha1_registry_proto_rawDesc), len(file_v1alpha1_registry_proto_rawDesc)))
+	})
+	return file_v1alpha1_registry_proto_rawDescData
+}
+
+var file_v1alpha1_registry_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_v1alpha1_registry_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_v1alpha1_registry_proto_goTypes = []any{
+	(RegistryType)(0),               // 0: matrixhub.v1alpha1.RegistryType
+	(RegistryStatus)(0),             // 1: matrixhub.v1alpha1.RegistryStatus
+	(*Registry)(nil),                // 2: matrixhub.v1alpha1.Registry
+	(*RegistryBasicCredential)(nil), // 3: matrixhub.v1alpha1.RegistryBasicCredential
+	(*ListRegistriesRequest)(nil),   // 4: matrixhub.v1alpha1.ListRegistriesRequest
+	(*ListRegistriesResponse)(nil),  // 5: matrixhub.v1alpha1.ListRegistriesResponse
+	(*GetRegistryRequest)(nil),      // 6: matrixhub.v1alpha1.GetRegistryRequest
+	(*GetRegistryResponse)(nil),     // 7: matrixhub.v1alpha1.GetRegistryResponse
+	(*CreateRegistryRequest)(nil),   // 8: matrixhub.v1alpha1.CreateRegistryRequest
+	(*CreateRegistryResponse)(nil),  // 9: matrixhub.v1alpha1.CreateRegistryResponse
+	(*UpdateRegistryRequest)(nil),   // 10: matrixhub.v1alpha1.UpdateRegistryRequest
+	(*UpdateRegistryResponse)(nil),  // 11: matrixhub.v1alpha1.UpdateRegistryResponse
+	(*DeleteRegistryRequest)(nil),   // 12: matrixhub.v1alpha1.DeleteRegistryRequest
+	(*DeleteRegistryResponse)(nil),  // 13: matrixhub.v1alpha1.DeleteRegistryResponse
+	(*PingRegistryRequest)(nil),     // 14: matrixhub.v1alpha1.PingRegistryRequest
+	(*PingRegistryResponse)(nil),    // 15: matrixhub.v1alpha1.PingRegistryResponse
+	(*timestamppb.Timestamp)(nil),   // 16: google.protobuf.Timestamp
+	(*Pagination)(nil),              // 17: matrixhub.v1alpha1.Pagination
+}
+var file_v1alpha1_registry_proto_depIdxs = []int32{
+	0,  // 0: matrixhub.v1alpha1.Registry.type:type_name -> matrixhub.v1alpha1.RegistryType
+	3,  // 1: matrixhub.v1alpha1.Registry.basic:type_name -> matrixhub.v1alpha1.RegistryBasicCredential
+	1,  // 2: matrixhub.v1alpha1.Registry.status:type_name -> matrixhub.v1alpha1.RegistryStatus
+	16, // 3: matrixhub.v1alpha1.Registry.created_at:type_name -> google.protobuf.Timestamp
+	16, // 4: matrixhub.v1alpha1.Registry.updated_at:type_name -> google.protobuf.Timestamp
+	2,  // 5: matrixhub.v1alpha1.ListRegistriesResponse.registries:type_name -> matrixhub.v1alpha1.Registry
+	17, // 6: matrixhub.v1alpha1.ListRegistriesResponse.pagination:type_name -> matrixhub.v1alpha1.Pagination
+	2,  // 7: matrixhub.v1alpha1.GetRegistryResponse.registry:type_name -> matrixhub.v1alpha1.Registry
+	0,  // 8: matrixhub.v1alpha1.CreateRegistryRequest.type:type_name -> matrixhub.v1alpha1.RegistryType
+	3,  // 9: matrixhub.v1alpha1.CreateRegistryRequest.basic:type_name -> matrixhub.v1alpha1.RegistryBasicCredential
+	2,  // 10: matrixhub.v1alpha1.CreateRegistryResponse.registry:type_name -> matrixhub.v1alpha1.Registry
+	3,  // 11: matrixhub.v1alpha1.UpdateRegistryRequest.basic:type_name -> matrixhub.v1alpha1.RegistryBasicCredential
+	2,  // 12: matrixhub.v1alpha1.UpdateRegistryResponse.registry:type_name -> matrixhub.v1alpha1.Registry
+	0,  // 13: matrixhub.v1alpha1.PingRegistryRequest.type:type_name -> matrixhub.v1alpha1.RegistryType
+	3,  // 14: matrixhub.v1alpha1.PingRegistryRequest.basic:type_name -> matrixhub.v1alpha1.RegistryBasicCredential
+	4,  // 15: matrixhub.v1alpha1.Registries.ListRegistries:input_type -> matrixhub.v1alpha1.ListRegistriesRequest
+	6,  // 16: matrixhub.v1alpha1.Registries.GetRegistry:input_type -> matrixhub.v1alpha1.GetRegistryRequest
+	8,  // 17: matrixhub.v1alpha1.Registries.CreateRegistry:input_type -> matrixhub.v1alpha1.CreateRegistryRequest
+	10, // 18: matrixhub.v1alpha1.Registries.UpdateRegistry:input_type -> matrixhub.v1alpha1.UpdateRegistryRequest
+	12, // 19: matrixhub.v1alpha1.Registries.DeleteRegistry:input_type -> matrixhub.v1alpha1.DeleteRegistryRequest
+	14, // 20: matrixhub.v1alpha1.Registries.PingRegistry:input_type -> matrixhub.v1alpha1.PingRegistryRequest
+	5,  // 21: matrixhub.v1alpha1.Registries.ListRegistries:output_type -> matrixhub.v1alpha1.ListRegistriesResponse
+	7,  // 22: matrixhub.v1alpha1.Registries.GetRegistry:output_type -> matrixhub.v1alpha1.GetRegistryResponse
+	9,  // 23: matrixhub.v1alpha1.Registries.CreateRegistry:output_type -> matrixhub.v1alpha1.CreateRegistryResponse
+	11, // 24: matrixhub.v1alpha1.Registries.UpdateRegistry:output_type -> matrixhub.v1alpha1.UpdateRegistryResponse
+	13, // 25: matrixhub.v1alpha1.Registries.DeleteRegistry:output_type -> matrixhub.v1alpha1.DeleteRegistryResponse
+	15, // 26: matrixhub.v1alpha1.Registries.PingRegistry:output_type -> matrixhub.v1alpha1.PingRegistryResponse
+	21, // [21:27] is the sub-list for method output_type
+	15, // [15:21] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
+}
+
+func init() { file_v1alpha1_registry_proto_init() }
+func file_v1alpha1_registry_proto_init() {
+	if File_v1alpha1_registry_proto != nil {
+		return
+	}
+	file_v1alpha1_utils_proto_init()
+	file_v1alpha1_registry_proto_msgTypes[0].OneofWrappers = []any{
+		(*Registry_Basic)(nil),
+	}
+	file_v1alpha1_registry_proto_msgTypes[6].OneofWrappers = []any{
+		(*CreateRegistryRequest_Basic)(nil),
+	}
+	file_v1alpha1_registry_proto_msgTypes[8].OneofWrappers = []any{
+		(*UpdateRegistryRequest_Basic)(nil),
+	}
+	file_v1alpha1_registry_proto_msgTypes[12].OneofWrappers = []any{
+		(*PingRegistryRequest_Basic)(nil),
+	}
+	type x struct{}
+	out := protoimpl.TypeBuilder{
+		File: protoimpl.DescBuilder{
+			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_v1alpha1_registry_proto_rawDesc), len(file_v1alpha1_registry_proto_rawDesc)),
+			NumEnums:      2,
+			NumMessages:   14,
+			NumExtensions: 0,
+			NumServices:   1,
+		},
+		GoTypes:           file_v1alpha1_registry_proto_goTypes,
+		DependencyIndexes: file_v1alpha1_registry_proto_depIdxs,
+		EnumInfos:         file_v1alpha1_registry_proto_enumTypes,
+		MessageInfos:      file_v1alpha1_registry_proto_msgTypes,
+	}.Build()
+	File_v1alpha1_registry_proto = out.File
+	file_v1alpha1_registry_proto_goTypes = nil
+	file_v1alpha1_registry_proto_depIdxs = nil
+}
