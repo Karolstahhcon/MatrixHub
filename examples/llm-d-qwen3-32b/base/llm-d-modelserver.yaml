@@ -53,3 +53,58 @@ spec:
           image: m.daocloud.io/docker.io/vllm/vllm-openai:v0.22.0-cu129
           livenessProbe:
             failureThreshold: 3
+            httpGet:
+              path: /health
+              port: modelserver
+            periodSeconds: 10
+            timeoutSeconds: 5
+          name: modelserver
+          ports:
+            - containerPort: 8000
+              name: modelserver
+              protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /v1/models
+              port: modelserver
+            periodSeconds: 5
+            timeoutSeconds: 2
+          resources:
+            limits:
+              cpu: "16"
+              memory: 128Gi
+              nvidia.com/gpu: 4
+            requests:
+              cpu: "8"
+              memory: 96Gi
+              nvidia.com/gpu: 4
+          startupProbe:
+            failureThreshold: 120
+            httpGet:
+              path: /v1/models
+              port: modelserver
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            timeoutSeconds: 5
+          volumeMounts:
+            - mountPath: /dev/shm
+              name: shm
+            - mountPath: /.cache
+              name: torch-compile-cache
+            - mountPath: /.triton
+              name: triton-cache
+            - mountPath: /.config
+              name: vllm-config
+      serviceAccountName: optimized-baseline-nvidia-gpu-vllm-sa
+      volumes:
+        - emptyDir:
+            medium: Memory
+            sizeLimit: 20Gi
+          name: shm
+        - emptyDir: {}
+          name: torch-compile-cache
+        - emptyDir: {}
+          name: triton-cache
+        - emptyDir: {}
+          name: vllm-config
