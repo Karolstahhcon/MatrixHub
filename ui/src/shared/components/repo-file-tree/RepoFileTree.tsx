@@ -127,3 +127,132 @@ function FileIcon({ file }: { file: RepoFile }) {
   }
 
   if (name === 'readme' || name === 'readme.md') {
+    return <IconFileDescription size={20} color="var(--mantine-color-gray-6)" />
+  }
+
+  if (
+    name.endsWith('.json')
+    || name.endsWith('.yaml')
+    || name.endsWith('.yml')
+    || name.endsWith('.toml')
+  ) {
+    return <IconFileSettings size={20} color="var(--mantine-color-gray-6)" />
+  }
+
+  return <IconFile size={20} color="var(--mantine-color-gray-6)" />
+}
+
+export function RepoFileTree({
+  files,
+  latestCommit,
+  buildTreeLink,
+  buildBlobLink,
+  buildCommitLink,
+  isLoading,
+}: RepoFileTreeProps) {
+  const { t } = useTranslation()
+
+  const sortedFiles = useMemo(() => sortFiles(files), [files])
+
+  const columns: MRT_ColumnDef<RepoFile>[] = [
+    {
+      id: 'name',
+      Cell: FileNameCell,
+      header: '',
+      size: 185,
+      grow: false,
+    },
+    {
+      id: 'size',
+      header: '',
+      Cell: FileSizeCell,
+      size: 185,
+      grow: false,
+    },
+    {
+      id: 'commit',
+      header: '',
+      Cell: FileCommitCell,
+      size: 360,
+    },
+    {
+      id: 'date',
+      header: '',
+      Cell: FileDateCell,
+      size: 185,
+      grow: false,
+    },
+  ]
+
+  return (
+    <div className={classes.wrapper}>
+      {latestCommit && (
+        <div className={classes.caption}>
+          <div className={classes.captionLeft}>
+            <span className={classes.captionAuthor}>{latestCommit.authorName}</span>
+            <span className={classes.captionMessage}>{latestCommit.message}</span>
+            {latestCommit.id && buildCommitLink && (
+              <AnchorLink
+                className={classes.captionHash}
+                size="sm"
+                underline="hover"
+                c="gray.6"
+                {...buildCommitLink(latestCommit.id)}
+              >
+                {latestCommit.id.slice(0, 8)}
+              </AnchorLink>
+            )}
+            {latestCommit.id && !buildCommitLink && (
+              <span className={classes.captionHash}>{latestCommit.id.slice(0, 8)}</span>
+            )}
+          </div>
+          <span className={classes.captionTime}>
+            {formatRelativeTime(latestCommit.createdAt)}
+          </span>
+        </div>
+      )}
+
+      <DataTable
+        data={sortedFiles}
+        columns={columns}
+        loading={isLoading}
+        emptyTitle={t('common.noResults')}
+        hideTableHead
+        enableRowActions
+        renderRowActions={FileActionCell}
+        displayColumnDefOptions={{
+          'mrt-row-actions': {
+            header: '',
+            size: 185,
+            grow: false,
+          },
+        }}
+        tableOptions={{
+          meta: {
+            buildTreeLink,
+            buildBlobLink,
+          },
+          mantineTableBodyCellProps: {
+            style: {
+              height: 44,
+              padding: '0 12px',
+            },
+          },
+        }}
+      />
+    </div>
+  )
+}
+
+function sortFiles(files: RepoFile[]): RepoFile[] {
+  return [...files].sort((a, b) => {
+    const aIsDir = a.type === FileType.DIR ? 0 : 1
+    const bIsDir = b.type === FileType.DIR ? 0 : 1
+
+    if (aIsDir !== bIsDir) {
+      return aIsDir - bIsDir
+    }
+
+    return (a.name ?? '').localeCompare(b.name ?? '')
+  })
+}
