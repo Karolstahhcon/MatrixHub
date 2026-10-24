@@ -117,3 +117,242 @@ function AppNavbar() {
       fontWeight: '600',
       color: isActive ? 'var(--nl-color)' : '#868E96',
     },
+    section: {
+      marginInlineEnd: '8px',
+    },
+    label: {
+      whiteSpace: 'nowrap',
+    },
+  })
+
+  return (
+    <Group
+      gap="sm"
+      wrap="nowrap"
+    >
+      {navRoutes.map((route) => {
+        let isActive = !!matchRoute({
+          to: route.to,
+          fuzzy: true,
+        })
+
+        if (isActive && 'repelMatch' in route) {
+          isActive = !route.repelMatch.some(repelRoute => matchRoute({
+            to: repelRoute,
+            fuzzy: true,
+          }))
+        } else if (!isActive && 'extraMatch' in route) {
+          isActive = !!matchRoute({
+            to: route.extraMatch,
+            fuzzy: true,
+          })
+        }
+
+        return (
+          <NavLink
+            key={route.to}
+            label={route.label}
+            component={Link}
+            to={route.to}
+            activeOptions={{ exact: true }}
+            leftSection={(
+              <route.icon
+                size={rem(20)}
+              />
+            )}
+            active={isActive}
+            styles={navLinkStyles(isActive)}
+          />
+        )
+      })}
+
+      <NavLink
+        label={t('nav.docs')}
+        component="a"
+        href={t('common.docs', { doc: DOCS_URL })}
+        target="_blank"
+        rel="noopener noreferrer"
+        leftSection={(
+          <DocsIcon
+            size={rem(20)}
+          />
+        )}
+        styles={navLinkStyles(false)}
+      />
+    </Group>
+  )
+}
+
+function AccountMenu() {
+  const { t } = useTranslation()
+  const user = use(CurrentUserContext)
+
+  const baseMenuItems = linkOptions([
+    {
+      label: t('nav.profile'),
+      icon: UserIcon,
+      to: ProfileRoute.to,
+    },
+    {
+      label: t('nav.createModel'),
+      icon: ModelIcon,
+      to: CreateModelRoute.to,
+    },
+  ])
+
+  const adminMenuItem = linkOptions([{
+    label: t('nav.settings'),
+    icon: SettingsIcon,
+    to: AdminRoute.to,
+  }])
+
+  const menuItems = user?.isAdmin
+    ? [...baseMenuItems, ...adminMenuItem]
+    : baseMenuItems
+
+  const {
+    mutate: logout,
+  } = useMutation({
+    mutationFn: () => Login.Logout({}),
+    onSuccess: () => {
+      queryClient.clear()
+      window.location.reload()
+    },
+  })
+
+  return (
+    <Menu
+      shadow="md"
+      withArrow
+    >
+      <Menu.Target>
+        <UnstyledButton>
+          <Group
+            gap={8}
+            wrap="nowrap"
+          >
+            <Avatar
+              radius="xl"
+              size={24}
+            />
+            <Text size="sm">
+              {user?.username ?? '...'}
+            </Text>
+            <ArrowDownIcon
+              size={rem(16)}
+            />
+          </Group>
+        </UnstyledButton>
+      </Menu.Target>
+
+      <Menu.Dropdown>
+        {
+          menuItems.map(item => (
+            <Menu.Item
+              key={item.label}
+              leftSection={(
+                <item.icon
+                  size={rem(16)}
+                  color="var(--mantine-color-gray-6)"
+                />
+              )}
+              component={Link}
+              to={item.to}
+            >
+              {item.label}
+            </Menu.Item>
+          ))
+        }
+        <Menu.Item
+          leftSection={(
+            <LogOutIcon
+              size={rem(16)}
+              color="var(--mantine-color-gray-6)"
+            />
+          )}
+          onClick={() => logout()}
+        >
+          {t('nav.logout')}
+        </Menu.Item>
+      </Menu.Dropdown>
+    </Menu>
+  )
+}
+
+function AuthErrorComponent({ error }: { error: unknown }) {
+  if (isForbiddenRouteError(error) || isSdkPermissionDenied(error)) {
+    return <RouteStatusPage code={403} />
+  }
+  if (isNotFoundRouteError(error) || isSdkNotFound(error)) {
+    return <RouteStatusPage code={404} />
+  }
+
+  if (isSdkUnauthenticated(error)) {
+    window.location.reload()
+
+    return null
+  }
+
+  return <RouterErrorComponent error={error} />
+}
+
+function AuthLayout() {
+  const resetKey = useRouterState({
+    select: s => s.resolvedLocation?.href ?? s.location.href,
+  })
+
+  const {
+    user,
+  } = Route.useLoaderData()
+
+  return (
+    <CurrentUserContext value={user}>
+      <AppShell
+        mode="static"
+        header={{ height: 60 }}
+      >
+        <AppShell.Header
+          withBorder={false}
+          style={{ background: '#F8F9FA' }}
+        >
+          <Flex
+            h="100%"
+            align="center"
+            justify="space-between"
+            px={24}
+          >
+            <Group
+              gap={135}
+              wrap="nowrap"
+            >
+              <AppLogo />
+
+              <AppNavbar />
+            </Group>
+
+            <Group gap="md" wrap="nowrap">
+              <LanguageSwitcher />
+
+              <AccountMenu />
+            </Group>
+          </Flex>
+        </AppShell.Header>
+
+        <AppShell.Main
+          styles={{
+            main: {
+              height: 'calc(100vh - var(--app-shell-header-height))',
+            },
+          }}
+        >
+          <CatchBoundary
+            getResetKey={() => resetKey}
+            errorComponent={AuthErrorComponent}
+          >
+            <Outlet />
+          </CatchBoundary>
+        </AppShell.Main>
+      </AppShell>
+    </CurrentUserContext>
+  )
+}
