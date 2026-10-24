@@ -4,3 +4,16 @@ services:
   matrixhub:
     image: ghcr.io/Karolstahhcon/matrixhub:${MATRIXHUB_IMAGE_TAG:-latest}
     container_name: matrixhub-apiserver
+    working_dir: /workspace
+    command:
+      - /usr/local/bin/matrixhub
+      - apiserver
+      - -c
+      - /etc/matrixhub/config.yaml
+    ports:
+      - "${MATRIXHUB_HTTP_PORT:-3001}:3001"
+      - "${MATRIXHUB_SSH_PORT:-2222}:22"
+    volumes:
+      - ./data/matrixhub:/data/
+      - ./config.yaml:/etc/matrixhub/config.yaml:ro
+    restart: unless-stopped
