@@ -236,3 +236,479 @@ func (s *Server) Serve(ctx context.Context, listener net.Listener) error {
 			return err
 		}
 		go s.handleConnection(ctx, conn)
+	}
+}
+
+// ListenAndServe listens on the given address and serves SSH protocol requests.
+func (s *Server) ListenAndServe(ctx context.Context, addr string) error {
+	var listenConfig net.ListenConfig
+	listener, err := listenConfig.Listen(ctx, "tcp", addr)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = listener.Close() }()
+	return s.Serve(ctx, listener)
+}
+
+// handleConnection handles a single SSH connection.
+func (s *Server) handleConnection(ctx context.Context, conn net.Conn) {
+	defer func() { _ = conn.Close() }()
+
+	serverConn, chans, reqs, err := ssh.NewServerConn(conn, s.config)
+	if err != nil {
+		slog.WarnContext(ctx, "ssh protocol: handshake failed", "error", err)
+		return
+	}
+	defer func() { _ = serverConn.Close() }()
+
+	// Discard global requests
+	go ssh.DiscardRequests(reqs)
+
+	user := getUserFromPermissions(serverConn.Permissions)
+	ctx = authenticate.WithContext(ctx, authenticate.UserInfo{User: user})
+
+	for newChannel := range chans {
+		if newChannel.ChannelType() != "session" {
+			_ = newChannel.Reject(ssh.UnknownChannelType, "unknown channel type")
+			continue
+		}
+
+		channel, requests, err := newChannel.Accept()
+		if err != nil {
+			slog.ErrorContext(ctx, "ssh protocol: could not accept channel", "error", err)
+			return
+		}
+
+		go s.handleSession(ctx, channel, requests)
+	}
+}
+
+// handleSession handles an SSH session channel.
+func (s *Server) handleSession(ctx context.Context, channel ssh.Channel, requests <-chan *ssh.Request) {
+	defer func() { _ = channel.Close() }()
+
+	var envs []string
+
+	for req := range requests {
+		switch req.Type {
+		case "env":
+			var env setenvRequest
+			err := ssh.Unmarshal(req.Payload, &env)
+			if err != nil {
+				_ = req.Reply(false, nil)
+				slog.WarnContext(ctx, "ssh protocol: failed to parse env request", "error", err)
+				sendExitStatus(channel, 1, "")
+				return
+			}
+			switch env.Name {
+			case "GIT_PROTOCOL":
+				if repository.IsValidGitProtocol(env.Value) {
+					envs = append(envs, "GIT_PROTOCOL="+env.Value)
+				}
+				_ = req.Reply(true, nil)
+			default:
+				_ = req.Reply(false, nil)
+			}
+		case "exec":
+			var exec execMsg
+			err := ssh.Unmarshal(req.Payload, &exec)
+			if err != nil {
+				_ = req.Reply(false, nil)
+				slog.WarnContext(ctx, "ssh protocol: failed to parse env request", "error", err)
+				sendExitStatus(channel, 1, "")
+				return
+			}
+
+			cmd, err := parseCommand(exec.Command)
+			if err != nil {
+				_ = req.Reply(false, nil)
+				slog.WarnContext(ctx, "ssh protocol: failed to parse exec command", "error", err)
+				sendExitStatus(channel, 1, "")
+				return
+			}
+
+			_ = req.Reply(true, nil)
+
+			switch cmd.service {
+			case repository.GitLFSAuthenticate:
+				s.executeLFSAuthenticate(ctx, channel, cmd.repoName, cmd.operation)
+			case repository.GitLFSTransfer:
+				sendExitStatus(channel, 1, "git-lfs-transfer is not supported\n")
+			default:
+				s.executeCommand(ctx, channel, cmd.service, cmd.repoName, envs...)
+			}
+			return
+		case "auth-agent-req@openssh.com":
+			_ = req.Reply(false, nil)
+		default:
+			_ = req.Reply(false, nil)
+			sendExitStatus(channel, 1, "unsupported request type\n")
+			return
+		}
+	}
+}
+
+// executeCommand runs a git service command and pipes I/O through the SSH channel.
+func (s *Server) executeCommand(ctx context.Context, channel ssh.Channel, service string, repoName string, env ...string) {
+	repoPath := s.storage.ResolvePath(repoName)
+	if repoPath == "" {
+		sendExitStatus(channel, 1, "repository not found\n")
+		return
+	}
+
+	isModelRepo := false
+	if s.modelService != nil {
+		_, _, isModelRepo = modelRepoPath(repoName)
+	}
+
+	if s.mirror != nil {
+		switch service {
+		case repository.GitUploadPack:
+			// Model repositories are synchronized by the model service in openRepo.
+			// They do not use the generic mirror source callback, which may be unset
+			// even when a model has a configured remote registry.
+			if isModelRepo {
+				break
+			}
+			isMirrorSrc, err := s.mirror.IsMirrorSource(ctx, repoName)
+			if err != nil {
+				slog.ErrorContext(ctx, "ssh protocol: failed to check mirror status", "repo", repoName, "error", err)
+				sendExitStatus(channel, 1, "")
+				return
+			}
+			if !isMirrorSrc {
+				slog.WarnContext(ctx, "ssh protocol: pull from mirror repository denied", "repo", repoName)
+				sendExitStatus(channel, 1, "pull from mirror repository denied")
+				return
+			}
+		case repository.GitReceivePack:
+			// Local model repositories are allowed to be created and pushed directly.
+			// Mirror destination checks only apply to repositories managed as mirrors.
+			if isModelRepo {
+				break
+			}
+			isMirrorDest, err := s.mirror.IsMirrorDestination(ctx, repoName)
+			if err != nil {
+				slog.ErrorContext(ctx, "ssh protocol: failed to check mirror destination status", "repo", repoName, "error", err)
+				sendExitStatus(channel, 1, "")
+				return
+			}
+			if !isMirrorDest {
+				slog.WarnContext(ctx, "ssh protocol: push to mirror destination repository denied", "repo", repoName)
+				sendExitStatus(channel, 1, "push to mirror destination repository denied")
+				return
+			}
+		}
+	}
+
+	if s.permissionHookFunc != nil {
+		op := permission.OperationReadRepo
+		if service == repository.GitReceivePack {
+			op = permission.OperationUpdateRepo
+		}
+		if ok, err := s.permissionHookFunc(ctx, op, repoName, permission.Context{}); err != nil {
+			slog.WarnContext(ctx, "ssh protocol: permission hook error", "service", service, "repo", repoName, "error", err)
+			sendExitStatus(channel, 1, "")
+			return
+		} else if !ok {
+			sendExitStatus(channel, 1, "permission denied")
+			return
+		}
+	}
+
+	_, err := s.openRepo(ctx, repoPath, repoName, service)
+	if err != nil {
+		if err == repository.ErrRepositoryNotExists {
+			sendExitStatus(channel, 1, "repository not found\n")
+			return
+		}
+		slog.WarnContext(ctx, "ssh protocol: failed to open repository", "repo", repoName, "error", err)
+		sendExitStatus(channel, 1, "")
+		return
+	}
+
+	// For receive-pack with permission/receive hooks: use pipe-based approach
+	// to intercept pkt-line commands for permission checking before the push completes.
+	if service == repository.GitReceivePack && (s.preReceiveHookFunc != nil || s.postReceiveHookFunc != nil || s.mirror != nil) {
+		s.executeReceivePackWithHooks(ctx, channel, service, repoName, repoPath, env...)
+		return
+	}
+
+	cmd := exec.CommandContext(ctx, service, ".")
+	cmd.Dir = repoPath
+	cmd.Stdin = channel
+	cmd.Stdout = channel
+	cmd.Stderr = channel.Stderr()
+	if len(env) > 0 {
+		cmd.Env = append(os.Environ(), env...)
+	}
+
+	if err := cmd.Run(); err != nil {
+		slog.ErrorContext(ctx, "ssh protocol: command failed", "service", service, "error", err)
+		sendExitStatus(channel, 1, "")
+		return
+	}
+
+	exitCode := cmd.ProcessState.ExitCode()
+	sendExitStatus(channel, uint32(exitCode), "")
+}
+
+// executeReceivePackWithHooks handles git-receive-pack using a pipe to intercept
+// pkt-line ref update commands. This allows the permission hook to inspect and
+// reject pushes before git-receive-pack processes the pack data.
+func (s *Server) executeReceivePackWithHooks(ctx context.Context, channel ssh.Channel, service string, repoName, repoPath string, env ...string) {
+	pr, pw := io.Pipe()
+	defer func() { _ = pr.Close() }()
+
+	cmd := exec.CommandContext(ctx, service, ".")
+	cmd.Dir = repoPath
+	cmd.Stdin = pr
+	cmd.Stdout = channel
+	cmd.Stderr = channel.Stderr()
+	if len(env) > 0 {
+		cmd.Env = append(os.Environ(), env...)
+	}
+
+	if err := cmd.Start(); err != nil {
+		_ = pw.Close()
+		slog.ErrorContext(ctx, "ssh protocol: command start failed", "service", service, "error", err)
+		sendExitStatus(channel, 1, "")
+		return
+	}
+
+	// After git-receive-pack sends the ref advertisement through stdout→channel,
+	// the client sends pkt-line commands back through the channel. ParseRefUpdates
+	// reads these commands and returns a replay reader for forwarding.
+	updates, replay := receive.ParseRefUpdates(channel, repoPath)
+
+	// Pre-receive hook — can reject the push before pack data is processed.
+	if s.preReceiveHookFunc != nil && len(updates) > 0 {
+		if ok, err := s.preReceiveHookFunc(ctx, repoName, updates); err != nil {
+			slog.WarnContext(ctx, "ssh protocol: pre-receive hook denied push", "repo", repoName, "error", err)
+			_ = cmd.Process.Kill()
+			_ = pw.Close()
+			_ = cmd.Wait()
+			sendExitStatus(channel, 1, "")
+			return
+		} else if !ok {
+			slog.WarnContext(ctx, "ssh protocol: pre-receive hook denied push", "repo", repoName)
+			_ = cmd.Process.Kill()
+			_ = pw.Close()
+			_ = cmd.Wait()
+			sendExitStatus(channel, 1, "pre-receive denied")
+			return
+		}
+	}
+
+	// Permission granted — forward the buffered pkt-line data and remaining
+	// channel input to git-receive-pack through the pipe.
+	go func() {
+		defer func() { _ = pw.Close() }()
+		if _, err := io.Copy(pw, replay); err != nil {
+			slog.WarnContext(ctx, "ssh protocol: error forwarding data to receive-pack", "repo", repoName, "error", err)
+		}
+	}()
+
+	if err := cmd.Wait(); err != nil {
+		slog.ErrorContext(ctx, "ssh protocol: command failed", "service", service, "error", err)
+		sendExitStatus(channel, 1, "")
+		return
+	}
+
+	// Fire post-receive hook with the ref updates.
+	s.afterReceivePack(ctx, repoName, updates)
+
+	exitCode := cmd.ProcessState.ExitCode()
+	sendExitStatus(channel, uint32(exitCode), "")
+}
+
+func (s *Server) afterReceivePack(ctx context.Context, repoName string, updates []receive.RefUpdate) {
+	if len(updates) == 0 {
+		return
+	}
+
+	if s.postReceiveHookFunc != nil {
+		if hookErr := s.postReceiveHookFunc(ctx, repoName, updates); hookErr != nil {
+			slog.WarnContext(ctx, "ssh protocol: post-receive hook error", "repo", repoName, "error", hookErr)
+		}
+	}
+}
+
+func (s *Server) openRepo(ctx context.Context, repoPath, repoName, service string) (*repository.Repository, error) {
+	if s.modelService != nil {
+		project, name, ok := modelRepoPath(repoName)
+		if ok {
+			switch service {
+			case repository.GitReceivePack:
+				if _, err := s.modelService.EnsureModel(ctx, project, name); err != nil {
+					return nil, fmt.Errorf("ensure model %s/%s: %w", project, name, err)
+				}
+			case repository.GitUploadPack:
+				if s.mirror != nil {
+					if err := s.modelService.CheckOrSyncFromRemote(ctx, project, name); err != nil {
+						log.Errorf("failed to sync from remote for %s/%s: %v", project, name, err)
+						return nil, err
+					}
+				}
+			}
+		}
+	}
+	return repository.Open(repoPath)
+}
+
+// modelRepoPath returns the project and model name for a model repository path.
+func modelRepoPath(repoName string) (project, name string, ok bool) {
+	repoType, project, name, ok := utils.ParseFromRepoName(repoName)
+	return project, name, ok && repoType == "models"
+}
+
+// lfsAuthResponse is the JSON response returned by git-lfs-authenticate.
+type lfsAuthResponse struct {
+	Href      string            `json:"href"`
+	Header    map[string]string `json:"header,omitempty"`
+	ExpiresIn int               `json:"expires_in,omitempty"`
+}
+
+func lfsHref(httpURL, repoName string) string {
+	href := strings.TrimRight(httpURL, "/") + "/" + strings.TrimPrefix(repoName, "/")
+	if !strings.HasSuffix(href, ".git") {
+		href += ".git"
+	}
+	href += "/info/lfs"
+	return href
+}
+
+// executeLFSAuthenticate handles the git-lfs-authenticate command by returning
+// a JSON response with the LFS API endpoint URL.
+func (s *Server) executeLFSAuthenticate(ctx context.Context, channel ssh.Channel, repoName string, operation string) {
+	if s.lfsURL == "" {
+		sendExitStatus(channel, 1, "server not configured for host url")
+		return
+	}
+
+	if operation != "download" && operation != "upload" {
+		slog.ErrorContext(ctx, "ssh protocol: git-lfs-authenticate: invalid operation", "operation", operation)
+		sendExitStatus(channel, 1, "invalid LFS operation")
+		return
+	}
+
+	repoPath := s.storage.ResolvePath(repoName)
+	if repoPath == "" {
+		sendExitStatus(channel, 1, "repository not found")
+		return
+	}
+
+	if s.permissionHookFunc != nil {
+		op := permission.OperationReadRepo
+		if operation == "upload" {
+			op = permission.OperationUpdateRepo
+		}
+		if ok, err := s.permissionHookFunc(ctx, op, repoName, permission.Context{}); err != nil {
+			slog.WarnContext(ctx, "ssh protocol: permission hook error", "operation", operation, "repo", repoName, "error", err)
+			sendExitStatus(channel, 1, "")
+			return
+		} else if !ok {
+			sendExitStatus(channel, 1, "permission denied")
+			return
+		}
+	}
+
+	// Build the LFS API href
+	href := lfsHref(s.lfsURL, repoName)
+
+	resp := lfsAuthResponse{
+		Href:      href,
+		Header:    make(map[string]string),
+		ExpiresIn: 3600,
+	}
+
+	// Include authentication headers when a token signer is configured,
+	// so LFS clients can authenticate with the HTTP server.
+	if s.tokenSignValidator != nil {
+		userInfo, _ := authenticate.GetUserInfo(ctx)
+		batchURL := href + "/objects/batch"
+		if token, err := s.tokenSignValidator.Sign(ctx, http.MethodPost, batchURL, userInfo.User, time.Duration(resp.ExpiresIn)*time.Second); err != nil {
+			slog.WarnContext(ctx, "ssh protocol: failed to sign LFS auth token", "error", err)
+		} else if token != "" {
+			resp.Header["Authorization"] = "Bearer " + token
+		}
+	}
+
+	data, err := json.Marshal(resp)
+	if err != nil {
+		slog.ErrorContext(ctx, "ssh protocol: failed to marshal LFS auth response", "error", err)
+		sendExitStatus(channel, 1, "")
+		return
+	}
+
+	if _, err := channel.Write(data); err != nil {
+		slog.ErrorContext(ctx, "ssh protocol: failed to write LFS auth response", "error", err)
+		sendExitStatus(channel, 1, "")
+		return
+	}
+
+	sendExitStatus(channel, 0, "")
+}
+
+// parsedCommand holds the result of parsing an SSH exec command.
+type parsedCommand struct {
+	service   string
+	repoName  string
+	operation string // only for git-lfs-authenticate and git-lfs-transfer
+}
+
+// parseCommand parses an SSH exec command like "git-upload-pack '/repo.git'",
+// "git-upload-pack /repo.git", or "git-lfs-authenticate '/repo.git' download".
+func parseCommand(cmdLine string) (*parsedCommand, error) {
+	parts := strings.SplitN(strings.TrimSpace(cmdLine), " ", 2)
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("invalid command format: %q", cmdLine)
+	}
+
+	service := parts[0]
+	rest := parts[1]
+
+	switch service {
+	case repository.GitUploadPack, repository.GitReceivePack:
+		repoName := strings.Trim(rest, "'")
+		return &parsedCommand{service: service, repoName: repoName}, nil
+
+	case repository.GitLFSAuthenticate, repository.GitLFSTransfer:
+		// Format: git-lfs-authenticate <path> <operation>
+		// or: git-lfs-transfer <path> <operation>
+		subParts := strings.SplitN(rest, " ", 2)
+		if len(subParts) != 2 {
+			return nil, fmt.Errorf("invalid %s format: %q", service, cmdLine)
+		}
+		repoName := strings.Trim(subParts[0], "'")
+		operation := strings.TrimSpace(subParts[1])
+		return &parsedCommand{service: service, repoName: repoName, operation: operation}, nil
+
+	default:
+		return nil, fmt.Errorf("unsupported service: %s", service)
+	}
+}
+
+// sendExitStatus sends the exit status to the SSH client.
+func sendExitStatus(channel ssh.Channel, status uint32, msg string) {
+	if msg != "" {
+		_, _ = fmt.Fprint(channel.Stderr(), msg)
+	}
+	_, _ = channel.SendRequest("exit-status", false, ssh.Marshal(&exitStatusMsg{Status: status}))
+}
+
+// exitStatusMsg copy from golang.org/x/crypto/ssh.exitStatusMsg
+type exitStatusMsg struct {
+	Status uint32
+}
+
+// setenvRequest copy from golang.org/x/crypto/ssh.setenvRequest
+type setenvRequest struct {
+	Name  string
+	Value string
+}
+
+// execMsg copy from golang.org/x/crypto/ssh.execMsg
+type execMsg struct {
+	Command string
+}
